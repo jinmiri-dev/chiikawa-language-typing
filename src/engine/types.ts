@@ -113,6 +113,8 @@ export interface Word {
   /** 담은 줄 전체이면 true */
   wholeLine?: boolean
   savedAt?: number
+  /** 나온 줄(예문). 단어장과 "담은 줄만 다시 연습"이 쓴다 */
+  example?: { src: string; ko?: string; segments: Segment[] }
 }
 
 /** 오늘의 복습 항목. step 0:1일 1:3일 2:7일 3:졸업 */

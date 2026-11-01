@@ -10,11 +10,14 @@ import { explainMistake } from '../../engine/judge/explain'
 import { judge, significantChars } from '../../engine/judge/judge'
 import { getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
-import type { LayoutId, LineResult, Material, Progress, Segment } from '../../engine/types'
+import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
+import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '../../engine/types'
 import { getMaterial } from '../../services/materials'
 import { speak } from '../../services/speech'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
+import WordDrawer from './WordDrawer'
+import { REVIEW_ID } from '../../services/review'
 import './Study.css'
 
 const LEVEL_NAME: Record<HintLevel, string> = { full: '전체', line: '한 줄', off: '없음' }
@@ -96,6 +99,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [sheetOpen, setSheetOpen] = useState(false)
   const [voiceNote, setVoiceNote] = useState('')
   const [mobileMap, setMobileMap] = useState(false)
+  const [words, setWords] = useState<Word[]>([])
+  const [wordsOpen, setWordsOpen] = useState(false)
 
   const composingRef = useRef(false)
   const clock = useRef<ClockState>({ activeMs: initial?.activeMs ?? 0, lastAt: null })
@@ -124,9 +129,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     [reduceMotion, settings.friend],
   )
 
-  // 처음 들어왔을 때 인사, 휴대폰에서 일본어 키보드를 처음 고를 때 시트
   useEffect(() => {
-    say('hello')
+    void store.listWords(material.lang).then(setWords)
+  }, [store, material.lang])
+  const savedText = useMemo(() => new Set(words.map((w) => w.text)), [words])
+  const isReview = material.id === REVIEW_ID
+
+  // 처음 들어왔을 때 인사(복습이면 복습 인사), 휴대폰에서 일본어 키보드를 처음 고를 때 시트
+  useEffect(() => {
+    say(isReview ? 'review' : 'hello')
     if (device === 'mobile' && !settings.layout.ja) setSheetOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -177,6 +188,41 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const fading = seg ? (hintMem[seg.reading ?? seg.text]?.level ?? 'full') : 'full'
   const level: HintLevel = !settings.hintFading ? settings.hintMode : idle || mistake ? 'full' : fading
 
+  /** 단어(또는 줄 전체)를 담고, 그 줄을 복습에 넣는다. 다시 누르면 뺀다. */
+  async function toggleWord(text: string, reading: string | undefined, wholeLine: boolean) {
+    const id = wholeLine ? `${material.id}|${line.id}` : `${material.lang}:${text}`
+    const exists = words.find((w) => w.id === id)
+    if (exists) {
+      await store.deleteWord(id)
+      setWords((ws) => ws.filter((w) => w.id !== id))
+    } else {
+      const w: Word = {
+        id, lang: material.lang, text, ...(reading && reading !== text ? { reading } : {}),
+        from: refOf(), wholeLine, savedAt: Date.now(),
+        example: { src: line.src, ...(line.ko ? { ko: line.ko } : {}), segments: line.segments },
+      }
+      await store.saveWord(w)
+      await addReview()
+      setWords((ws) => [...ws, w])
+    }
+    inputRef.current?.focus({ preventScroll: true })
+  }
+
+  /** 이 줄이 원래 어느 재료의 몇째 줄인가(복습 재료의 줄은 원래 위치를 id 에 담고 있다) */
+  function refOf() {
+    if (isReview) {
+      const [materialId, lineId] = line.id.split('|')
+      return { materialId, lineId }
+    }
+    return { materialId: material.id, lineId: line.id }
+  }
+
+  async function addReview() {
+    const ref = refOf()
+    const existing = (await store.listReview()).find((r) => r.id === reviewId(ref))
+    if (!existing) await store.saveReview(newReviewItem(ref, Date.now()))
+  }
+
   function persist(nextIdx: number, nextResults: LineResult[]) {
     void store.saveProgress({
       materialId: material.id,
@@ -196,6 +242,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setResults(nextResults)
     setLineDone(true)
     persist(idx + 1, nextResults)
+    // 복습: 이 줄의 일정을 다시 잡는다. 일반 연습: 틀린 줄은 복습에 넣는다.
+    if (isReview)
+      void store.listReview().then((list) => {
+        const item = list.find((x) => x.id === line.id)
+        if (item) void store.saveReview(schedule(item, r.mistakes === 0, t))
+      })
+    else if (r.mistakes > 0) void addReview()
 
     // 친구 반응: 5분 단계가 바뀌었으면 그것만, 아니면 연속·다시 맞힘·가끔 한마디
     const stage = stageOf(clock.current.activeMs)
@@ -284,6 +337,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     return () => window.removeEventListener('keydown', onKey)
   }, [lineDone, idx, goTo, listen])
 
+  const lineSaved = words.some((w) => w.id === `${material.id}|${line.id}`)
   const progressText = `${Math.min(idx + 1, material.lines.length)} / ${material.lines.length}줄`
   const stage = stageOf(activeMs)
   const prev = material.lines[idx - 1]
@@ -302,13 +356,28 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
                 </span>
               )
             })
-            return g.text !== g.reading && settings.show.reading ? (
-              <ruby key={si}>
-                {chars}
-                <rt>{g.reading}</rt>
-              </ruby>
+            const body =
+              g.text !== g.reading && settings.show.reading ? (
+                <ruby>
+                  {chars}
+                  <rt>{g.reading}</rt>
+                </ruby>
+              ) : (
+                chars
+              )
+            return g.isWord ? (
+              <button
+                key={si}
+                type="button"
+                className="word"
+                data-saved={savedText.has(g.text) || undefined}
+                aria-label={`${g.text} ${savedText.has(g.text) ? '단어장에서 빼기' : '단어장에 담기'}`}
+                onClick={() => void toggleWord(g.text, g.reading, false)}
+              >
+                {body}
+              </button>
             ) : (
-              <span key={si}>{chars}</span>
+              <span key={si}>{body}</span>
             )
           })}
         </p>
@@ -422,6 +491,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           건너뛰기 →
         </button>
       </div>
+      <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
+        {lineSaved ? '✓ 담은 줄' : '이 줄 담기'}
+      </button>
+      <p className="ctl-note">단어를 누르면 단어장에 담겨요.</p>
     </div>
   )
 
@@ -438,11 +511,14 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   return (
     <div className={`study study-${device}`}>
       <AppHeader
-        back={href({ name: 'materials', lang: material.lang, tab: 'starter' })}
+        back={isReview ? '#/' : href({ name: 'materials', lang: material.lang, tab: material.kind === 'starter' ? 'starter' : 'script' })}
         title={<span className="study-title">{material.title}</span>}
         right={
           <>
             <span className="study-meta">{progressText}</span>
+            <button type="button" className="study-words" onClick={() => setWordsOpen(true)}>
+              단어 {words.length}
+            </button>
             {device === 'mobile' ? (
               <a href="#/friend" className="study-face" aria-label="친구 바꾸기">
                 <FriendImage friend={settings.friend} stage={stage} size={40} />
@@ -496,12 +572,29 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             <button type="button" className="btn btn-sub" onClick={() => goTo(idx + 1)}>
               건너뛰기
             </button>
+            <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
+              {lineSaved ? '✓ 담음' : '줄 담기'}
+            </button>
           </div>
           {voiceNote && <p className="ctl-note">{voiceNote}</p>}
           {/* 말풍선은 문장을 가리거나 밀지 않게 조작 버튼 아래에 둔다 */}
           <FriendBubble line={bubble.line} shownAt={bubble.at} />
         </main>
       )}
+      <WordDrawer
+        open={wordsOpen}
+        lang={material.lang}
+        words={words}
+        onClose={() => setWordsOpen(false)}
+        onChange={(w) => {
+          void store.saveWord(w)
+          setWords((ws) => ws.map((x) => (x.id === w.id ? w : x)))
+        }}
+        onDelete={(id) => {
+          void store.deleteWord(id)
+          setWords((ws) => ws.filter((x) => x.id !== id))
+        }}
+      />
       <KeyboardSheet
         open={sheetOpen}
         device={device}

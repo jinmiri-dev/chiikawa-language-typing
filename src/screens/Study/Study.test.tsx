@@ -52,3 +52,18 @@ test('첫 줄을 맞게 치면 맞았어요, 진도 저장', async () => {
   await act(async () => {})
   expect((await store.getProgress('ja-greet'))?.lineIndex).toBe(1)
 })
+
+test('단어를 누르면 단어장에 담기고 그 줄이 복습에 들어간다', async () => {
+  await open()
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '元気 단어장에 담기' })))
+  expect((await store.listWords('ja')).map((w) => [w.text, w.reading, w.example?.ko])).toEqual([['元気', 'げんき', '좋은 아침! 잘 지내?']])
+  expect((await store.listReview()).map((r) => r.id)).toEqual(['ja-greet|greet-01'])
+  expect(screen.getByRole('button', { name: '단어 1' })).toBeTruthy()
+})
+
+test('틀린 줄은 복습에 들어간다', async () => {
+  const input = await open()
+  await act(async () => compose(input, 'おはや', 'おはや')())
+  await act(async () => compose(input, 'おはよう！元気', 'おはよう！元気')())
+  expect((await store.listReview()).map((r) => r.id)).toEqual(['ja-greet|greet-01'])
+})

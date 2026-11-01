@@ -3,6 +3,7 @@ import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader, FriendImage, StatusNotice } from '../../components/components'
 import { getMaterial } from '../../services/materials'
+import { buildReviewMaterial, reviewCount } from '../../services/review'
 import { KIND_NAME, LANG_NAME, LANGS, type Lang } from '../../engine/lang'
 import type { Material, Progress } from '../../engine/types'
 import './Home.css'
@@ -67,10 +68,10 @@ function HowTo() {
   )
 }
 
-function Continue({ p, m }: { p: Progress; m: Material }) {
+function Continue({ p, m, sub }: { p: Progress; m: Material; sub?: boolean }) {
   const done = Math.min(p.lineIndex, m.lines.length)
   return (
-    <a className="continue" href={href({ name: 'study', materialId: p.materialId })}>
+    <a className={sub ? 'continue continue-sub' : 'continue'} href={href({ name: 'study', materialId: p.materialId })}>
       <span className="continue-label">이어서 공부하기</span>
       <span className="continue-title">
         {LANG_NAME[m.lang].ko} · {KIND_NAME[m.kind]} · {m.title}
@@ -88,13 +89,20 @@ function Continue({ p, m }: { p: Progress; m: Material }) {
 export default function Home() {
   const { store, settings } = useApp()
   const [last, setLast] = useState<{ p: Progress; m: Material } | null | undefined>(undefined)
+  const [due, setDue] = useState(0)
   useEffect(() => {
     void (async () => {
       const p = await store.lastProgress()
       const m = p ? await getMaterial(store, p.materialId) : null
+      setDue(await reviewCount(store))
       setLast(p && m ? { p, m } : null)
     })()
   }, [store])
+
+  async function startReview() {
+    const m = await buildReviewMaterial(store)
+    if (m) location.hash = href({ name: 'study', materialId: m.id })
+  }
   if (last === undefined) return null
 
   return (
@@ -108,7 +116,13 @@ export default function Home() {
                 <FriendImage friend={settings.friend} size={120} />
               </div>
               <h1>다시 왔네요! 오늘도 한 줄씩 쳐 봐요.</h1>
-              <Continue p={last.p} m={last.m} />
+              {due > 0 && (
+                <button type="button" className="continue review-start" onClick={() => void startReview()}>
+                  <span className="continue-label">오늘의 복습</span>
+                  <span className="continue-title">틀렸던 줄과 담은 단어 {due}개 · 약 {Math.max(1, Math.round(due * 0.6))}분</span>
+                </button>
+              )}
+              <Continue p={last.p} m={last.m} sub={due > 0} />
               <h2>다른 언어로 시작하기</h2>
             </>
           ) : (

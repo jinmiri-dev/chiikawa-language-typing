@@ -238,3 +238,20 @@
     display: none;
   }
 }
+
+/* 복습이 있으면 복습이 주요 버튼, 이어서 공부하기는 보조 */
+.review-start {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.continue-sub {
+  margin-top: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+}
+.continue-sub .continue-bar {
+  background: var(--soft);
+}
