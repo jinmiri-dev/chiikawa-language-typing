@@ -1,0 +1,14 @@
+# 언어 1급 중계 함수. 배포는 사용자가 한다(docs/직접-해야-할-일.md).
+name = "language-grade1"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://jinmiri-dev.github.io,http://localhost:5173,http://localhost:4173"
+
+# npx wrangler kv namespace create CACHE 로 만든 id 를 넣는다
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_ID"
+
+# 비밀값(키)은 여기 쓰지 않는다: npx wrangler secret put YOUTUBE_API_KEY 등
