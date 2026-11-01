@@ -306,3 +306,31 @@
     font-size: var(--fs-body);
   }
 }
+
+.share-preview {
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  padding-left: 24px;
+}
+.done .notice {
+  width: 100%;
+  text-align: left;
+}
+.done .notice .done-actions {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+.backup-lead {
+  display: block;
+  margin: 0 0 8px;
+}
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.backup-actions label {
+  cursor: pointer;
+}

@@ -7,11 +7,12 @@ import { buildDraftMaterial } from '../../engine/import/material'
 import { parseScript } from '../../engine/import/parse'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Material } from '../../engine/types'
-import { pairTexts, readScriptFile, titleFrom, youtubeIdFrom } from '../../services/files'
+import { readShareFile, shareFile, shareLink } from '../../services/backup'
+import { downloadText, pairTexts, readScriptFile, titleFrom, youtubeIdFrom } from '../../services/files'
 import { loadJaTokenizer } from '../../services/jaTokenizer'
 import { newScriptId } from '../../services/materials'
 
-const ACCEPT = '.txt,.srt,.vtt,.csv,.tsv,.pdf,text/plain,application/pdf'
+const ACCEPT = '.txt,.srt,.vtt,.csv,.tsv,.pdf,.json,text/plain,application/pdf,application/json'
 
 function NetflixPanel({ lang }: { lang: Lang }) {
   const picks = NETFLIX_PICKS[lang] ?? []
@@ -52,6 +53,7 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState<Material[]>([])
+  const [shared, setShared] = useState('')
   useEffect(() => {
     void store.listMaterials(lang).then((list) => setSaved(list.filter((m) => m.kind === 'script')))
   }, [store, lang])
@@ -60,6 +62,17 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
     setError('')
     try {
       setBusy('대본을 읽고 있어요…')
+      // 공유 파일(.json)이면 그대로 연습에 넣는다
+      if (files.length === 1 && /\.json$/i.test(files[0].name)) {
+        const shared = readShareFile(JSON.parse(await files[0].text()))
+        if (!shared) {
+          setError('언어 1급 공유 파일이 아니에요. 백업 파일은 설정에서 올려 주세요.')
+          return
+        }
+        await store.saveMaterial(shared)
+        location.hash = href({ name: 'study', materialId: shared.id })
+        return
+      }
       const texts = files.length ? await Promise.all(files.slice(0, 2).map(readScriptFile)) : [text]
       const { text: src, koText } = pairTexts(texts, lang)
       const parsed = parseScript(src, lang, { koText })
@@ -84,6 +97,22 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
     } finally {
       setBusy('')
     }
+  }
+
+  async function share(m: Material) {
+    const data = shareLink(m)
+    if (data) {
+      const url = `${location.origin}${location.pathname}${href({ name: 'share', data })}`
+      try {
+        await navigator.clipboard.writeText(url)
+        setShared(`"${m.title}" 공유 링크를 복사했어요. 받은 사람은 링크를 열면 바로 연습할 수 있어요.`)
+        return
+      } catch {
+        /* 복사가 막히면 파일로 */
+      }
+    }
+    downloadText(`언어1급-공유-${m.title}.json`, shareFile(m))
+    setShared(`"${m.title}" 공유 파일을 받았어요. 받은 사람은 대본 탭에서 파일을 올리면 돼요.`)
   }
 
   async function remove(id: string) {
@@ -144,12 +173,16 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
                   <a className="btn btn-sub" href={href({ name: 'review', materialId: m.id })}>
                     정리
                   </a>
+                  <button type="button" className="btn btn-sub" onClick={() => void share(m)}>
+                    공유
+                  </button>
                   <button type="button" className="btn btn-sub" onClick={() => void remove(m.id)} aria-label={`${m.title} 지우기`}>
                     지우기
                   </button>
                 </li>
               ))}
             </ul>
+            {shared && <p className="busy" aria-live="polite">{shared}</p>}
           </section>
         )}
       </section>

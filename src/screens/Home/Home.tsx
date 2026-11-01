@@ -9,6 +9,13 @@ import { KIND_NAME, LANG_NAME, LANGS, type Lang } from '../../engine/lang'
 import type { Material, Progress } from '../../engine/types'
 import './Home.css'
 
+/** 아이폰·아이패드 사파리이고 홈 화면 앱으로 연 게 아니면 */
+function isIosSafari(): boolean {
+  const ua = navigator.userAgent
+  const standalone = (navigator as Navigator & { standalone?: boolean }).standalone
+  return /iP(hone|ad|od)/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua) && !standalone
+}
+
 const GLYPH: Record<Lang, string> = { en: 'Aa', ja: 'あ', zh: '你', tw: '妳', mn: 'Ө' }
 
 function LangCards() {
@@ -92,11 +99,13 @@ export default function Home() {
   const [last, setLast] = useState<{ p: Progress; m: Material } | null | undefined>(undefined)
   const [due, setDue] = useState(0)
   const [trend, setTrend] = useState<string | null>(null)
+  const [safariTip, setSafariTip] = useState(false)
   useEffect(() => {
     void (async () => {
       const p = await store.lastProgress()
       const m = p ? await getMaterial(store, p.materialId) : null
       setDue(await reviewCount(store))
+      if (isIosSafari() && !(await store.getMeta('safariTipOff'))) setSafariTip(true)
       if (m) setTrend(lineSpeedTrend(await store.listStats(m.lang), m.lang, Date.now())?.text ?? null)
       setLast(p && m ? { p, m } : null)
     })()
@@ -147,6 +156,21 @@ export default function Home() {
           )}
           <LangCards />
           <p className="home-note">로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요.</p>
+          {safariTip && (
+            <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
+              아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.
+              <button
+                type="button"
+                className="btn btn-sub tip-off"
+                onClick={() => {
+                  setSafariTip(false)
+                  void store.setMeta('safariTipOff', true)
+                }}
+              >
+                다시 보지 않기
+              </button>
+            </StatusNotice>
+          )}
           {!store.persistent && <StatusNotice title="이 브라우저에서는 기록이 저장되지 않아요" tone="warn">사생활 보호 모드에서는 창을 닫으면 진도가 사라져요.</StatusNotice>}
         </section>
         {!last && <HowTo />}

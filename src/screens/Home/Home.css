@@ -261,3 +261,7 @@
   color: var(--success);
   font-weight: 700;
 }
+.tip-off {
+  margin-top: 8px;
+  align-self: flex-start;
+}

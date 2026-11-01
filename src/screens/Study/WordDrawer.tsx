@@ -5,19 +5,11 @@ import { Sheet } from '../../components/components'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Word } from '../../engine/types'
 import { wordsCsv, wordsTxt } from '../../engine/words/export'
+import { downloadText } from '../../services/files'
 import { buildSavedLinesMaterial } from '../../services/review'
 
 
 const today = () => new Date().toISOString().slice(0, 10).replace(/-/g, '')
-
-function download(name: string, text: string, type: string) {
-  const url = URL.createObjectURL(new Blob([text], { type }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
 
 /** 단어장 (와이어프레임 06): 단어·발음·뜻(고치기)·나온 줄, 정렬·삭제, 내려받기, 담은 줄만 다시 연습 */
 export default function WordDrawer(props: {
@@ -49,10 +41,10 @@ export default function WordDrawer(props: {
               <option value="recent">담은 순</option>
               <option value="abc">글자 순</option>
             </select>
-            <button type="button" className="btn btn-sub" onClick={() => download(`언어1급-단어장-${today()}.csv`, wordsCsv(list), 'text/csv;charset=utf-8')}>
+            <button type="button" className="btn btn-sub" onClick={() => downloadText(`언어1급-단어장-${today()}.csv`, wordsCsv(list), 'text/csv;charset=utf-8')}>
               CSV 받기
             </button>
-            <button type="button" className="btn btn-sub" onClick={() => download(`언어1급-단어장-${today()}.txt`, wordsTxt(list), 'text/plain;charset=utf-8')}>
+            <button type="button" className="btn btn-sub" onClick={() => downloadText(`언어1급-단어장-${today()}.txt`, wordsTxt(list), 'text/plain;charset=utf-8')}>
               TXT 받기
             </button>
           </div>

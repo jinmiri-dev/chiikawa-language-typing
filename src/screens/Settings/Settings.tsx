@@ -3,6 +3,7 @@ import { AppHeader, FriendImage } from '../../components/components'
 import { FRIEND_INFO } from '../../content/friendLines'
 import { LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import type { LayoutId, Settings as S } from '../../engine/types'
+import BackupSection from './BackupSection'
 import '../pages.css'
 
 function Toggle({ label, sub, on, onChange }: { label: string; sub?: string; on: boolean; onChange: (v: boolean) => void }) {
@@ -65,6 +66,7 @@ export default function Settings() {
           <Choice label="일본어 목소리" value={s.voice.ja ?? 'female'} options={[['female', '여자 목소리'], ['male', '남자 목소리']]} onChange={(v) => set({ voice: { ...s.voice, ja: v } })} />
           <Choice label="빠르기" value={String(s.rate) as '1' | '0.75'} options={[['1', '보통'], ['0.75', '0.75배']]} onChange={(v) => set({ rate: v === '1' ? 1 : 0.75 })} />
         </section>
+        <BackupSection />
         <section aria-label="친구">
           <h2>친구</h2>
           <a className="set-row set-link" href="#/friend">

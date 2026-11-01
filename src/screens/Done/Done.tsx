@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { AppHeader } from '../../components/components'
+import { AppHeader, StatusNotice } from '../../components/components'
 import { FRIEND_INFO, pickLine } from '../../content/friendLines'
+import { downloadBackup } from '../../services/backup'
 import { getMaterial } from '../../services/materials'
 import { eul } from '../../engine/josa'
 import { KIND_NAME, LANG_NAME } from '../../engine/lang'
@@ -19,12 +20,19 @@ export default function Done({ materialId }: { materialId: string }) {
   const [others, setOthers] = useState<Progress[]>([])
   const [cardOk, setCardOk] = useState(true)
   const [cheer] = useState(() => pickLine(settings.friend, 'finish'))
+  const [nudge, setNudge] = useState(false)
   useEffect(() => {
     void (async () => {
       const mat = await getMaterial(store, materialId)
       setM(mat)
       setP(await store.getProgress(materialId))
       if (mat) setOthers(await store.listProgress(mat.lang))
+      // 30줄 이상 쳤는데 백업을 한 번도 안 받았으면 한 번만 권한다 (기획안 16장)
+      const typed = (await store.listProgress()).reduce((a, x) => a + x.results.length, 0)
+      if (typed >= 30 && !(await store.getMeta('backupAt')) && !(await store.getMeta('backupNudged'))) {
+        setNudge(true)
+        await store.setMeta('backupNudged', Date.now())
+      }
     })()
   }, [store, materialId])
   if (m === undefined || p === undefined) return null
@@ -102,6 +110,19 @@ export default function Done({ materialId }: { materialId: string }) {
               ))}
             </ul>
           </section>
+        )}
+        {nudge && (
+          <StatusNotice title="벌써 30줄 넘게 쳤어요! 백업 파일을 받아 둘까요?">
+            기록은 이 브라우저에만 있어요. 받아 두면 다른 기기에서도 이어서 할 수 있어요.
+            <div className="done-actions">
+              <button type="button" className="btn btn-sub" onClick={() => void downloadBackup(store).then(() => setNudge(false))}>
+                백업 파일 받기
+              </button>
+              <button type="button" className="btn btn-sub" onClick={() => setNudge(false)}>
+                다음에
+              </button>
+            </div>
+          </StatusNotice>
         )}
         <div className="done-actions">
           {cardOk && (
