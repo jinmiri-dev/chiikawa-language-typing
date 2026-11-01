@@ -1,0 +1,140 @@
+.lab {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 599px) {
+  .lab {
+    gap: 12px;
+  }
+  .lab-langs button {
+    padding: 0 12px;
+  }
+}
+
+.lab h1 {
+  margin: 0;
+  font-size: var(--fs-h1);
+}
+
+.lab-back {
+  align-self: flex-start;
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.lab-sub {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+
+.lab-langs {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lab-langs legend {
+  margin-bottom: 8px;
+  font-size: var(--fs-sub);
+  font-weight: 700;
+}
+
+.lab button {
+  min-height: var(--btn-h-sub);
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lab-langs button[aria-pressed='true'] {
+  border: 2px solid var(--ink);
+  font-weight: 700;
+}
+
+.lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-sub);
+  font-weight: 700;
+}
+
+.lab-field input,
+.lab-field select {
+  min-height: var(--btn-h-sub);
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* iOS 자동 확대 방지 */
+  font-weight: 400;
+}
+
+.lab-target {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.lab-input {
+  border: 2px solid var(--ink) !important;
+}
+
+.lab-summary {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.lab-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sub);
+}
+
+.lab-summary dt {
+  color: var(--ink-2);
+}
+
+.lab-summary dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.lab-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.lab-actions .primary {
+  border: 0;
+  background: var(--ink);
+  color: #ffffff;
+  font-weight: 700;
+}

@@ -6,6 +6,11 @@
   padding: 24px 20px;
 }
 
+/* 입력이 있는 화면은 위에서 시작한다(휴대폰 키보드가 올라와도 문장이 보이게) */
+.app-top {
+  align-items: flex-start;
+}
+
 .center {
   max-width: 480px;
   text-align: center;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import InputLab from '../lab/InputLab'
 import { parseRoute, type Route } from './routes'
 import './App.css'
 
@@ -25,18 +26,6 @@ function Home() {
   )
 }
 
-function LabPlaceholder() {
-  return (
-    <section className="center">
-      <h1>입력 시험</h1>
-      <p className="sub">곧 열려요.</p>
-      <a className="link" href="#/">
-        처음으로
-      </a>
-    </section>
-  )
-}
-
 function NotFound() {
   return (
     <section className="center">
@@ -51,9 +40,9 @@ function NotFound() {
 export default function App() {
   const route = useRoute()
   return (
-    <main className="app">
+    <main className={route.name === 'lab-input' ? 'app app-top' : 'app'}>
       {route.name === 'home' && <Home />}
-      {route.name === 'lab-input' && <LabPlaceholder />}
+      {route.name === 'lab-input' && <InputLab />}
       {route.name === 'not-found' && <NotFound />}
     </main>
   )

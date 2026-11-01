@@ -29,3 +29,4 @@ dist-ssr
 *.pdf
 spike-output/
 .superpowers/
+.claude/
