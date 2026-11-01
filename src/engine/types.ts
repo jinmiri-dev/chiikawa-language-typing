@@ -102,3 +102,32 @@ export const DEFAULT_SETTINGS: Settings = {
   rate: 1,
   friend: 'chiikawa',
 }
+
+export interface Word {
+  id: string
+  lang: Lang
+  text: string
+  reading?: string
+  meaning?: string
+  from: { materialId: string; lineId: string }
+  /** 담은 줄 전체이면 true */
+  wholeLine?: boolean
+  savedAt?: number
+}
+
+/** 오늘의 복습 항목. step 0:1일 1:3일 2:7일 3:졸업 */
+export interface ReviewItem {
+  id: string
+  ref: { materialId: string; lineId: string }
+  due: number
+  step: 0 | 1 | 2 | 3
+}
+
+/** 효과 기록: 기본 연습 세트 하나를 끝낼 때마다 */
+export interface StatRecord {
+  id: string
+  lang: Lang
+  day: string
+  avgMs: number
+  accuracy: number
+}

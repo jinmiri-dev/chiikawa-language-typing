@@ -1,28 +1,34 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader } from '../../components/components'
 import { FRIEND_INFO, pickLine } from '../../content/friendLines'
-import { starterMaterial } from '../../content/starter'
+import { getMaterial } from '../../services/materials'
 import { eul } from '../../engine/josa'
+import { KIND_NAME, LANG_NAME } from '../../engine/lang'
 import { avgLineMs, compareText } from '../../engine/stats/compare'
-import { FRIENDS, type Progress } from '../../engine/types'
+import { FRIENDS, type Material, type Progress } from '../../engine/types'
 import '../pages.css'
 
 const BASE = import.meta.env.BASE_URL
 
 export default function Done({ materialId }: { materialId: string }) {
   const { store, settings } = useApp()
-  const m = useMemo(() => starterMaterial(materialId), [materialId])
+  const [m, setM] = useState<Material | null | undefined>(undefined)
   const [p, setP] = useState<Progress | null | undefined>(undefined)
   const [others, setOthers] = useState<Progress[]>([])
   const [cardOk, setCardOk] = useState(true)
   const [cheer] = useState(() => pickLine(settings.friend, 'finish'))
   useEffect(() => {
-    void store.getProgress(materialId).then(setP)
-    if (m) void store.listProgress(m.lang).then(setOthers)
-  }, [store, materialId, m])
-  if (!m || p === undefined) return null
+    void (async () => {
+      const mat = await getMaterial(store, materialId)
+      setM(mat)
+      setP(await store.getProgress(materialId))
+      if (mat) setOthers(await store.listProgress(mat.lang))
+    })()
+  }, [store, materialId])
+  if (m === undefined || p === undefined) return null
+  if (!m) return null
   if (!p || p.results.length === 0)
     return (
       <main className="app">
@@ -51,7 +57,7 @@ export default function Done({ materialId }: { materialId: string }) {
       <main className="done">
         <h1>언어 1급 따냈어요!</h1>
         <p className="done-sub">
-          일본어 · 기본 연습 · {m.title}
+          {LANG_NAME[m.lang].ko} · {KIND_NAME[m.kind]} · {m.title}
           {eul(m.title)} 끝까지 쳤어요.
         </p>
         <div className="done-card">
@@ -99,7 +105,7 @@ export default function Done({ materialId }: { materialId: string }) {
         )}
         <div className="done-actions">
           {cardOk && (
-            <a className="btn btn-primary" href={card} download={`언어1급-일본어-${p.friend}.png`}>
+            <a className="btn btn-primary" href={card} download={`언어1급-${LANG_NAME[m.lang].ko}-${p.friend}.png`}>
               카드 이미지 저장
             </a>
           )}

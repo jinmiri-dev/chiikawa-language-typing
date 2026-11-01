@@ -4,7 +4,6 @@ import { href } from '../../app/routes'
 import { AppHeader, FriendBubble, FriendImage, StatusNotice } from '../../components/components'
 import KeyboardMap from '../../components/KeyboardMap'
 import { pickLine, STAGE_LINES, type FriendLine, type Situation } from '../../content/friendLines'
-import { starterMaterial } from '../../content/starter'
 import { clockEvent, stageOf, type ClockState } from '../../engine/friend/clock'
 import { nextHintLevel, type HintLevel, type HintMemory } from '../../engine/hint/hint'
 import { explainMistake } from '../../engine/judge/explain'
@@ -12,6 +11,7 @@ import { judge, significantChars } from '../../engine/judge/judge'
 import { getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
 import type { LayoutId, LineResult, Material, Progress, Segment } from '../../engine/types'
+import { getMaterial } from '../../services/materials'
 import { speak } from '../../services/speech'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
@@ -54,11 +54,12 @@ function minutes(ms: number) {
 
 export default function Study({ materialId }: { materialId: string }) {
   const { store } = useApp()
-  const material = useMemo(() => starterMaterial(materialId), [materialId])
-  const [initial, setInitial] = useState<Progress | null | undefined>(undefined)
+  const [loaded, setLoaded] = useState<{ material: Material | null; initial: Progress | null } | undefined>(undefined)
   useEffect(() => {
-    void store.getProgress(materialId).then(setInitial)
+    void Promise.all([getMaterial(store, materialId), store.getProgress(materialId)]).then(([material, initial]) => setLoaded({ material, initial }))
   }, [store, materialId])
+  if (loaded === undefined) return null
+  const { material, initial } = loaded
   if (!material)
     return (
       <main className="app">
@@ -70,7 +71,6 @@ export default function Study({ materialId }: { materialId: string }) {
         </section>
       </main>
     )
-  if (initial === undefined) return null
   return <StudyView material={material} initial={initial} />
 }
 

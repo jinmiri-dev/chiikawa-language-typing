@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader, FriendImage, StatusNotice } from '../../components/components'
-import { starterMaterial } from '../../content/starter'
-import { LANG_NAME, LANGS, type Lang } from '../../engine/lang'
-import type { Progress } from '../../engine/types'
+import { getMaterial } from '../../services/materials'
+import { KIND_NAME, LANG_NAME, LANGS, type Lang } from '../../engine/lang'
+import type { Material, Progress } from '../../engine/types'
 import './Home.css'
 
 const GLYPH: Record<Lang, string> = { en: 'Aa', ja: 'あ', zh: '你', tw: '妳', mn: 'Ө' }
@@ -67,15 +67,13 @@ function HowTo() {
   )
 }
 
-function Continue({ p }: { p: Progress }) {
-  const m = starterMaterial(p.materialId)
-  if (!m) return null
+function Continue({ p, m }: { p: Progress; m: Material }) {
   const done = Math.min(p.lineIndex, m.lines.length)
   return (
     <a className="continue" href={href({ name: 'study', materialId: p.materialId })}>
       <span className="continue-label">이어서 공부하기</span>
       <span className="continue-title">
-        {LANG_NAME[m.lang].ko} · 기본 연습 · {m.title}
+        {LANG_NAME[m.lang].ko} · {KIND_NAME[m.kind]} · {m.title}
       </span>
       <span className="continue-progress">
         {done} / {m.lines.length}줄
@@ -89,9 +87,13 @@ function Continue({ p }: { p: Progress }) {
 
 export default function Home() {
   const { store, settings } = useApp()
-  const [last, setLast] = useState<Progress | null | undefined>(undefined)
+  const [last, setLast] = useState<{ p: Progress; m: Material } | null | undefined>(undefined)
   useEffect(() => {
-    void store.lastProgress().then(setLast)
+    void (async () => {
+      const p = await store.lastProgress()
+      const m = p ? await getMaterial(store, p.materialId) : null
+      setLast(p && m ? { p, m } : null)
+    })()
   }, [store])
   if (last === undefined) return null
 
@@ -106,7 +108,7 @@ export default function Home() {
                 <FriendImage friend={settings.friend} size={120} />
               </div>
               <h1>다시 왔네요! 오늘도 한 줄씩 쳐 봐요.</h1>
-              <Continue p={last} />
+              <Continue p={last.p} m={last.m} />
               <h2>다른 언어로 시작하기</h2>
             </>
           ) : (

@@ -9,3 +9,6 @@ export const LANG_NAME: Record<Lang, { ko: string; native: string; htmlLang: str
   tw: { ko: '대만어 (번체)', native: '繁體中文', htmlLang: 'zh-TW' },
   mn: { ko: '몽골어', native: 'Монгол хэл', htmlLang: 'mn' },
 }
+
+/** 재료 종류 이름 */
+export const KIND_NAME = { starter: '기본 연습', script: '대본', youtube: '유튜브' } as const
