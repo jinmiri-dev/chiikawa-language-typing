@@ -1,8 +1,38 @@
 import { expect, test } from 'vitest'
-import { parseRoute } from './routes'
+import { href, parseRoute, type Route } from './routes'
 
 test('빈 해시는 홈', () => expect(parseRoute('')).toEqual({ name: 'home' }))
 test('#/ 는 홈', () => expect(parseRoute('#/')).toEqual({ name: 'home' }))
 test('입력 시험', () => expect(parseRoute('#/lab/input')).toEqual({ name: 'lab-input' }))
 test('뒤 슬래시 허용', () => expect(parseRoute('#/lab/input/')).toEqual({ name: 'lab-input' }))
 test('모르는 경로', () => expect(parseRoute('#/nope')).toEqual({ name: 'not-found' }))
+
+test('재료 화면', () =>
+  expect(parseRoute('#/materials?lang=ja&tab=starter')).toEqual({ name: 'materials', lang: 'ja', tab: 'starter' }))
+test('재료 화면 탭 기본값은 기본 연습', () =>
+  expect(parseRoute('#/materials?lang=tw')).toEqual({ name: 'materials', lang: 'tw', tab: 'starter' }))
+test('모르는 언어는 찾을 수 없음', () => expect(parseRoute('#/materials?lang=xx')).toEqual({ name: 'not-found' }))
+test('모르는 탭은 찾을 수 없음', () =>
+  expect(parseRoute('#/materials?lang=ja&tab=zzz')).toEqual({ name: 'not-found' }))
+test('학습 화면', () => expect(parseRoute('#/study/ja-greet')).toEqual({ name: 'study', materialId: 'ja-greet' }))
+test('완료 화면', () => expect(parseRoute('#/done/ja-greet')).toEqual({ name: 'done', materialId: 'ja-greet' }))
+test('친구·설정·안내', () => {
+  expect(parseRoute('#/friend')).toEqual({ name: 'friend' })
+  expect(parseRoute('#/settings')).toEqual({ name: 'settings' })
+  expect(parseRoute('#/guide')).toEqual({ name: 'guide' })
+})
+
+test('href 와 parseRoute 는 서로 되돌린다', () => {
+  const routes: Route[] = [
+    { name: 'home' },
+    { name: 'materials', lang: 'ja', tab: 'starter' },
+    { name: 'materials', lang: 'mn', tab: 'script' },
+    { name: 'study', materialId: 'ja-plan' },
+    { name: 'done', materialId: 'ja-plan' },
+    { name: 'friend' },
+    { name: 'settings' },
+    { name: 'guide' },
+    { name: 'lab-input' },
+  ]
+  for (const r of routes) expect(parseRoute(href(r))).toEqual(r)
+})
