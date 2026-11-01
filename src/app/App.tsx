@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import InputLab from '../lab/InputLab'
+import Done from '../screens/Done/Done'
+import Friend from '../screens/Friend/Friend'
+import Guide from '../screens/Guide/Guide'
 import Home from '../screens/Home/Home'
 import Materials from '../screens/Materials/Materials'
+import Settings from '../screens/Settings/Settings'
 import Study from '../screens/Study/Study'
 import { AppProvider } from './AppState'
 import { parseRoute, type Route } from './routes'
@@ -41,6 +45,14 @@ function Screen({ route }: { route: Route }) {
       return <Materials lang={route.lang} tab={route.tab} />
     case 'study':
       return <Study key={route.materialId} materialId={route.materialId} />
+    case 'done':
+      return <Done key={route.materialId} materialId={route.materialId} />
+    case 'friend':
+      return <Friend />
+    case 'settings':
+      return <Settings />
+    case 'guide':
+      return <Guide />
     case 'lab-input':
       return (
         <main className="app app-top">

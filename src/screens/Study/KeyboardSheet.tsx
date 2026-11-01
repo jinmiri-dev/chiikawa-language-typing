@@ -1,15 +1,9 @@
 import { useRef, useState } from 'react'
 import { Sheet } from '../../components/components'
 import { recommendLayout } from '../../engine/ja/detect'
+import { ro } from '../../engine/josa'
 import { LAYOUT_LABEL, type Layout } from '../../engine/layouts'
 import type { LayoutId } from '../../engine/types'
-
-/** 받침이 있으면(ㄹ 제외) '으로', 없으면 '로' */
-function ro(word: string): string {
-  const code = word.charCodeAt(word.length - 1) - 0xac00
-  const jong = code >= 0 && code < 11172 ? code % 28 : 0
-  return jong && jong !== 8 ? '으로' : '로'
-}
 
 /** 휴대폰 10초 확인: か 를 한 번 치게 하고 조합 모양으로 배열을 추천한다 */
 function QuickCheck({ onResult }: { onResult: (id: LayoutId | null) => void }) {

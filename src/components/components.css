@@ -29,6 +29,7 @@
   white-space: nowrap;
 }
 .app-header-nav {
+  flex: none;
   display: flex;
   gap: 4px;
 }
@@ -42,6 +43,7 @@
   white-space: nowrap;
 }
 .icon-btn {
+  flex: none;
   width: var(--tap);
   height: var(--tap);
   border: 0;

@@ -1,0 +1,308 @@
+/* 완료·친구·설정·안내 화면 */
+.page-lead {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+}
+
+.done,
+.settings,
+.guide-page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px var(--gutter) 40px;
+  display: flex;
+  flex-direction: column;
+}
+.done {
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+.done h1,
+.settings h1,
+.guide-page h1,
+.friend-page h1 {
+  margin: 0;
+  font-size: var(--fs-h1);
+  line-height: 1.3;
+}
+.done-sub {
+  margin: -8px 0 0;
+  color: var(--ink-2);
+}
+.done-card img {
+  display: block;
+  width: min(320px, 80vw);
+  height: auto;
+  border-radius: var(--radius-card);
+}
+.done-card-fallback {
+  width: min(320px, 80vw);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-card);
+  background: var(--point);
+  border: 2px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.done-card-fallback b {
+  font-family: var(--font-logo);
+  font-size: 56px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.done-stats {
+  margin: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.done-stats div {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--soft);
+}
+.done-stats dt {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.done-stats dd {
+  margin: 4px 0 0;
+  font-size: var(--fs-h2);
+  font-weight: 700;
+}
+.done-compare {
+  margin: 0;
+  font-weight: 700;
+  color: var(--success);
+}
+.done-wrong {
+  width: 100%;
+  text-align: left;
+}
+.done-wrong h2 {
+  margin: 0 0 8px;
+  font-size: var(--fs-body);
+}
+.done-wrong ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.done-ko {
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+.done-actions {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.friend-page {
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px var(--gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 64px;
+  align-items: center;
+}
+.friend-grid {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.friend-card {
+  min-height: 160px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.friend-card[aria-checked='true'] {
+  border: 2px solid var(--ink);
+}
+.friend-preview {
+  padding-left: 40px;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.friend-preview h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.friend-poses {
+  margin: 8px 0;
+  align-self: stretch;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+.friend-poses div {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+.friend-poses dt {
+  color: var(--ink-2);
+}
+.friend-poses dd {
+  margin: 0;
+}
+.friend-preview .btn {
+  align-self: stretch;
+}
+.friend-sticky {
+  display: none;
+}
+
+.settings section {
+  margin-top: 28px;
+}
+.settings h2 {
+  margin: 0 0 4px;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  font-weight: 400;
+}
+.set-row {
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.set-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.set-sub {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.set-row select {
+  max-width: 55%;
+}
+.switch {
+  appearance: none;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  margin: 6px 0;
+  border-radius: 16px;
+  background: var(--border-strong);
+  position: relative;
+  cursor: pointer;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg);
+  transition: left 0.15s;
+}
+.switch:checked {
+  background: var(--ink);
+}
+.switch:checked::after {
+  left: 23px;
+}
+
+.guide-steps {
+  margin: 20px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.guide-page h2 {
+  margin: 32px 0 8px;
+  font-size: var(--fs-h2);
+}
+.faq {
+  border-bottom: 1px solid var(--line);
+}
+.faq summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+.faq p {
+  margin: 0 0 16px;
+  color: var(--ink-2);
+}
+.guide-footer {
+  padding: 0 var(--gutter) 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 1023px) {
+  .friend-page {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .friend-preview {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .friend-preview > .btn {
+    display: none;
+  }
+  .friend-sticky {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    padding: 12px var(--gutter) 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .friend-sticky .btn {
+    width: 100%;
+  }
+}
+@media (max-width: 599px) {
+  .friend-page,
+  .done,
+  .settings,
+  .guide-page {
+    padding-top: 20px;
+  }
+  .friend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .done-stats dd {
+    font-size: var(--fs-body);
+  }
+}
