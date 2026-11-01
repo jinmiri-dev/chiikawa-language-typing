@@ -4,9 +4,8 @@ import { href } from '../../app/routes'
 import { AppHeader } from '../../components/components'
 import { editLine, mergeUp, removeLines, restoreRemoved, shiftKo, splitAt, type Segmenter } from '../../engine/import/edit'
 import { LANG_NAME } from '../../engine/lang'
-import { buildJaSegments, type JaToken } from '../../engine/reading/ja'
 import type { Line, Material } from '../../engine/types'
-import { loadJaTokenizer } from '../../services/jaTokenizer'
+import { loadSegmenter } from '../../services/segmenter'
 import './Review.css'
 
 const fmt = (s?: number) => (s === undefined ? '' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`)
@@ -51,26 +50,28 @@ function Cell({ value, label, lang, onSave }: { value: string; label: string; la
 export default function Review({ materialId }: { materialId: string }) {
   const { store } = useApp()
   const [m, setM] = useState<Material | null | undefined>(undefined)
-  const [tokenize, setTokenize] = useState<((s: string) => JaToken[]) | null>(null)
+  const [segmenter, setSegmenter] = useState<Segmenter | null>(null)
   const [onlyCheck, setOnlyCheck] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
   const [splitting, setSplitting] = useState<number | null>(null)
 
   useEffect(() => {
-    void store.getMaterial(materialId).then(setM)
-    void loadJaTokenizer().then((t) => setTokenize(() => t), () => setTokenize(null))
+    void store.getMaterial(materialId).then((mat) => {
+      setM(mat)
+      if (mat) void loadSegmenter(mat.lang).then((s) => setSegmenter(() => s), () => setSegmenter(null))
+    })
   }, [store, materialId])
 
   const seg: Segmenter = useMemo(
     () => (src) => {
       try {
-        if (tokenize) return buildJaSegments(src, tokenize)
+        if (segmenter) return segmenter(src)
       } catch {
         /* 아래로 */
       }
       return [{ text: src, reading: src, isWord: true, confident: false }]
     },
-    [tokenize],
+    [segmenter],
   )
 
   if (m === undefined) return null

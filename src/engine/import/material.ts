@@ -1,7 +1,7 @@
 /** 나눈 초안 줄 → 연습 재료. 읽기를 만들지 못하면 줄마다 "읽기 확인 필요"로 둔다. */
 import type { Lang } from '../lang'
-import { buildJaSegments, type JaToken } from '../reading/ja'
 import type { Line, Material, Segment } from '../types'
+import type { Segmenter } from './edit'
 import type { DraftLine } from './parse'
 
 export function buildDraftMaterial(opts: {
@@ -9,15 +9,16 @@ export function buildDraftMaterial(opts: {
   lang: Lang
   title: string
   lines: DraftLine[]
-  tokenize: ((s: string) => JaToken[]) | null
+  /** 언어별 읽기 만들기. 불러오지 못했으면 null(줄마다 읽기 확인 필요) */
+  segment: Segmenter | null
   youtubeId?: string
   now?: number
 }): Material {
   const lines: Line[] = opts.lines.map((d, i) => {
     let segments: Segment[]
     try {
-      if (!opts.tokenize || opts.lang !== 'ja') throw new Error('읽기 없음')
-      segments = buildJaSegments(d.src, opts.tokenize)
+      if (!opts.segment) throw new Error('읽기 없음')
+      segments = opts.segment(d.src)
     } catch {
       segments = [{ text: d.src, reading: d.src, isWord: true, confident: false }]
     }

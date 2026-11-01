@@ -9,7 +9,7 @@ import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Material } from '../../engine/types'
 import { readShareFile, shareFile, shareLink } from '../../services/backup'
 import { downloadText, pairTexts, readScriptFile, titleFrom, youtubeIdFrom } from '../../services/files'
-import { loadJaTokenizer } from '../../services/jaTokenizer'
+import { LOADING_TEXT, loadSegmenter } from '../../services/segmenter'
 import { newScriptId } from '../../services/materials'
 
 const ACCEPT = '.txt,.srt,.vtt,.csv,.tsv,.pdf,.json,text/plain,application/pdf,application/json'
@@ -23,7 +23,7 @@ function NetflixPanel({ lang }: { lang: Lang }) {
         <ul className="netflix-list">
           {picks.map((p) => (
             <li key={p.title}>
-              <a className="netflix-card" href={netflixSearch(p.title)} target="_blank" rel="noopener noreferrer">
+              <a className="netflix-card" href={netflixSearch(p.search ?? p.title)} target="_blank" rel="noopener noreferrer">
                 <b>{p.title}</b>
                 <span lang={LANG_NAME[lang].htmlLang}>{p.original}</span>
                 <span className="netflix-meta">
@@ -35,7 +35,12 @@ function NetflixPanel({ lang }: { lang: Lang }) {
           ))}
         </ul>
       ) : (
-        <p className="page-lead">추천 작품을 고르고 있어요.</p>
+        <div className="netflix-none">
+          <p className="page-lead">지금 한국 넷플릭스에는 {LANG_NAME[lang].ko} 작품이 거의 없어요. 유튜브에서 {LANG_NAME[lang].ko} 영상을 찾아 연습해 보세요.</p>
+          <a className="btn btn-sub" href={href({ name: 'materials', lang, tab: 'youtube' })}>
+            유튜브로 찾기
+          </a>
+        </div>
       )}
       <p className="netflix-note">
         직접 고른 작품이에요. 한국 넷플릭스에서 내려갔을 수 있어요. 이중 자막 대본 받는 법은 <a href="#/guide">이용 안내</a>에 있어요.
@@ -80,14 +85,14 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
         setError('대본에서 줄을 찾지 못했어요. 한 줄에 한 문장씩 붙여 넣어 보세요.')
         return
       }
-      setBusy('일본어 사전을 불러오고 있어요. 처음 한 번만 조금 걸려요(약 17MB).')
-      const tokenize = await loadJaTokenizer().catch(() => null)
+      if (LOADING_TEXT[lang]) setBusy(LOADING_TEXT[lang]!)
+      const segment = await loadSegmenter(lang).catch(() => null)
       const m = buildDraftMaterial({
         id: newScriptId(lang),
         lang,
         title: title.trim() || titleFrom({ fileName: files[0]?.name, text: parsed.lines[0].src }),
         lines: parsed.lines,
-        tokenize,
+        segment,
         youtubeId: youtubeIdFrom(yt),
       })
       await store.saveMaterial(m)

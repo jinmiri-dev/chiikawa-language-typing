@@ -34,13 +34,13 @@ test('읽기를 모르는 한자는 확신 없음', () => {
 })
 
 test('사전이 없으면 줄마다 읽기 확인 필요로 두고 계속', () => {
-  const m = buildDraftMaterial({ id: 'ja-s1', lang: 'ja', title: 't', lines: [{ src: '元気？', ko: '잘 지내?', flags: [] }], tokenize: null })
+  const m = buildDraftMaterial({ id: 'ja-s1', lang: 'ja', title: 't', lines: [{ src: '元気？', ko: '잘 지내?', flags: [] }], segment: null })
   expect(m.lines[0].segments).toEqual([{ text: '元気？', reading: '元気？', isWord: true, confident: false }])
   expect(m.lines[0].needsCheck).toEqual(['reading'])
 })
 
 test('초안으로 재료 만들기', () => {
-  const m = buildDraftMaterial({ id: 'ja-s1', lang: 'ja', title: '대본', lines: [{ src: '元気？', ko: '잘 지내?', start: 3, flags: [] }, { src: 'またね', flags: ['no-ko'] }], tokenize })
+  const m = buildDraftMaterial({ id: 'ja-s1', lang: 'ja', title: '대본', lines: [{ src: '元気？', ko: '잘 지내?', start: 3, flags: [] }, { src: 'またね', flags: ['no-ko'] }], segment: (s) => buildJaSegments(s, tokenize) })
   expect(m).toMatchObject({ id: 'ja-s1', kind: 'script', koSource: 'given', title: '대본' })
   expect(m.lines.map((l) => l.id)).toEqual(['l001', 'l002'])
   expect(m.lines[0]).toMatchObject({ src: '元気？', ko: '잘 지내?', start: 3 })

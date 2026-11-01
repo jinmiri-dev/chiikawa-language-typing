@@ -66,7 +66,7 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
                 })}
               </ul>
             </>
-          ) : tab === 'script' && lang === 'ja' ? (
+          ) : tab === 'script' ? (
             <ScriptTab lang={lang} />
           ) : (
             <StatusNotice title="곧 열려요">{SOON}</StatusNotice>

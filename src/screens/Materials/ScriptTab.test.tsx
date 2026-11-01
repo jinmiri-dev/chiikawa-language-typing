@@ -33,3 +33,24 @@ test('넷플릭스 추천은 새 탭, 안전한 링크', async () => {
   expect(a.getAttribute('target')).toBe('_blank')
   expect(a.getAttribute('rel')).toBe('noopener noreferrer')
 })
+
+test.each([
+  ['tw', '你好！ 안녕!', (m: import('../../engine/types').Material) => m.lines[0].segments[0].zhuyin, 'ㄋㄧˇ ㄏㄠˇ'],
+  ['zh', '你好！ 안녕!', (m: import('../../engine/types').Material) => m.lines[0].segments[0].reading, 'nǐ hǎo'],
+  ['mn', 'Сайн уу? 안녕?', (m: import('../../engine/types').Material) => m.lines[0].segments[0].romaji, 'Sain'],
+  ['en', 'Hello! 안녕!', (m: import('../../engine/types').Material) => m.lines[0].src, 'Hello!'],
+] as const)('%s 대본도 읽기를 만든다', async (lang, text, pick, want) => {
+  const store = memoryStore()
+  render(<AppProvider store={store}><ScriptTab lang={lang} /></AppProvider>)
+  fireEvent.change(await screen.findByLabelText('대본 붙여넣기'), { target: { value: text } })
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '나누기' })))
+  const [m] = await store.listMaterials(lang)
+  expect(pick(m)).toBe(want)
+  expect(m.lines[0].needsCheck).toBeUndefined()
+})
+
+test('몽골어는 넷플릭스 작품이 거의 없다고 알리고 유튜브로', async () => {
+  render(<AppProvider store={memoryStore()}><ScriptTab lang="mn" /></AppProvider>)
+  expect(await screen.findByText(/몽골어 작품이 거의 없어요/)).toBeTruthy()
+  expect(screen.getByRole('link', { name: '유튜브로 찾기' }).getAttribute('href')).toBe('#/materials?lang=mn&tab=youtube')
+})
