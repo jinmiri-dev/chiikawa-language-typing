@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { AppProvider } from '../../app/AppState'
 import { memoryStore } from '../../services/storage'
@@ -44,6 +44,8 @@ test.each([
   render(<AppProvider store={store}><ScriptTab lang={lang} /></AppProvider>)
   fireEvent.change(await screen.findByLabelText('대본 붙여넣기'), { target: { value: text } })
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '나누기' })))
+  // 병음 사전은 처음 한 번 따로 불러오므로 저장될 때까지 기다린다
+  await waitFor(async () => expect(await store.listMaterials(lang)).toHaveLength(1), { timeout: 5000 })
   const [m] = await store.listMaterials(lang)
   expect(pick(m)).toBe(want)
   expect(m.lines[0].needsCheck).toBeUndefined()

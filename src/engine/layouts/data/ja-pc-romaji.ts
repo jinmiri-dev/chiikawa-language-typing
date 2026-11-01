@@ -13,9 +13,9 @@ const PC_ROWS: KeyDef[][] = [
   row(4, [['space', 'Space', 6]]),
 ]
 
-/** labels 로 키에 다른 글자를 적는다(주음·키릴 배열) */
+/** labels 로 키에 다른 글자를 적는다(주음·키릴 배열). 실제 키보드에 찍힌 영문 글자도 함께 보여 준다(`ㄗ Y`). */
 export function pcRows(labels: Record<string, string> = {}): KeyDef[][] {
-  return PC_ROWS.map((r) => r.map((k) => (labels[k.id] ? { ...k, label: labels[k.id] } : k)))
+  return PC_ROWS.map((r) => r.map((k) => (labels[k.id] ? { ...k, label: `${labels[k.id]} ${k.label}` } : k)))
 }
 
 export const jaPcRomaji: Layout = { id: 'ja-pc-romaji', lang: 'ja', device: 'pc', verified: true, rows: pcRows() }

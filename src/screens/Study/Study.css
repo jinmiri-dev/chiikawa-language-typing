@@ -320,6 +320,15 @@ select.btn {
 .word:hover {
   background: var(--soft);
 }
+/* 한 글자 낱말도 손가락으로 누르기 쉽게, 글자 배치는 그대로 두고 누르는 자리만 넓힌다 */
+.word {
+  position: relative;
+}
+.word::after {
+  content: '';
+  position: absolute;
+  inset: -6px -10px;
+}
 .word[data-saved] {
   text-decoration: underline 2px var(--ok);
   text-underline-offset: 8px;
