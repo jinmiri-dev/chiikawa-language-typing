@@ -179,6 +179,8 @@ sequenceDiagram
 | 409 | `EMBED_BLOCKED` | 외부 재생 막힌 영상 | 상태 안내 "재생 막힘" |
 | 429 | `QUOTA_EXCEEDED` | 하루 상한 초과 | 상태 안내 "오늘 검색 끝", `retryAfter`(초) 표시 |
 | 502 | `UPSTREAM_FAILED` | 외부 서비스 실패 | 다시 시도 버튼, 대본·기본 연습 권유 |
+| 403 | `FORBIDDEN` | 허용 출처가 아닌 브라우저에서 부름 | (남의 사이트 차단) |
+| 503 | `NOT_CONFIGURED` | 그 기능의 키를 아직 안 넣음 | 상태 안내 "준비 중" |
 
 **사용량 헤더**: `X-Quota-Remaining`, `X-Quota-Reset`(UTC 자정까지 초).
 
@@ -188,7 +190,7 @@ sequenceDiagram
 |---|---|---|
 | `lang` | ✓ | 배울 언어 |
 | `q` | | 검색어. 없으면 `tag`의 기본 검색어 |
-| `tag` | | `song`, `drama`, `anime`, `variety`, `vlog`, `news`, `kids` |
+| `tag` | | `song`, `kids`, `drama`, `movie`, `variety`, `news`, `vlog` (기획안 7.4의 일곱 태그) |
 | `pageToken` | | 다음 쪽 |
 
 ```json
