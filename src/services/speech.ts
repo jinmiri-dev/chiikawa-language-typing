@@ -1,5 +1,6 @@
-/** 듣기 (기획안 10장). 1-A 는 기기 음성(speechSynthesis)만 쓴다. 1-B 에서 중계 함수 음성이 앞에 붙는다. */
+/** 듣기 (기획안 10장). 중계 함수의 Azure 목소리(여자/남자, 캐시)를 먼저 쓰고, 안 되면 기기 음성(speechSynthesis). */
 import { LANG_NAME, type Lang } from '../engine/lang'
+import { ttsUrl, workerOrigin } from './api'
 
 type Voice = 'female' | 'male'
 
@@ -27,10 +28,37 @@ export async function canSpeak(lang: Lang): Promise<boolean> {
 }
 
 export function stopSpeaking(): void {
+  current?.pause?.()
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel()
 }
 
-export function speak(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'device' | 'none' }> {
+let current: HTMLAudioElement | null = null
+
+/** 중계 함수 목소리. 재생이 끝나면 풀리고, 실패하면 던진다 */
+function playWorker(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<void> {
+  current?.pause?.()
+  const audio = new Audio(ttsUrl(opts.lang, opts.voice, text, opts.rate))
+  current = audio
+  return new Promise((resolve, reject) => {
+    audio.onended = () => resolve()
+    audio.onerror = () => reject(new Error('목소리를 받지 못했어요'))
+    audio.play().catch(reject)
+  })
+}
+
+export async function speak(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'worker' | 'device' | 'none' }> {
+  if (workerOrigin()) {
+    try {
+      await playWorker(text, opts)
+      return { source: 'worker' }
+    } catch {
+      /* 기기 목소리로 */
+    }
+  }
+  return speakDevice(text, opts)
+}
+
+function speakDevice(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'device' | 'none' }> {
   const v = pickVoice(opts.lang, opts.voice)
   if (!v) return Promise.resolve({ source: 'none' })
   stopSpeaking()

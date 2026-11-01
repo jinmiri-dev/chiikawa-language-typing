@@ -29,3 +29,8 @@ test('빌드 결과 html의 head 맨 앞에 meta로 넣는다', () => {
   const html = injectCsp('<html><head><meta charset="UTF-8" /></head></html>')
   expect(html).toMatch(/<head>\s*<meta http-equiv="Content-Security-Policy" content="default-src 'self';/)
 })
+
+test('중계 함수 목소리(mp3)를 재생할 수 있게 media-src 에도 Worker 주소', () => {
+  const csp = buildCsp({ workerOrigin: 'https://language-grade1.x.workers.dev' })
+  expect(csp).toContain("media-src 'self' blob: https://language-grade1.x.workers.dev")
+})

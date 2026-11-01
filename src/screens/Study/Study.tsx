@@ -16,6 +16,8 @@ import { avgLineMs } from '../../engine/stats/compare'
 import { dayKey } from '../../engine/stats/trend'
 import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '../../engine/types'
 import { getMaterial } from '../../services/materials'
+import YouTubePlayer, { type PlayerHandle } from '../../components/YouTubePlayer'
+import { workerOrigin } from '../../services/api'
 import { speak } from '../../services/speech'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
@@ -122,6 +124,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const streak = useRef(0)
   const oopsSaid = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const player = useRef<PlayerHandle>(null)
 
   const line = material.lines[idx]
   const recorder = useMemo(() => lineRecorder(line.src, settings.strict), [line, settings.strict])
@@ -169,9 +172,21 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   }, [])
 
   const listen = useCallback(async () => {
+    // 유튜브 재료는 영상의 그 줄 구간을 들려준다
+    if (material.youtubeId && line.start !== undefined && player.current) {
+      player.current.playSegment(line.start, line.end ?? line.start + 5, settings.rate)
+      setVoiceNote('')
+      return
+    }
     const r = await speak(line.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
-    setVoiceNote(r.source === 'none' ? `이 기기에는 ${LANG_NAME[material.lang].ko} 목소리가 없어요. 다른 브라우저에서 들어 보세요.` : '')
-  }, [line.src, material.lang, settings.voice, settings.rate])
+    setVoiceNote(
+      r.source === 'none'
+        ? `이 기기에는 ${LANG_NAME[material.lang].ko} 목소리가 없어요. 다른 브라우저에서 들어 보세요.`
+        : r.source === 'device' && workerOrigin()
+          ? '기기 목소리로 읽고 있어요.'
+          : '',
+    )
+  }, [line, material, settings.voice, settings.rate])
 
   // 줄이 바뀌면 입력을 비우고, 설정이 켜져 있으면 듣기
   useEffect(() => {
@@ -180,7 +195,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setComposing('')
     setLineDone(false)
     oopsSaid.current = false
-    if (settings.autoListen) void listen()
+    // 줄 시작 때 자동으로 듣기: 설정, 또는 유튜브 재료는 기본으로(기획안 10장)
+    if (settings.autoListen || material.kind === 'youtube') void listen()
     inputRef.current?.focus({ preventScroll: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx])
@@ -566,6 +582,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             </a>
           </aside>
           <section className="study-center">
+            {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} />}
             {prev && (
               <p className="sentence-prev" lang={htmlLang}>
                 {prev.src}
@@ -584,6 +601,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         </main>
       ) : (
         <main className="study-mobile">
+          {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} />}
           {sentence}
           {input}
           {status}

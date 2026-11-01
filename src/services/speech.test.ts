@@ -59,3 +59,28 @@ test('그 언어 목소리가 없으면 말하지 않는다', async () => {
   expect(await canSpeak('ja')).toBe(false)
   expect(await canSpeak('en')).toBe(true)
 })
+
+test('중계 함수 목소리가 있으면 그것을 먼저', async () => {
+  vi.stubEnv('VITE_WORKER_ORIGIN', 'https://w.test')
+  const played: string[] = []
+  vi.stubGlobal('Audio', class {
+    src: string
+    onended: (() => void) | null = null
+    constructor(src: string) { this.src = src }
+    play() { played.push(this.src); setTimeout(() => this.onended?.(), 0); return Promise.resolve() }
+  })
+  expect(await speak('はい', { lang: 'ja', voice: 'male', rate: 1 })).toEqual({ source: 'worker' })
+  expect(played[0]).toBe('https://w.test/tts?lang=ja&voice=male&text=%E3%81%AF%E3%81%84')
+  expect(spoken).toHaveLength(0)
+  vi.unstubAllEnvs()
+})
+
+test('중계 함수 목소리가 실패하면 기기 목소리', async () => {
+  vi.stubEnv('VITE_WORKER_ORIGIN', 'https://w.test')
+  vi.stubGlobal('Audio', class {
+    play() { return Promise.reject(new Error('blocked')) }
+  })
+  expect(await speak('はい', { lang: 'ja', voice: 'female', rate: 1 })).toEqual({ source: 'device' })
+  expect(spoken[0].voice?.name).toContain('Nanami')
+  vi.unstubAllEnvs()
+})

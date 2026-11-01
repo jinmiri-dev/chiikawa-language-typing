@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { StatusNotice } from '../../components/components'
-import { NETFLIX_PICKS, netflixSearch } from '../../content/netflixPicks'
 import { buildDraftMaterial } from '../../engine/import/material'
 import { parseScript } from '../../engine/import/parse'
 import { LANG_NAME, type Lang } from '../../engine/lang'
@@ -10,44 +9,10 @@ import type { Material } from '../../engine/types'
 import { readShareFile, shareFile, shareLink } from '../../services/backup'
 import { downloadText, pairTexts, readScriptFile, titleFrom, youtubeIdFrom } from '../../services/files'
 import { LOADING_TEXT, loadSegmenter } from '../../services/segmenter'
+import NetflixPanel from './NetflixPanel'
 import { newScriptId } from '../../services/materials'
 
 const ACCEPT = '.txt,.srt,.vtt,.csv,.tsv,.pdf,.json,text/plain,application/pdf,application/json'
-
-function NetflixPanel({ lang }: { lang: Lang }) {
-  const picks = NETFLIX_PICKS[lang] ?? []
-  return (
-    <aside className="netflix" aria-label="넷플릭스 추천">
-      <h2>{LANG_NAME[lang].ko}로 볼 만한 넷플릭스 작품</h2>
-      {picks.length ? (
-        <ul className="netflix-list">
-          {picks.map((p) => (
-            <li key={p.title}>
-              <a className="netflix-card" href={netflixSearch(p.search ?? p.title)} target="_blank" rel="noopener noreferrer">
-                <b>{p.title}</b>
-                <span lang={LANG_NAME[lang].htmlLang}>{p.original}</span>
-                <span className="netflix-meta">
-                  {p.year} · {p.type}
-                </span>
-                <span className="chip">{p.note}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="netflix-none">
-          <p className="page-lead">지금 한국 넷플릭스에는 {LANG_NAME[lang].ko} 작품이 거의 없어요. 유튜브에서 {LANG_NAME[lang].ko} 영상을 찾아 연습해 보세요.</p>
-          <a className="btn btn-sub" href={href({ name: 'materials', lang, tab: 'youtube' })}>
-            유튜브로 찾기
-          </a>
-        </div>
-      )}
-      <p className="netflix-note">
-        직접 고른 작품이에요. 한국 넷플릭스에서 내려갔을 수 있어요. 이중 자막 대본 받는 법은 <a href="#/guide">이용 안내</a>에 있어요.
-      </p>
-    </aside>
-  )
-}
 
 export default function ScriptTab({ lang }: { lang: Lang }) {
   const { store } = useApp()

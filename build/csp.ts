@@ -11,7 +11,8 @@ export function buildCsp(opts: { workerOrigin?: string } = {}): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     'font-src https://fonts.gstatic.com',
     "img-src 'self' data: blob: https://i.ytimg.com https://image.tmdb.org",
-    "media-src 'self' blob:",
+    // 중계 함수의 목소리(mp3)
+    `media-src ${["'self'", 'blob:', opts.workerOrigin].filter(Boolean).join(' ')}`,
     `connect-src ${connect}`,
     'frame-src https://www.youtube-nocookie.com',
     "object-src 'none'",
