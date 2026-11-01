@@ -1,7 +1,52 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Sheet } from '../../components/components'
+import { recommendLayout } from '../../engine/ja/detect'
 import { LAYOUT_LABEL, type Layout } from '../../engine/layouts'
 import type { LayoutId } from '../../engine/types'
+
+/** 받침이 있으면(ㄹ 제외) '으로', 없으면 '로' */
+function ro(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00
+  const jong = code >= 0 && code < 11172 ? code % 28 : 0
+  return jong && jong !== 8 ? '으로' : '로'
+}
+
+/** 휴대폰 10초 확인: か 를 한 번 치게 하고 조합 모양으로 배열을 추천한다 */
+function QuickCheck({ onResult }: { onResult: (id: LayoutId | null) => void }) {
+  const samples = useRef<string[]>([])
+  const [msg, setMsg] = useState('')
+  const finish = (value: string) => {
+    const id = recommendLayout('ja', { compositionSamples: samples.current, keydownKeys: [], finalValue: value })
+    setMsg(id ? `✓ ${LAYOUT_LABEL[id].name}${ro(LAYOUT_LABEL[id].name)} 보여요` : '잘 모르겠어요. 아래에서 직접 골라 주세요.')
+    onResult(id)
+  }
+  return (
+    <div className="quick-check">
+      <label htmlFor="quick-check-input">
+        <b>10초 확인</b> <span lang="ja">か</span>를 한 번 쳐 보세요
+      </label>
+      <input
+        id="quick-check-input"
+        className="type-input"
+        lang="ja"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        onCompositionUpdate={(e) => samples.current.push(e.data)}
+        onCompositionEnd={(e) => finish(e.currentTarget.value)}
+        onChange={(e) => {
+          if (!(e.nativeEvent as InputEvent).isComposing && e.target.value) finish(e.target.value)
+        }}
+      />
+      {msg && (
+        <p className="quick-check-msg" aria-live="polite">
+          {msg}
+        </p>
+      )}
+    </div>
+  )
+}
 
 /** 키보드 고르기 (기획안 11.5) */
 export default function KeyboardSheet(props: {
@@ -16,6 +61,7 @@ export default function KeyboardSheet(props: {
   return (
     <Sheet open={props.open} onClose={props.onClose} title="일본어 키보드 고르기">
       <p className="sheet-desc">지금 쓰는 {props.device === 'mobile' ? '휴대폰' : 'PC'} 키보드와 같아야 안내가 맞아요.</p>
+      {props.device === 'mobile' && <QuickCheck onResult={(id) => id && setPicked(id)} />}
       <div role="radiogroup" aria-label="키보드" className="layout-list">
         {props.layouts.map((l) => (
           <button key={l.id} type="button" role="radio" aria-checked={picked === l.id} className="layout-item" onClick={() => setPicked(l.id)}>
