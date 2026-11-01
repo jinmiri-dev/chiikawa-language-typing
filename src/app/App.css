@@ -1,0 +1,36 @@
+.app {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+}
+
+.center {
+  max-width: 480px;
+  text-align: center;
+}
+
+.center h1 {
+  margin: 0;
+  font-family: var(--font-logo);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+}
+
+.center p {
+  margin: 12px 0 0;
+}
+
+.center .sub {
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+
+.link {
+  margin-top: 24px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 700;
+}
