@@ -7,3 +7,5 @@
 - 캐릭터 말투: [docs/캐릭터-말투.md](docs/캐릭터-말투.md)
 
 완성 후 화면별 캡처와 함께 자세히 정리할 예정입니다.
+
+- 아키텍처·API·ERD: [docs/아키텍처-API-ERD.md](docs/아키텍처-API-ERD.md)
