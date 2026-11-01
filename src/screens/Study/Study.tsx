@@ -184,7 +184,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   // 지금 칠 조각의 안내
   const inSeg = seg ? res.okUpTo - starts[segIndex] : 0
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
-  const guide = seg && layout.verified ? guideFor(layout, seg, segComposing) : null
+  const guide = seg && seg.confident && layout.verified ? guideFor(layout, seg, segComposing) : null
   const nextStep = guide?.steps[guide.nextIndex]
   const idle = now - lastInputAt >= 2000
   const fading = seg ? (hintMem[seg.reading ?? seg.text]?.level ?? 'full') : 'full'
@@ -444,7 +444,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     </div>
   )
 
-  const guidePanel = !seg ? null : !layout.verified ? (
+  const guidePanel = !seg ? null : !seg.confident ? (
+    <StatusNotice title="읽기를 확인하지 못한 줄이에요">
+      {material.kind === 'script' ? '대본 정리 화면에서 읽기를 고치면 키 안내가 나와요. ' : ''}타자와 채점은 그대로 돼요.
+    </StatusNotice>
+  ) : !layout.verified ? (
     <StatusNotice title="이 키보드는 안내를 준비하고 있어요">타자와 채점은 그대로 돼요. 입력 시험 결과를 받으면 키 안내를 열어요.</StatusNotice>
   ) : (
     <div className="guide">

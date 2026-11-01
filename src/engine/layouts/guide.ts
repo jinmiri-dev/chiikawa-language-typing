@@ -35,6 +35,14 @@ function stepAfterKana(steps: KeyStep[], k: number): number {
 }
 
 export function guideFor(layout: Layout, seg: Segment, composing: string): { steps: KeyStep[]; nextIndex: number; matches: boolean } {
+  try {
+    return guideForUnsafe(layout, seg, composing)
+  } catch {
+    return { steps: keySteps(layout, seg).steps, nextIndex: 0, matches: true }
+  }
+}
+
+function guideForUnsafe(layout: Layout, seg: Segment, composing: string): { steps: KeyStep[]; nextIndex: number; matches: boolean } {
   const { steps } = keySteps(layout, seg)
   const reading = toHiragana(seg.reading ?? seg.text)
   const comp = toHiragana(composing)
@@ -76,6 +84,17 @@ export function guideText(layout: Layout, seg: Segment): string {
   const reading = seg.reading ?? seg.text
   const head = seg.text !== reading ? `${seg.text} → ${reading}` : reading
   let body: string
+  try {
+    body = bodyText(layout, seg, reading)
+  } catch {
+    return head // 안내할 수 없는 글자가 있으면 읽기까지만 보여 준다
+  }
+  const tail = seg.text === reading ? '' : layout.device === 'pc' ? ' → Space로 변환, Enter로 확정' : ` → 후보에서 ${seg.text} 선택`
+  return `${head} → ${body}${tail}`
+}
+
+function bodyText(layout: Layout, seg: Segment, reading: string): string {
+  let body: string
   if (isRomaji(layout)) body = romajiKeys(reading).map((c) => c.toUpperCase()).join(' ')
   else {
     const tapMode = layout.id === 'ja-tap'
@@ -88,8 +107,7 @@ export function guideText(layout: Layout, seg: Segment): string {
       })
       .join(' ')
   }
-  const tail = seg.text === reading ? '' : layout.device === 'pc' ? ' → Space로 변환, Enter로 확정' : ` → 후보에서 ${seg.text} 선택`
-  return `${head} → ${body}${tail}`
+  return body
 }
 
 /** 화면 읽기용: "다음: は 키를 오른쪽으로" */

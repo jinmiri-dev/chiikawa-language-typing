@@ -10,6 +10,7 @@ import Settings from '../screens/Settings/Settings'
 import Share from '../screens/Share/Share'
 import Study from '../screens/Study/Study'
 import { AppProvider } from './AppState'
+import ErrorBoundary from './ErrorBoundary'
 import { parseRoute, type Route } from './routes'
 import './App.css'
 
@@ -74,7 +75,9 @@ export default function App() {
   const route = useRoute()
   return (
     <AppProvider>
-      <Screen route={route} />
+      <ErrorBoundary resetKey={window.location.hash}>
+        <Screen route={route} />
+      </ErrorBoundary>
     </AppProvider>
   )
 }

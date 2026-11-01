@@ -30,3 +30,9 @@ test('한 줄 안내 문구', () => {
   expect(guideText(flick, seg('食べ', 'たべ'))).toBe('食べ → たべ → た(た행 탭) べ(は행 → + ゛) → 후보에서 食べ 선택')
   expect(guideText(tap, seg('うん'))).toBe('うん → う(あ행 3번) ん(わ행 3번)')
 })
+
+test('괄호가 있는 대본 줄도 안내가 멈추지 않는다', () => {
+  expect(guideText(pc, seg('「はい」'))).toBe('「はい」 → [ H A I ]')
+  expect(() => guideText(flick, seg('「はい」'))).not.toThrow()
+  expect(guideFor(pc, seg('「はい」'), 'は').matches).toBe(false)
+})

@@ -23,4 +23,5 @@ export const jaPcRomaji: Layout = {
 export const PC_CHAR_KEYS: Record<string, string[]> = {
   '-': ['minus'], ',': ['comma'], '.': ['period'], '/': ['slash'],
   '!': ['shift', '1'], '?': ['shift', 'slash'], '~': ['shift', 'backquote'], ' ': ['space'],
+  '[': ['bracketleft'], ']': ['bracketright'], '(': ['shift', '9'], ')': ['shift', '0'], ':': ['shift', 'semicolon'],
 }

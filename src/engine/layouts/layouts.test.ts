@@ -54,3 +54,10 @@ test('배열 이름', () => {
   expect(LAYOUT_LABEL['ja-flick'].name).toBe('12키 플릭')
   expect(LAYOUT_LABEL['ja-pc-romaji'].name).toBe('PC 로마자 입력')
 })
+
+test('읽기를 모르는 조각(한자 그대로)은 멈추지 않고 안내 없음', () => {
+  for (const id of ['ja-pc-romaji', 'ja-flick', 'ja-tap', 'ja-mobile-romaji'] as const) {
+    const r = keySteps(getLayout(id), seg('今日', '今日', false))
+    expect(r).toEqual({ steps: [], confident: false })
+  }
+})

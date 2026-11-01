@@ -58,6 +58,18 @@ export function keySteps(layout: Layout, seg: Segment): { steps: KeyStep[]; conv
   const reading = seg.reading ?? seg.text
   const convert = seg.text !== reading ? seg.text : undefined
   let steps: KeyStep[]
+  // 읽기를 모르는 조각(한자가 그대로 남은 읽기 등)은 키를 알 수 없으니 안내하지 않는다
+  if (!seg.confident) return { steps: [], confident: false }
+  try {
+    steps = stepsFor(layout, reading, convert)
+  } catch {
+    return { steps: [], confident: false }
+  }
+  return { steps, ...(convert ? { convert } : {}), confident: true }
+}
+
+function stepsFor(layout: Layout, reading: string, convert: string | undefined): KeyStep[] {
+  let steps: KeyStep[]
   switch (layout.id) {
     case 'ja-pc-romaji':
       steps = romajiSteps(reading, true)
@@ -75,5 +87,5 @@ export function keySteps(layout: Layout, seg: Segment): { steps: KeyStep[]; conv
     default:
       throw new Error(`키 순서를 아직 모르는 배열: ${layout.id}`)
   }
-  return { steps, ...(convert ? { convert } : {}), confident: seg.confident }
+  return steps
 }

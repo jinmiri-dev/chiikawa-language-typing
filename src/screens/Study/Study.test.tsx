@@ -67,3 +67,12 @@ test('틀린 줄은 복습에 들어간다', async () => {
   await act(async () => compose(input, 'おはよう！元気', 'おはよう！元気')())
   expect((await store.listReview()).map((r) => r.id)).toEqual(['ja-greet|greet-01'])
 })
+
+test('읽기 확인이 필요한 대본 줄도 화면이 멈추지 않는다', async () => {
+  await store.saveMaterial({
+    id: 'ja-sx', lang: 'ja', kind: 'script', title: '대본', koSource: 'given', createdAt: 1,
+    lines: [{ id: 'l001', src: '今日は', ko: '오늘은', segments: [{ text: '今日は', reading: '今日は', isWord: true, confident: false }], needsCheck: ['reading'] }],
+  })
+  render(<AppProvider store={store}><Study materialId="ja-sx" /></AppProvider>)
+  expect(await screen.findByText(/읽기를 확인하지 못한 줄이에요/)).toBeTruthy()
+})
