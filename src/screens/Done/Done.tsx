@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { AppHeader, StatusNotice } from '../../components/components'
+import { AppHeader, StatusNotice, Sentences } from '../../components/components'
 import { FRIEND_INFO, pickLine } from '../../content/friendLines'
 import { downloadBackup } from '../../services/backup'
 import { getMaterial } from '../../services/materials'
@@ -81,7 +81,7 @@ export default function Done({ materialId }: { materialId: string }) {
         </div>
         {/* 완료 화면의 축하는 사라지지 않는다 */}
         <p className="bubble" aria-live="polite">
-          <b>{cheer.text}</b>
+          <b><Sentences text={cheer.text} /></b>
           {cheer.action && <span className="bubble-action">{cheer.action}</span>}
         </p>
         <dl className="done-stats">

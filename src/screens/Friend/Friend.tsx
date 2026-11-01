@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../app/AppState'
-import { AppHeader, FriendImage } from '../../components/components'
+import { AppHeader, FriendImage, Sentences } from '../../components/components'
 import { FRIEND_INFO, STAGE_LINES } from '../../content/friendLines'
 import { ro } from '../../engine/josa'
 import { FRIENDS, type FriendId } from '../../engine/types'
@@ -34,7 +34,7 @@ export default function Friend() {
       <main className="friend-page">
         <section>
           <h1>함께할 친구 바꾸기</h1>
-          <p className="page-lead">바꿔도 진도와 연습 시간은 그대로예요. 5분마다 자세가 바뀌고, 끝까지 치면 1급 카드를 함께 받아요.</p>
+          <p className="page-lead"><Sentences text="바꿔도 진도와 연습 시간은 그대로예요. 5분마다 자세가 바뀌고, 끝까지 치면 1급 카드를 함께 받아요." /></p>
           <div role="radiogroup" aria-label="친구" className="friend-grid">
             {FRIENDS.map((f) => (
               <button key={f} type="button" role="radio" aria-checked={picked === f} className="friend-card" onClick={() => setPicked(f)}>
@@ -46,7 +46,7 @@ export default function Friend() {
         </section>
         <aside className="friend-preview" aria-label={`${info.name} 미리보기`}>
           <p className="bubble">
-            <b>{info.preview}</b>
+            <b><Sentences text={info.preview} /></b>
           </p>
           <FriendImage friend={picked} size={168} />
           <h2>{info.name}</h2>

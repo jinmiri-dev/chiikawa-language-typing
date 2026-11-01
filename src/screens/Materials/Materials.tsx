@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href, type MaterialTab } from '../../app/routes'
-import { AppHeader, StatusNotice } from '../../components/components'
+import { AppHeader, StatusNotice, Sentences } from '../../components/components'
 import { starterSets } from '../../content/starter'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Progress } from '../../engine/types'
@@ -48,7 +48,7 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
         <section role="tabpanel" className="tabpanel">
           {tab === 'starter' && sets.length > 0 ? (
             <>
-              <p className="materials-lead">친구와 채팅할 때 바로 쓰는 짧은 말이에요. 세트를 고르면 바로 시작해요.</p>
+              <p className="materials-lead"><Sentences text="친구와 채팅할 때 바로 쓰는 짧은 말이에요. 세트를 고르면 바로 시작해요." /></p>
               <ul className="set-grid">
                 {sets.map((s) => {
                   const p = progress[s.id]

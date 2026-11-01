@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../app/AppState'
-import { StatusNotice } from '../../components/components'
+import { StatusNotice, Sentences } from '../../components/components'
 import { conflicts, downloadBackup, importBackup } from '../../services/backup'
 
 /** 설정 › 기록 지키기: 백업 파일 받기·올리기 (기획안 16장) */
@@ -36,7 +36,7 @@ export default function BackupSection() {
   return (
     <section aria-label="기록 지키기">
       <h2>기록 지키기</h2>
-      <p className="set-sub backup-lead">기록은 이 브라우저에만 저장돼요. 다른 기기로 옮기거나 지워질 때를 대비해 백업 파일을 받아 두세요.</p>
+      <p className="set-sub backup-lead"><Sentences text="기록은 이 브라우저에만 저장돼요. 다른 기기로 옮기거나 지워질 때를 대비해 백업 파일을 받아 두세요." /></p>
       <div className="backup-actions">
         <button type="button" className="btn btn-sub" onClick={() => void downloadBackup(store).then(() => setMsg({ title: '백업 파일을 받았어요.', tone: 'info' }))}>
           백업 파일 받기

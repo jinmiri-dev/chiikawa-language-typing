@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { AppHeader } from '../../components/components'
+import { AppHeader, Sentences } from '../../components/components'
 import { editLine, mergeUp, removeLines, restoreRemoved, shiftKo, splitAt, type Segmenter } from '../../engine/import/edit'
 import { LANG_NAME } from '../../engine/lang'
 import type { Line, Material } from '../../engine/types'
@@ -110,7 +110,7 @@ export default function Review({ materialId }: { materialId: string }) {
           {material.lines.length}줄로 나눴어요 · {check ? `${check}줄만 확인하면 바로 연습할 수 있어요` : '바로 연습할 수 있어요'}
         </h1>
         <p className="page-lead">
-          {material.title} · 칸을 누르면 고칠 수 있어요. 줄을 고르면 아래에 합치기·나누기·뜻 밀기가 나와요.
+          <Sentences text={`${material.title} · 칸을 누르면 고칠 수 있어요. 줄을 고르면 아래에 합치기·나누기·뜻 밀기가 나와요.`} />
         </p>
         <div role="radiogroup" aria-label="보기" className="review-filter">
           <button type="button" role="radio" aria-checked={!onlyCheck} className="btn btn-sub" onClick={() => setOnlyCheck(false)}>
@@ -172,7 +172,7 @@ export default function Review({ materialId }: { materialId: string }) {
               </span>
               {warnings(l).map((w) => (
                 <p key={w} className="row-warn" role="note">
-                  ⚠ {w}
+                  ⚠ <Sentences text={w} />
                 </p>
               ))}
             </div>

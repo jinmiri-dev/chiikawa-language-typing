@@ -1,5 +1,5 @@
 import { useApp } from '../../app/AppState'
-import { AppHeader, FriendImage } from '../../components/components'
+import { AppHeader, FriendImage, Sentences } from '../../components/components'
 import { FRIEND_INFO } from '../../content/friendLines'
 import { LANG_NAME, LANGS } from '../../engine/lang'
 import { LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
@@ -12,7 +12,7 @@ function Toggle({ label, sub, on, onChange }: { label: string; sub?: string; on:
     <label className="set-row">
       <span className="set-text">
         <span>{label}</span>
-        {sub && <span className="set-sub">{sub}</span>}
+        {sub && <span className="set-sub"><Sentences text={sub} /></span>}
       </span>
       <input type="checkbox" role="switch" className="switch" checked={on} onChange={(e) => onChange(e.target.checked)} />
     </label>

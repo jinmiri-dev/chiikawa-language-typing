@@ -22,7 +22,7 @@ test('다시 방문: 이어서 공부하기', async () => {
   const store = memoryStore()
   await store.saveProgress({ materialId: 'ja-plan', lineIndex: 3, results: [], activeMs: 0, friend: 'chiikawa', updatedAt: 1 })
   render(<AppProvider store={store}><Home /></AppProvider>)
-  expect(await screen.findByText('다시 왔네요! 오늘도 한 줄씩 쳐 봐요.')).toBeTruthy()
+  expect((await screen.findAllByRole('heading', { level: 1 })).some((h) => h.textContent === '다시 왔네요! 오늘도 한 줄씩 쳐 봐요.')).toBe(true)
   const cont = screen.getByRole('link', { name: /이어서 공부하기/ })
   expect(cont.getAttribute('href')).toBe('#/study/ja-plan')
   expect(cont.textContent).toContain('3 / 10줄')

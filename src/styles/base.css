@@ -21,6 +21,35 @@ a {
   color: var(--ink);
 }
 
+/* 줄바꿈: 한국어는 낱말 가운데서 끊지 않는다. 일본어·중국어는 띄어쓰기가 없어 글자 사이에서 끊어야 한다 */
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+:lang(ja),
+:lang(zh) {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+/* 제목·말풍선·안내는 줄 길이를 고르게, 문단은 마지막 줄에 한 낱말만 남지 않게 */
+h1,
+h2,
+h3,
+.bubble,
+.notice > b {
+  text-wrap: balance;
+}
+p,
+li,
+dd,
+.notice-body {
+  text-wrap: pretty;
+}
+/* 문장 하나는 한 덩어리로: 줄을 바꿔야 하면 문장 끝에서 먼저 바꾼다 */
+.sent {
+  display: inline-block;
+}
+
 :focus-visible {
   outline: 3px solid var(--ok);
   outline-offset: 2px;

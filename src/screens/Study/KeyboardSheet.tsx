@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Sheet } from '../../components/components'
+import { Sheet, Sentences } from '../../components/components'
 import { CHECK_CHAR, recommendLayout } from '../../engine/detect'
 import { ro } from '../../engine/josa'
 import { LANG_NAME, type Lang } from '../../engine/lang'
@@ -36,7 +36,7 @@ function QuickCheck({ lang, char, onResult }: { lang: Lang; char: string; onResu
       />
       {msg && (
         <p className="quick-check-msg" aria-live="polite">
-          {msg}
+          <Sentences text={msg} />
         </p>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { Sentences } from '../../components/components'
 import { useEffect, useState } from 'react'
 import { href } from '../../app/routes'
 import { NETFLIX_PICKS, netflixSearch } from '../../content/netflixPicks'
@@ -50,14 +51,17 @@ export default function NetflixPanel({ lang }: { lang: Lang }) {
         </ul>
       ) : (
         <div className="netflix-none">
-          <p className="page-lead">지금 한국 넷플릭스에는 {LANG_NAME[lang].ko} 작품이 거의 없어요. 유튜브에서 {LANG_NAME[lang].ko} 영상을 찾아 연습해 보세요.</p>
+          <p className="page-lead"><Sentences text={`지금 한국 넷플릭스에는 ${LANG_NAME[lang].ko} 작품이 거의 없어요. 유튜브에서 ${LANG_NAME[lang].ko} 영상을 찾아 연습해 보세요.`} /></p>
           <a className="btn btn-sub" href={href({ name: 'materials', lang, tab: 'youtube' })}>
             유튜브로 찾기
           </a>
         </div>
       )}
       <p className="netflix-note">
-        {tmdb ? '' : '직접 고른 작품이에요. '}한국 넷플릭스에서 내려갔을 수 있어요. 이중 자막 대본 받는 법은 <a href="#/guide">이용 안내</a>에 있어요.
+        <Sentences text={`${tmdb ? '' : '직접 고른 작품이에요. '}한국 넷플릭스에서 내려갔을 수 있어요.`} />{' '}
+        <span className="sent">
+          이중 자막 대본 받는 법은 <a href="#/guide">이용 안내</a>에 있어요.
+        </span>
       </p>
       {tmdb && <p className="netflix-note">{tmdb.attribution}</p>}
     </aside>

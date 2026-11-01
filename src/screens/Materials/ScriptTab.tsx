@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { StatusNotice } from '../../components/components'
+import { StatusNotice, Sentences } from '../../components/components'
 import { buildDraftMaterial } from '../../engine/import/material'
 import { parseScript } from '../../engine/import/parse'
 import { LANG_NAME, type Lang } from '../../engine/lang'
@@ -93,7 +93,7 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
   return (
     <div className="script-tab">
       <section className="script-input">
-        <p className="materials-lead">넷플릭스 이중 자막 대본이나 내 대본을 넣으면 한 줄씩 나눠 드려요. 형식은 자동으로 알아봐요.</p>
+        <p className="materials-lead"><Sentences text="넷플릭스 이중 자막 대본이나 내 대본을 넣으면 한 줄씩 나눠 드려요. 형식은 자동으로 알아봐요." /></p>
         <textarea
           className="script-paste"
           aria-label="대본 붙여넣기"
@@ -152,7 +152,7 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
                 </li>
               ))}
             </ul>
-            {shared && <p className="busy" aria-live="polite">{shared}</p>}
+            {shared && <p className="busy" aria-live="polite"><Sentences text={shared} /></p>}
           </section>
         )}
       </section>

@@ -43,6 +43,11 @@ export function AppProvider({ store: given, children }: { store?: Store; childre
     [store],
   )
 
+  // 설정의 '캐릭터 움직임 줄이기'를 CSS 에 알린다
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-calm', settings.reduceMotion)
+  }, [settings.reduceMotion])
+
   if (!ready || !store) return null
   return <Ctx.Provider value={{ store, settings, setSettings }}>{children}</Ctx.Provider>
 }

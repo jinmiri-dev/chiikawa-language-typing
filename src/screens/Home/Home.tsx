@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { AppHeader, FriendImage, StatusNotice } from '../../components/components'
+import { AppHeader, FriendImage, StatusNotice, Sentences } from '../../components/components'
 import { getMaterial } from '../../services/materials'
 import { buildReviewMaterial, reviewCount } from '../../services/review'
 import { lineSpeedTrend } from '../../engine/stats/trend'
@@ -127,7 +127,7 @@ export default function Home() {
               <div className="home-friend">
                 <FriendImage friend={settings.friend} size={120} />
               </div>
-              <h1>다시 왔네요! 오늘도 한 줄씩 쳐 봐요.</h1>
+              <h1><Sentences text="다시 왔네요! 오늘도 한 줄씩 쳐 봐요." /></h1>
               {due > 0 && (
                 <button type="button" className="continue review-start" onClick={() => void startReview()}>
                   <span className="continue-label">오늘의 복습</span>
@@ -150,12 +150,12 @@ export default function Home() {
                 <br />
                 외국어 타자를 익혀요
               </h1>
-              <p className="home-sub">어떤 키를 누르는지 하나하나 알려 줘요. 휴대폰에서도 돼요.</p>
+              <p className="home-sub"><Sentences text="어떤 키를 누르는지 하나하나 알려 줘요. 휴대폰에서도 돼요." /></p>
               <h2>배울 언어를 누르면 바로 시작해요</h2>
             </>
           )}
           <LangCards />
-          <p className="home-note">로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요.</p>
+          <p className="home-note"><Sentences text="로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요." /></p>
           {safariTip && (
             <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
               아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.

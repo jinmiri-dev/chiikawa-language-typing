@@ -1,4 +1,4 @@
-import { AppHeader } from '../../components/components'
+import { AppHeader, Sentences } from '../../components/components'
 import '../pages.css'
 
 const FAQ: [string, string][] = [
@@ -19,20 +19,20 @@ export default function Guide() {
         <h1>이용 안내</h1>
         <ol className="guide-steps">
           <li>
-            <b>언어를 골라요.</b> 시작 화면의 언어 카드를 누르면 바로 시작해요.
+            <b className="sent">언어를 골라요.</b>{' '}<span className="sent">시작 화면의 언어 카드를 누르면 바로 시작해요.</span>
           </li>
           <li>
-            <b>한 줄씩 따라 쳐요.</b> 지금 칠 글자와 누를 키를 노란색으로 알려 줘요.
+            <b className="sent">한 줄씩 따라 쳐요.</b>{' '}<span className="sent">지금 칠 글자와 누를 키를 노란색으로 알려 줘요.</span>
           </li>
           <li>
-            <b>끝까지 치면 1급 카드!</b> 친구가 함께 축하해 줘요.
+            <b className="sent">끝까지 치면 1급 카드!</b>{' '}<span className="sent">친구가 함께 축하해 줘요.</span>
           </li>
         </ol>
         <h2>자주 묻는 질문</h2>
         {FAQ.map(([q, a]) => (
           <details key={q} className="faq">
             <summary>{q}</summary>
-            <p>{a}</p>
+            <p><Sentences text={a} /></p>
           </details>
         ))}
       </main>

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { StatusNotice } from '../../components/components'
+import { StatusNotice, Sentences } from '../../components/components'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { SavedVideo } from '../../engine/types'
 import { ApiFailure, noticeFor, searchVideos, workerOrigin, type VideoItem } from '../../services/api'
@@ -111,7 +111,7 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
       </div>
       {notice && <StatusNotice title={notice.title} tone="warn">{notice.body}</StatusNotice>}
       {busy && <p className="busy" aria-live="polite">{busy}</p>}
-      {view === 'saved' && !saved.length && <p className="page-lead">마음에 드는 영상의 저장 버튼을 누르면 여기에 모여요. 저장한 영상은 검색 한도를 쓰지 않아요.</p>}
+      {view === 'saved' && !saved.length && <p className="page-lead"><Sentences text="마음에 드는 영상의 저장 버튼을 누르면 여기에 모여요. 저장한 영상은 검색 한도를 쓰지 않아요." /></p>}
       <ul className="yt-grid">
         {shown.map((v) => {
           const isSaved = saved.some((s) => s.videoId === v.videoId)

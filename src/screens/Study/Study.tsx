@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type CompositionEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { AppHeader, FriendBubble, FriendImage, StatusNotice } from '../../components/components'
+import { AppHeader, FriendBubble, FriendImage, StatusNotice, Sentences } from '../../components/components'
 import KeyboardMap from '../../components/KeyboardMap'
 import { pickLine, STAGE_LINES, type FriendLine, type Situation } from '../../content/friendLines'
 import { clockEvent, stageOf, type ClockState } from '../../engine/friend/clock'
@@ -473,7 +473,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
 
   const guidePanel = !seg ? null : !seg.confident ? (
     <StatusNotice title="읽기를 확인하지 못한 줄이에요">
-      {material.kind === 'script' ? '대본 정리 화면에서 읽기를 고치면 키 안내가 나와요. ' : ''}타자와 채점은 그대로 돼요.
+      {(material.kind === 'script' ? '대본 정리 화면에서 읽기를 고치면 키 안내가 나와요. ' : '') + '타자와 채점은 그대로 돼요.'}
     </StatusNotice>
   ) : !layout.verified ? (
     <StatusNotice title="이 키보드는 안내를 준비하고 있어요">타자와 채점은 그대로 돼요. 입력 시험 결과를 받으면 키 안내를 열어요.</StatusNotice>
@@ -484,7 +484,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           {guideText(layout, seg)}
         </p>
       ) : (
-        <p className="guide-off">안내 없이 쳐 봐요. 멈추면 다시 알려 줘요.</p>
+        <p className="guide-off"><Sentences text="안내 없이 쳐 봐요. 멈추면 다시 알려 줘요." /></p>
       )}
       <p className="sr-only" aria-live="polite">
         {level !== 'off' ? stepSpeech(layout, nextStep) : ''}
@@ -518,7 +518,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           <option value="male">남자 목소리</option>
         </select>
       </div>
-      {voiceNote && <p className="ctl-note">{voiceNote}</p>}
+      {voiceNote && <p className="ctl-note"><Sentences text={voiceNote} /></p>}
     </div>
   )
 
@@ -563,7 +563,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             </button>
             {device === 'mobile' ? (
               <a href="#/friend" className="study-face" aria-label="친구 바꾸기">
-                <FriendImage friend={settings.friend} stage={stage} size={40} />
+                <FriendImage friend={settings.friend} stage={stage} size={40} cue={bubble.at} />
               </a>
             ) : (
               <a href="#/settings">설정</a>
@@ -575,7 +575,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         <main className="study-grid">
           <aside className="study-friend" aria-label="함께하는 친구">
             <FriendBubble line={bubble.line} shownAt={bubble.at} />
-            <FriendImage friend={settings.friend} stage={stage} size={168} />
+            <FriendImage friend={settings.friend} stage={stage} size={168} cue={bubble.at} />
             <p className="study-time">연습 시간 {minutes(activeMs)}</p>
             <a className="btn btn-sub" href="#/friend">
               친구 바꾸기
@@ -620,7 +620,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
               {lineSaved ? '✓ 담음' : '줄 담기'}
             </button>
           </div>
-          {voiceNote && <p className="ctl-note">{voiceNote}</p>}
+          {voiceNote && <p className="ctl-note"><Sentences text={voiceNote} /></p>}
           {/* 말풍선은 문장을 가리거나 밀지 않게 조작 버튼 아래에 둔다 */}
           <FriendBubble line={bubble.line} shownAt={bubble.at} />
         </main>

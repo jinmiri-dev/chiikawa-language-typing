@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
-import { Sheet } from '../../components/components'
+import { Sheet, Sentences } from '../../components/components'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Word } from '../../engine/types'
 import { wordsCsv, wordsTxt } from '../../engine/words/export'
@@ -33,7 +33,7 @@ export default function WordDrawer(props: {
   return (
     <Sheet open={props.open} onClose={props.onClose} title={`${LANG_NAME[props.lang].ko} 단어장 ${props.words.length}`}>
       {list.length === 0 ? (
-        <p className="sheet-desc">연습 중에 원문 단어를 누르면 여기에 담겨요. 담은 단어가 나온 줄은 오늘의 복습에도 들어가요.</p>
+        <p className="sheet-desc"><Sentences text="연습 중에 원문 단어를 누르면 여기에 담겨요. 담은 단어가 나온 줄은 오늘의 복습에도 들어가요." /></p>
       ) : (
         <>
           <div className="words-bar">
