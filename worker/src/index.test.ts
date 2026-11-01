@@ -39,19 +39,19 @@ describe('공통', () => {
 })
 
 describe('하루 상한', async () => {
-  const { useQuota } = await import('./quota')
+  const { takeQuota } = await import('./quota')
   test('상한을 넘으면 429, 남은 시간과 사용량 헤더', async () => {
     const env = testEnv()
     const now = Date.UTC(2026, 10, 2, 10)
-    for (let i = 0; i < 2; i++) expect((await useQuota(env.KV, 'search', 2, now)).ok).toBe(true)
-    const r = await useQuota(env.KV, 'search', 2, now)
+    for (let i = 0; i < 2; i++) expect((await takeQuota(env.KV, 'search', 2, now)).ok).toBe(true)
+    const r = await takeQuota(env.KV, 'search', 2, now)
     expect(r.ok).toBe(false)
     expect(r.remaining).toBe(0)
     expect(r.resetSec).toBe(14 * 3600)
   })
   test('날이 바뀌면 다시', async () => {
     const env = testEnv()
-    await useQuota(env.KV, 'search', 1, Date.UTC(2026, 10, 2, 10))
-    expect((await useQuota(env.KV, 'search', 1, Date.UTC(2026, 10, 3, 1))).ok).toBe(true)
+    await takeQuota(env.KV, 'search', 1, Date.UTC(2026, 10, 2, 10))
+    expect((await takeQuota(env.KV, 'search', 1, Date.UTC(2026, 10, 3, 1))).ok).toBe(true)
   })
 })

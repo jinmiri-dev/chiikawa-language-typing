@@ -2,7 +2,7 @@
 import { cachedJson, putJson } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { ApiError, json } from './http'
-import { LIMITS, quotaHeaders, useQuota } from './quota'
+import { LIMITS, quotaHeaders, takeQuota } from './quota'
 
 export interface Cue {
   start: number
@@ -136,7 +136,7 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
 
   if (!(await embeddable(env, deps, v))) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
-  const quota = await useQuota(env.KV, 'transcript', LIMITS.transcript, deps.now())
+  const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now())
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 새 영상 자막은 다 받았어요. 저장한 영상과 대본은 계속 쓸 수 있어요.', quota.resetSec)
 
   const src = await firstTrack(env, deps, v, TRACK[lang])
