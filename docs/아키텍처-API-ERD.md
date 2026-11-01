@@ -277,6 +277,7 @@ erDiagram
   LINE ||--o{ WORD : "나온 줄"
   LINE ||--o{ REVIEW_ITEM : "복습 대상"
   STATS_DAY }o--|| LANG : "언어별 하루 기록"
+  SAVED_VIDEO }o--|| LANG : "언어별 저장한 영상"
   SETTINGS ||--|| LANG : "언어별 배열·목소리"
 
   MATERIAL {
@@ -357,6 +358,16 @@ erDiagram
     boolean reduceMotion
     string friend "기본 chiikawa"
   }
+  SAVED_VIDEO {
+    string id PK "lang:videoId"
+    string lang
+    string videoId
+    string title
+    string channel
+    string thumbnail
+    number durationSec
+    number savedAt
+  }
   LANG {
     string code PK "en|ja|zh|tw|mn"
   }
@@ -369,6 +380,7 @@ erDiagram
 | `materials` | `id` | `lang`, `updatedAt` | `lines`와 그 안의 `segments`를 한 문서에 품는다(같이 읽고 같이 쓰므로) |
 | `progress` | `materialId` | `updatedAt` | `results`를 배열로 품는다 |
 | `words` | `id` | `lang`, `materialId` | |
+| `saved` | `id` | `lang`, `savedAt` | 저장한 영상. 목록을 그릴 때 API를 부르지 않도록 제목·썸네일·길이를 함께 둔다 |
 | `review` | `id` | `due` | 시작 화면이 `due <= 오늘`만 읽는다 |
 | `stats` | `id` | `lang` | 하루 한 줄, 언어별 |
 | `settings` | `id` | | 한 문서 |

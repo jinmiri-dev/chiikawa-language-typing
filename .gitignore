@@ -30,3 +30,5 @@ dist-ssr
 spike-output/
 .superpowers/
 .claude/
+public/_audit/
+public/_measure.html
