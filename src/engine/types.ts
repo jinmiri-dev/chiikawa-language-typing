@@ -18,6 +18,10 @@ export type LayoutId =
   | 'tw-zhuyin-mobile'
   | 'tw-pinyin'
   | 'mn-cyrillic'
+  | 'en-qwerty-mobile'
+  | 'zh-pinyin-mobile'
+  | 'tw-pinyin-mobile'
+  | 'mn-cyrillic-mobile'
 
 export interface Segment {
   /** 원문 조각 (예: 食べ) */

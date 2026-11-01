@@ -14,14 +14,64 @@ function toHiragana(s: string): string {
   return s.replace(/[ァ-ヶ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
 }
 
-/** 로마자 n글자를 친 뒤의 단계 위치(Shift 처럼 글자가 없는 단계는 건너뛴다) */
+/** 글자 n개를 친 뒤의 단계 위치. 다음 글자가 Shift 와 함께면 Shift 단계부터. */
 function stepAfterRomaji(steps: KeyStep[], n: number): number {
   let typed = 0
   for (let i = 0; i < steps.length; i++) {
-    if (typed === n && steps[i].text !== '') return i
+    if (typed === n) return i
     if (steps[i].text.length === 1) typed++
   }
   return steps.length
+}
+
+/** 일본어 밖: 단계의 글자를 이은 것과 지금까지 친(조합 중) 글자를 비교한다 */
+function guideOther(layout: Layout, seg: Segment, composing: string): { steps: KeyStep[]; nextIndex: number; matches: boolean } {
+  const { steps } = keySteps(layout, seg)
+  const pinyin = /pinyin/.test(layout.id)
+  const comp = (pinyin ? composing.replace(/[\s']/g, '') : composing).toLowerCase()
+  const target = steps.filter((s) => s.text.length === 1).map((s) => s.text).join('').toLowerCase()
+  let at = 0
+  while (at < comp.length && comp[at] === target[at]) at++
+  return { steps, nextIndex: stepAfterRomaji(steps, at), matches: at === comp.length }
+}
+
+const KEY_NAME: Record<string, string> = {
+  space: 'Space', shift: 'Shift', semicolon: ';', comma: ',', period: '.', slash: '/', minus: '-', quote: "'",
+  bracketleft: '[', bracketright: ']', equal: '=', backquote: '`', sym: '기호',
+}
+const keyName = (id: string) => KEY_NAME[id] ?? (/^k\d$/.test(id) ? id.slice(1) : id.length === 1 ? id.toUpperCase() : id)
+
+/** 키 단계 → `Shift+H E L L O` */
+function keysText(steps: KeyStep[]): string {
+  const out: string[] = []
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i].keyId === 'shift' && steps[i + 1]) out.push(`Shift+${keyName(steps[++i].keyId)}`)
+    else out.push(keyName(steps[i].keyId))
+  }
+  return out.join(' ')
+}
+
+function otherText(layout: Layout, seg: Segment): string {
+  const steps = keySteps(layout, seg).steps
+  const han = /\p{Script=Han}/u.test(seg.text)
+  if (layout.lang === 'mn') {
+    const head = `${seg.text}${seg.romaji ? ` (${seg.romaji})` : ''}`
+    if (layout.device === 'mobile') return `${head} → ${[...seg.text].join(' ')}`
+    const parts: string[] = []
+    for (let i = 0; i < steps.length; i++) {
+      const shift = steps[i].keyId === 'shift'
+      const s = shift ? steps[++i] : steps[i]
+      parts.push(`${s.text}(${shift ? 'Shift+' : ''}${keyName(s.keyId)})`)
+    }
+    return `${head} → ${parts.join(' ')}`
+  }
+  if (!han) return `${seg.text} → ${keysText(steps)}`
+  if (layout.id.startsWith('tw-zhuyin')) {
+    const keys = layout.device === 'pc' ? keysText(steps) : steps.map((s) => (s.keyId === 'space' ? '공백' : s.keyId)).join(' ')
+    return `${seg.text} → ${seg.zhuyin} → ${keys} → ${layout.device === 'pc' ? 'Enter로 확정' : `후보에서 ${seg.text} 선택`}`
+  }
+  const keys = keysText(steps.filter((s) => s.text !== '후보'))
+  return `${seg.text} → ${seg.reading} → ${keys} → ${layout.device === 'pc' && layout.id !== 'zh-pinyin-9key' ? 'Space로 후보 선택' : `후보에서 ${seg.text} 선택`}`
 }
 
 /** 가나 k글자를 다 친 뒤의 단계 위치. 꾸밈 키(゛゜小)가 뒤따르면 그것까지 쳐야 한 글자다. */
@@ -43,6 +93,7 @@ export function guideFor(layout: Layout, seg: Segment, composing: string): { ste
 }
 
 function guideForUnsafe(layout: Layout, seg: Segment, composing: string): { steps: KeyStep[]; nextIndex: number; matches: boolean } {
+  if (layout.lang !== 'ja') return guideOther(layout, seg, composing)
   const { steps } = keySteps(layout, seg)
   const reading = toHiragana(seg.reading ?? seg.text)
   const comp = toHiragana(composing)
@@ -81,6 +132,13 @@ function modMark(s: KeyStep): string {
 
 /** 한 줄 안내: `食べ → たべ → た(た행 탭) べ(は행 → + ゛) → 후보에서 食べ 선택` */
 export function guideText(layout: Layout, seg: Segment): string {
+  if (layout.lang !== 'ja') {
+    try {
+      return otherText(layout, seg)
+    } catch {
+      return seg.text
+    }
+  }
   const reading = seg.reading ?? seg.text
   const head = seg.text !== reading ? `${seg.text} → ${reading}` : reading
   let body: string
