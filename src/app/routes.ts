@@ -7,6 +7,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'materials'; lang: Lang; tab: MaterialTab }
   | { name: 'study'; materialId: string }
+  | { name: 'review'; materialId: string }
   | { name: 'done'; materialId: string }
   | { name: 'friend' }
   | { name: 'settings' }
@@ -36,8 +37,8 @@ export function parseRoute(hash: string): Route {
     return { name: 'materials', lang: lang as Lang, tab: tab as MaterialTab }
   }
 
-  const m = path.match(/^\/(study|done)\/([\w-]+)$/)
-  if (m) return { name: m[1] as 'study' | 'done', materialId: m[2] }
+  const m = path.match(/^\/(study|done|review)\/([\w-]+)$/)
+  if (m) return { name: m[1] as 'study' | 'done' | 'review', materialId: m[2] }
   return { name: 'not-found' }
 }
 
@@ -50,6 +51,7 @@ export function href(r: Route): string {
       return `#/materials?lang=${r.lang}&tab=${r.tab}`
     case 'study':
     case 'done':
+    case 'review':
       return `#/${r.name}/${r.materialId}`
     case 'lab-input':
       return '#/lab/input'

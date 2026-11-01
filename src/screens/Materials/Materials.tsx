@@ -5,6 +5,7 @@ import { AppHeader, StatusNotice } from '../../components/components'
 import { starterSets } from '../../content/starter'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Progress } from '../../engine/types'
+import ScriptTab from './ScriptTab'
 import './Materials.css'
 
 const TABS: { id: MaterialTab; label: string }[] = [
@@ -13,7 +14,7 @@ const TABS: { id: MaterialTab; label: string }[] = [
   { id: 'script', label: '대본' },
 ]
 
-const SOON = '이 단계에서는 일본어 기본 연습부터 열었어요. 유튜브와 대본, 다른 언어는 곧 열려요.'
+const SOON = '지금은 일본어 기본 연습과 일본어 대본을 열었어요. 유튜브와 다른 언어는 곧 열려요.'
 
 export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab }) {
   const { store } = useApp()
@@ -65,6 +66,8 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
                 })}
               </ul>
             </>
+          ) : tab === 'script' && lang === 'ja' ? (
+            <ScriptTab lang={lang} />
           ) : (
             <StatusNotice title="곧 열려요">{SOON}</StatusNotice>
           )}

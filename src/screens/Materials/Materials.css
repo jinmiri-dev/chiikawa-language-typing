@@ -98,3 +98,140 @@
     min-height: 0;
   }
 }
+
+/* 대본 탭: 넣기(왼쪽)와 넷플릭스 추천(오른쪽) */
+.script-tab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+}
+.script-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.script-input .materials-lead {
+  margin: 0;
+}
+.script-paste {
+  min-height: 200px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  font: inherit;
+  resize: vertical;
+}
+.script-files {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.script-files label {
+  cursor: pointer;
+}
+.script-files-note,
+.busy {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.field-input {
+  height: var(--btn-h-sub);
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+.script-input > .btn-primary {
+  align-self: flex-start;
+  min-width: 160px;
+}
+.saved-scripts h2,
+.netflix h2 {
+  margin: 12px 0 8px;
+  font-size: var(--fs-body);
+}
+.saved-scripts ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.saved-scripts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.saved-scripts li > a:first-child {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  overflow: hidden;
+}
+.saved-scripts li span {
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+.netflix {
+  padding: 4px 0 0 32px;
+  border-left: 1px solid var(--line);
+}
+.netflix h2 {
+  margin-top: 0;
+}
+.netflix-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.netflix-card {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.netflix-card:hover {
+  border-color: var(--ink);
+}
+.netflix-card span {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.netflix-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+@media (max-width: 1023px) {
+  .script-tab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .netflix {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
