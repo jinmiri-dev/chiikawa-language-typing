@@ -1,12 +1,22 @@
 /// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
+import { injectCsp } from './build/csp.ts'
+
+/** 배포용 빌드에만 CSP meta를 넣는다(개발 서버는 HMR 때문에 제외). */
+function cspPlugin(): Plugin {
+  return {
+    name: 'language-grade1-csp',
+    apply: 'build',
+    transformIndexHtml: (html) => injectCsp(html, { workerOrigin: process.env.VITE_WORKER_ORIGIN }),
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages 하위 경로: https://jinmiri-dev.github.io/chiikawa-language-typing/
   base: '/chiikawa-language-typing/',
-  plugins: [react()],
+  plugins: [react(), cspPlugin()],
   test: {
     environment: 'jsdom',
   },

@@ -152,6 +152,7 @@ export default function InputLab() {
         />
       </label>
 
+      <p className="lab-sub">결과 파일에는 입력 기록과 브라우저 정보(기기 종류)가 들어가요. 어디에도 자동으로 보내지 않아요.</p>
       <div className="lab-actions">
         <button
           type="button"

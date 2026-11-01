@@ -9,3 +9,4 @@
 완성 후 화면별 캡처와 함께 자세히 정리할 예정입니다.
 
 - 아키텍처·API·ERD: [docs/아키텍처-API-ERD.md](docs/아키텍처-API-ERD.md)
+- 보안·오류 점검: [docs/보안-점검.md](docs/보안-점검.md)
