@@ -29,8 +29,10 @@ describe('일본어 기본 연습', () => {
 
   test('줄 길이 4~16자', () => {
     for (const s of SET_IDS)
-      for (const line of starterMaterial(`ja-${s}`)!.lines)
-        expect([...line.src].length, line.src).toBeGreaterThanOrEqual(4), expect([...line.src].length, line.src).toBeLessThanOrEqual(16)
+      for (const line of starterMaterial(`ja-${s}`)!.lines) {
+        expect([...line.src].length, line.src).toBeGreaterThanOrEqual(4)
+        expect([...line.src].length, line.src).toBeLessThanOrEqual(16)
+      }
   })
 
   test('재료 모양', () => {
