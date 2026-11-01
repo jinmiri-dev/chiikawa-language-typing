@@ -72,7 +72,7 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
       const m = buildDraftMaterial({
         id: newScriptId(lang),
         lang,
-        title: title.trim() || titleFrom({ fileName: files[0]?.name, text: src }),
+        title: title.trim() || titleFrom({ fileName: files[0]?.name, text: parsed.lines[0].src }),
         lines: parsed.lines,
         tokenize,
         youtubeId: youtubeIdFrom(yt),

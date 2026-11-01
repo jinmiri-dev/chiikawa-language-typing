@@ -28,6 +28,7 @@ test('href 와 parseRoute 는 서로 되돌린다', () => {
     { name: 'materials', lang: 'ja', tab: 'starter' },
     { name: 'materials', lang: 'mn', tab: 'script' },
     { name: 'study', materialId: 'ja-plan' },
+    { name: 'review', materialId: 'ja-s1abc' },
     { name: 'done', materialId: 'ja-plan' },
     { name: 'friend' },
     { name: 'settings' },

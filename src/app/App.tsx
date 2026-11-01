@@ -5,6 +5,7 @@ import Friend from '../screens/Friend/Friend'
 import Guide from '../screens/Guide/Guide'
 import Home from '../screens/Home/Home'
 import Materials from '../screens/Materials/Materials'
+import Review from '../screens/Review/Review'
 import Settings from '../screens/Settings/Settings'
 import Study from '../screens/Study/Study'
 import { AppProvider } from './AppState'
@@ -45,6 +46,8 @@ function Screen({ route }: { route: Route }) {
       return <Materials lang={route.lang} tab={route.tab} />
     case 'study':
       return <Study key={route.materialId} materialId={route.materialId} />
+    case 'review':
+      return <Review key={route.materialId} materialId={route.materialId} />
     case 'done':
       return <Done key={route.materialId} materialId={route.materialId} />
     case 'friend':
