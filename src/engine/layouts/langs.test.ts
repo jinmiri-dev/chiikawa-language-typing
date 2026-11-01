@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { getLayout, keySteps, layoutsFor } from './index'
 import { guideFor, guideText } from './guide'
 import type { Segment } from '../types'
+import { starterMaterial, starterSets } from '../../content/starter'
 
 const seg = (text: string, reading = text, extra: Partial<Segment> = {}): Segment => ({ text, reading, isWord: true, confident: true, ...extra })
 const ids = (layout: Parameters<typeof keySteps>[0], s: Segment) => keySteps(layout, s).steps.map((x) => x.keyId).join(' ')
@@ -73,4 +74,18 @@ describe('몽골어 키릴', () => {
     expect(pc.verified).toBe(false)
     expect(layoutsFor('mn', 'mobile').map((l) => l.id)).toEqual(['mn-cyrillic-mobile'])
   })
+})
+
+test('4개 언어 기본 연습 160줄: 모든 배열에서 안내하는 키가 그 배열 그림 안에 있고 막히지 않는다', () => {
+  for (const lang of ['tw', 'zh', 'en', 'mn'] as const)
+    for (const layout of [...layoutsFor(lang, 'pc'), ...layoutsFor(lang, 'mobile')]) {
+      const keyIds = new Set(layout.rows.flat().map((k) => k.id))
+      for (const s of starterSets(lang))
+        for (const line of starterMaterial(s.id)!.lines)
+          for (const g of line.segments) {
+            const r = keySteps(layout, g)
+            expect(r.confident, `${layout.id} ${g.text}`).toBe(true)
+            for (const st of r.steps) expect(keyIds.has(st.keyId), `${layout.id} ${g.text} ${st.keyId}`).toBe(true)
+          }
+    }
 })

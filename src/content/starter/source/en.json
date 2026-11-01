@@ -1,0 +1,52 @@
+{
+  "sets": {
+    "greet": [
+      "Morning! How are you?",
+      "Yeah, I'm good.",
+      "Long time no see!",
+      "How's it going lately?",
+      "Not bad.",
+      "What are you doing now?",
+      "Just chilling at home.",
+      "Have you eaten?",
+      "Not yet.",
+      "Sorry for the late reply!"
+    ],
+    "plan": [
+      "Are you free this weekend?",
+      "I'm free on Saturday.",
+      "Let's go eat together!",
+      "What time works?",
+      "How about three?",
+      "Let's meet at the station.",
+      "I want to go to a cafe.",
+      "I'll make a reservation.",
+      "I might be a bit late.",
+      "Text me when you get there!"
+    ],
+    "react": [
+      "Awesome!",
+      "Really?",
+      "You did it!",
+      "No way!",
+      "Nice, I like that!",
+      "So cute!",
+      "I know, right?",
+      "Congrats!",
+      "Are you okay?",
+      "I laughed so hard!"
+    ],
+    "bye": [
+      "See you tomorrow!",
+      "Today was fun!",
+      "Thanks, you saved me!",
+      "Get home safe.",
+      "I'm home now.",
+      "Good night!",
+      "Let's hang out again.",
+      "Okay, bye-bye!",
+      "Sweet dreams.",
+      "I'll text you later!"
+    ]
+  }
+}

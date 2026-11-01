@@ -4,7 +4,7 @@ import { pinyinToZhuyin, toneless } from './zhuyin'
 import { buildZhSegments, type PinyinFn } from './zh'
 import { buildPlainSegments, mnRomaji } from './plain'
 
-const py: PinyinFn = (text, toneType) => pinyin(text, { type: 'array', toneType })
+const py: PinyinFn = (text) => pinyin(text, { type: 'array', toneType: 'num', toneSandhi: false })
 
 describe('주음', () => {
   test.each([
@@ -71,5 +71,30 @@ describe('영어·몽골어', () => {
   test('몽골어 조각에 전사', () => {
     const s = buildPlainSegments('mn', 'Сайн уу?')
     expect(s.filter((g) => g.isWord).map((g) => g.romaji)).toEqual(['Sain', 'uu'])
+  })
+})
+
+describe('검수에서 찾은 읽기', () => {
+  const tw = (s: string) => buildZhSegments('tw', s, py).map((g) => g.zhuyin ?? '').filter(Boolean).join(' ')
+  const zh = (s: string) => buildZhSegments('zh', s, py).map((g) => (g.reading !== g.text ? g.reading : '')).filter(Boolean).join(' ')
+  test('車站은 ㄔㄜ', () => expect(tw('在車站見吧。')).toContain('ㄔㄜ ㄓㄢˋ'))
+  test('嗎·麼·啦·囉는 경성', () => {
+    expect(tw('你好嗎？')).toContain('˙ㄇㄚ')
+    expect(tw('怎麼樣？')).toContain('ㄗㄣˇ ˙ㄇㄜ')
+    expect(tw('還可以啦。')).toContain('˙ㄌㄚ')
+    expect(tw('那掰掰囉！')).toContain('˙ㄌㄨㄛ')
+  })
+  test('幾點은 ㄐㄧˇ, 休息는 ㄒㄧˊ, 路上은 ㄕㄤˋ', () => {
+    expect(tw('幾點比較好？')).toContain('ㄐㄧˇ ㄉㄧㄢˇ')
+    expect(tw('在家休息中。')).toContain('ㄒㄧㄡ ㄒㄧˊ')
+    expect(tw('回家路上小心。')).toContain('ㄌㄨˋ ㄕㄤˋ')
+  })
+  test('一·不 는 본래 성조(입력기가 그 소리로 찾는다)', () => {
+    expect(tw('一起去吃飯吧！')).toContain('ㄧ ㄑㄧˇ')
+    expect(tw('不會吧！')).toContain('ㄅㄨˋ ㄏㄨㄟˋ')
+  })
+  test('간체: 干嘛 gàn, 玩得很 de', () => {
+    expect(zh('你现在在干嘛？')).toContain('gàn')
+    expect(zh('今天玩得很开心！')).toContain('de hěn')
   })
 })

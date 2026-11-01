@@ -1,6 +1,10 @@
 import type { Lang } from '../../engine/lang'
 import type { Material, Segment } from '../../engine/types'
+import en from './en.json'
 import ja from './ja.json'
+import mn from './mn.json'
+import tw from './tw.json'
+import zh from './zh.json'
 
 /** 기본 연습 세트 파일 모양 (기획안 20.3) */
 interface StarterFile {
@@ -18,13 +22,21 @@ export interface StarterSet {
   lines: number
 }
 
-const FILES: Partial<Record<Lang, StarterFile>> = { ja }
+const FILES: Record<Lang, StarterFile> = { ja, tw, zh, en, mn }
 
 /** 문장부호·공백만 있는 조각은 단어가 아니다 */
 const isWord = (text: string) => /[^\p{P}\p{S}\s]/u.test(text)
 
-function toSegment([text, reading]: string[]): Segment {
-  return { text, reading: reading ?? text, isWord: isWord(text), confident: true }
+/** [원문, 읽기?, 주음?, 전사?] (빈 칸은 없음) */
+function toSegment([text, reading, zhuyin, romaji]: string[]): Segment {
+  return {
+    text,
+    reading: reading || text,
+    ...(zhuyin ? { zhuyin } : {}),
+    ...(romaji ? { romaji } : {}),
+    isWord: isWord(text),
+    confident: true,
+  }
 }
 
 export function starterSets(lang: Lang): StarterSet[] {

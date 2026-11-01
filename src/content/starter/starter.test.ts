@@ -46,6 +46,33 @@ describe('일본어 기본 연습', () => {
     const sets = starterSets('ja')
     expect(sets.map((s) => s.title)).toEqual(['인사와 대답', '약속 잡기', '리액션', '마무리 인사'])
     expect(sets[0]).toMatchObject({ id: 'ja-greet', lang: 'ja', lines: 10, reviewed: false })
-    expect(starterSets('mn')).toEqual([])
+    expect(starterSets('mn')).toHaveLength(4)
+  })
+})
+
+describe('다른 언어 기본 연습', () => {
+  const jaKo = data.sets.flatMap((s) => s.lines.map((l) => l.ko))
+  const TRAD_ONLY = /[這們麼說嗎還沒間見來會對車點歡關聯謝夢訂廳厲幾開幫話]/
+  const SIMP_ONLY = /[这们么说吗还没间见来会对车点欢关联谢梦订厅厉几开帮话]/
+  for (const lang of ['tw', 'zh', 'en', 'mn'] as const) {
+    test(`${lang}: 4세트 × 10줄, 뜻은 일본어 세트와 같다, 조각을 이으면 원문`, () => {
+      const sets = starterSets(lang)
+      expect(sets.map((s) => s.title)).toEqual(['인사와 대답', '약속 잡기', '리액션', '마무리 인사'])
+      const lines = sets.flatMap((s) => starterMaterial(s.id)!.lines)
+      expect(lines).toHaveLength(40)
+      expect(lines.map((l) => l.ko)).toEqual(jaKo)
+      for (const l of lines) expect(l.segments.map((g) => g.text).join('')).toBe(l.src)
+    })
+  }
+  test('대만어는 번체만, 중국어는 간체만', () => {
+    const src = (lang: 'tw' | 'zh') => starterSets(lang).flatMap((s) => starterMaterial(s.id)!.lines.map((l) => l.src)).join('')
+    expect(src('tw')).not.toMatch(SIMP_ONLY)
+    expect(src('zh')).not.toMatch(TRAD_ONLY)
+  })
+  test('대만어 한자 조각에는 주음, 몽골어 낱말에는 전사', () => {
+    for (const l of starterMaterial('tw-greet')!.lines) for (const g of l.segments) if (/\p{Script=Han}/u.test(g.text)) expect(g.zhuyin).toBeTruthy()
+    const mn = starterSets('mn').flatMap((s) => starterMaterial(s.id)!.lines)
+    expect(mn.map((l) => l.src).join('')).toMatch(/[өү]/)
+    for (const l of mn) for (const g of l.segments) if (g.isWord) expect(g.romaji).toBeTruthy()
   })
 })
