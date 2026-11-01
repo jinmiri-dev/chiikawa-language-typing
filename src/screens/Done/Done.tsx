@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader } from '../../components/components'
@@ -13,7 +13,7 @@ const BASE = import.meta.env.BASE_URL
 
 export default function Done({ materialId }: { materialId: string }) {
   const { store, settings } = useApp()
-  const m = starterMaterial(materialId)
+  const m = useMemo(() => starterMaterial(materialId), [materialId])
   const [p, setP] = useState<Progress | null | undefined>(undefined)
   const [others, setOthers] = useState<Progress[]>([])
   const [cardOk, setCardOk] = useState(true)
