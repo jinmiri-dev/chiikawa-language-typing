@@ -1,0 +1,41 @@
+/** 틀린 이유 (기획안 11.1). 첫 번째로 다른 글자를 보고 자주 나는 실수를 짚는다. */
+import type { Lang } from '../lang'
+
+const SMALL = 'ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ'
+const LARGE = 'あいうえおつやゆよわアイウエオツヤユヨワ'
+const KANJI = /\p{Script=Han}/u
+
+/** 공백·문장부호로 끊긴 단어 */
+function wordAround(s: string, i: number): string {
+  const chars = [...s]
+  let a = i
+  let b = i
+  while (a > 0 && !/[\p{P}\s]/u.test(chars[a - 1])) a--
+  while (b < chars.length && !/[\p{P}\s]/u.test(chars[b])) b++
+  return chars.slice(a, b).join('')
+}
+
+function explainJa(e: string, t: string, expected: string, typed: string, i: number): string | null {
+  const [eBase, eMark] = [...e.normalize('NFD')]
+  if (eMark === '゙' && eBase === t) return '゛가 빠졌어요'
+  if (eMark === '゚' && eBase === t) return '゜가 빠졌어요'
+  const si = SMALL.indexOf(e)
+  if (si >= 0 && LARGE[si] === t) return `작은 ${e}이에요`
+  const li = LARGE.indexOf(e)
+  if (li >= 0 && SMALL[li] === t) return `큰 ${e}예요`
+  if (e === 'ー') return 'ー(장음)가 빠졌어요'
+  if (KANJI.test(e) && KANJI.test(t)) return `다른 한자를 골랐어요: ${wordAround(expected, i)} → ${wordAround(typed, i)}`
+  return null
+}
+
+export function explainMistake(lang: Lang, expected: string, typed: string): string | null {
+  const exp = [...expected]
+  const got = [...typed]
+  let i = 0
+  while (i < exp.length && i < got.length && exp[i] === got[i]) i++
+  if (i >= got.length) return null
+  const e = exp[i]
+  const t = got[i]
+  if (e === undefined) return `${t}를 더 쳤어요`
+  return (lang === 'ja' ? explainJa(e, t, expected, typed, i) : null) ?? `${e} 대신 ${t}를 쳤어요`
+}
