@@ -21,6 +21,11 @@ function significant(s: string, strict: boolean): { ch: string; at: number }[] {
   return out
 }
 
+/** 비교하는 글자만(너그러우면 문장부호·공백을 빼고 맞춘 글자) */
+export function significantChars(s: string, strict: boolean): string[] {
+  return significant(s, strict).map((x) => x.ch)
+}
+
 export function judge(
   expected: string,
   committed: string,

@@ -1,0 +1,64 @@
+.kbd-map {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kbd-row {
+  display: flex;
+  gap: 6px;
+}
+.kbd-key {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.kbd-key[data-now] {
+  border: 2px solid var(--ink);
+  background: var(--point);
+  color: var(--ink);
+  font-weight: 700;
+  overflow: visible;
+}
+.kbd-mobile .kbd-key {
+  height: 48px;
+  font-size: var(--fs-body);
+}
+.kbd-small .kbd-key {
+  height: 34px;
+}
+.kbd-arrow {
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kbd-taps {
+  position: absolute;
+  bottom: -10px;
+  right: -6px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12px;
+}

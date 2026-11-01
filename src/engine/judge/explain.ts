@@ -16,6 +16,7 @@ function wordAround(s: string, i: number): string {
 }
 
 function explainJa(e: string, t: string, expected: string, typed: string, i: number): string | null {
+  if (/[a-z]/i.test(t) && !/[a-z]/i.test(e)) return '일본어 입력기가 꺼져 있어요. 켜고 다시 쳐 보세요(Windows: Alt+`, Mac: Ctrl+Space).'
   const [eBase, eMark] = [...e.normalize('NFD')]
   if (eMark === '゙' && eBase === t) return '゛가 빠졌어요'
   if (eMark === '゚' && eBase === t) return '゜가 빠졌어요'

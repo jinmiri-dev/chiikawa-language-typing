@@ -23,6 +23,8 @@ describe('틀린 이유', () => {
   test('다른 한자', () => expect(explainMistake('ja', '書く', '描く')).toBe('다른 한자를 골랐어요: 書く → 描く'))
   test('그 밖', () => expect(explainMistake('ja', 'たべ', 'ため')).toBe('べ 대신 め를 쳤어요'))
   test('같으면 없음', () => expect(explainMistake('ja', 'たべ', 'たべ')).toBeNull())
+  test('입력기가 꺼져 로마자가 들어오면 알려 준다', () =>
+    expect(explainMistake('ja', 'たべ', 'ta')).toBe('일본어 입력기가 꺼져 있어요. 켜고 다시 쳐 보세요(Windows: Alt+`, Mac: Ctrl+Space).'))
 })
 
 describe('조합 중 읽기', () => {

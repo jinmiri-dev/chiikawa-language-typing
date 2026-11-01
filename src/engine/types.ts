@@ -71,6 +71,8 @@ export interface Progress {
   friend: FriendId
   /** 이어서 공부하기 순서 */
   updatedAt: number
+  /** 같은 재료를 다시 칠 때, 지난 회차의 한 줄 평균 시간(완료 화면 비교용) */
+  prevAvgMs?: number
 }
 
 export interface Settings {

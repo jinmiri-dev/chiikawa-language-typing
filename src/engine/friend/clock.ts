@@ -10,13 +10,12 @@ const IDLE_LIMIT = 60_000
 const STAGE_MS = 300_000
 const LAST_STAGE = 12
 
-export function clockEvent(s: ClockState, now: number, kind: 'input' | 'hide' | 'show' | 'tick'): ClockState {
+/** 입력 사이 간격(60초 이하)만 더한다. 입력이 없으면 시간이 흐르지 않는다. */
+export function clockEvent(s: ClockState, now: number, kind: 'input' | 'hide' | 'show'): ClockState {
   if (kind === 'show') return { ...s, lastAt: null }
   const gap = s.lastAt === null ? 0 : now - s.lastAt
   const activeMs = s.activeMs + (gap > 0 && gap <= IDLE_LIMIT ? gap : 0)
   if (kind === 'hide') return { activeMs, lastAt: null }
-  // tick 은 시간을 더하되 활동 시각은 그대로 둔다(입력 없이 시간만 흐르면 60초 뒤 멈춤)
-  if (kind === 'tick') return gap <= IDLE_LIMIT ? { activeMs, lastAt: now } : { activeMs: s.activeMs, lastAt: s.lastAt }
   return { activeMs, lastAt: now }
 }
 
