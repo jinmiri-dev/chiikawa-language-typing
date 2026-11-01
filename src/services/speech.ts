@@ -5,8 +5,8 @@ type Voice = 'female' | 'male'
 
 /** 이름으로 남녀를 가린다. 기기·브라우저마다 이름이 달라 흔한 것만 둔다. */
 const NAME_HINT: Record<Voice, RegExp> = {
-  female: /nanami|kyoko|haruka|ayumi|mizuki|aoi|female|여자/i,
-  male: /keita|otoya|ichiro|daichi|naoki|male|남자/i,
+  female: /nanami|kyoko|haruka|ayumi|mizuki|aoi|xiaoxiao|xiaoyi|huihui|yaoyao|tingting|meijia|hsiaochen|hsiaoyu|hanhan|zira|aria|jenny|samantha|karen|moira|yesui|female|여자/i,
+  male: /keita|otoya|ichiro|daichi|naoki|yunxi|yunyang|kangkang|yunjhe|zhiwei|david|guy|daniel|alex|fred|bataa|male|남자/i,
 }
 
 function voicesFor(lang: Lang): SpeechSynthesisVoice[] {

@@ -8,7 +8,8 @@ import { clockEvent, stageOf, type ClockState } from '../../engine/friend/clock'
 import { nextHintLevel, type HintLevel, type HintMemory } from '../../engine/hint/hint'
 import { explainMistake } from '../../engine/judge/explain'
 import { judge, significantChars } from '../../engine/judge/judge'
-import { getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
+import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
+import { LANG_NAME } from '../../engine/lang'
 import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
 import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
 import { avgLineMs } from '../../engine/stats/compare'
@@ -51,6 +52,14 @@ function segmentStarts(segs: Segment[]): number[] {
     at += s.text.length
     return start
   })
+}
+
+/** 원문 위에 보이는 읽기: 일본어 후리가나, 중국어 병음, 대만어 주음, 몽골어 로마자 전사, 영어 없음 */
+function rubyOf(lang: Material['lang'], g: Segment): string | undefined {
+  if (lang === 'tw') return g.zhuyin
+  if (lang === 'mn') return g.romaji
+  if (lang === 'en') return undefined
+  return g.reading && g.reading !== g.text ? g.reading : undefined
 }
 
 function minutes(ms: number) {
@@ -117,8 +126,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const line = material.lines[idx]
   const recorder = useMemo(() => lineRecorder(line.src, settings.strict), [line, settings.strict])
 
-  const saved = settings.layout.ja
-  const layoutId: LayoutId = saved && getLayout(saved).device === device ? saved : device === 'mobile' ? 'ja-flick' : 'ja-pc-romaji'
+  const lang = material.lang
+  const htmlLang = LANG_NAME[lang].htmlLang
+  const saved = settings.layout[lang]
+  const layoutId: LayoutId = saved && getLayout(saved).lang === lang && getLayout(saved).device === device ? saved : DEFAULT_LAYOUT[lang][device]
   const layout = getLayout(layoutId)
 
   const say = useCallback(
@@ -140,7 +151,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   // 처음 들어왔을 때 인사(복습이면 복습 인사), 휴대폰에서 일본어 키보드를 처음 고를 때 시트
   useEffect(() => {
     say(isReview ? 'review' : 'hello')
-    if (device === 'mobile' && !settings.layout.ja) setSheetOpen(true)
+    if (device === 'mobile' && !settings.layout[material.lang]) setSheetOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -158,9 +169,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   }, [])
 
   const listen = useCallback(async () => {
-    const r = await speak(line.src, { lang: 'ja', voice: settings.voice.ja ?? 'female', rate: settings.rate })
-    setVoiceNote(r.source === 'none' ? '이 기기에는 일본어 목소리가 없어요. 다른 브라우저에서 들어 보세요.' : '')
-  }, [line.src, settings.voice.ja, settings.rate])
+    const r = await speak(line.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
+    setVoiceNote(r.source === 'none' ? `이 기기에는 ${LANG_NAME[material.lang].ko} 목소리가 없어요. 다른 브라우저에서 들어 보세요.` : '')
+  }, [line.src, material.lang, settings.voice, settings.rate])
 
   // 줄이 바뀌면 입력을 비우고, 설정이 켜져 있으면 듣기
   useEffect(() => {
@@ -179,7 +190,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const segIndex = res.done ? -1 : Math.max(0, starts.findLastIndex((s) => s <= res.okUpTo))
   const seg = segIndex >= 0 ? line.segments[segIndex] : null
   const strip = (s: string) => significantChars(s, settings.strict).join('')
-  const mistake = res.wrongAt !== undefined ? explainMistake('ja', strip(line.src), strip(committed)) : null
+  const mistake = res.wrongAt !== undefined ? explainMistake(lang, strip(line.src), strip(committed)) : null
 
   // 지금 칠 조각의 안내
   const inSeg = seg ? res.okUpTo - starts[segIndex] : 0
@@ -354,7 +365,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const prev = material.lines[idx - 1]
 
   const sentence = (
-    <div className="sentence" lang="ja">
+    <div className="sentence" lang={htmlLang}>
       {settings.show.src && (
         <p className="sentence-src">
           {line.segments.map((g, si) => {
@@ -367,15 +378,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
                 </span>
               )
             })
-            const body =
-              g.text !== g.reading && settings.show.reading ? (
-                <ruby>
-                  {chars}
-                  <rt>{g.reading}</rt>
-                </ruby>
-              ) : (
-                chars
-              )
+            const ruby = settings.show.reading ? rubyOf(lang, g) : undefined
+            const body = ruby ? (
+              <ruby>
+                {chars}
+                <rt>{ruby}</rt>
+              </ruby>
+            ) : (
+              chars
+            )
             return g.isWord ? (
               <button
                 key={si}
@@ -407,7 +418,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         ref={inputRef}
         className="type-input"
         aria-label="여기에 쳐 보세요"
-        lang="ja"
+        lang={htmlLang}
         value={value}
         onChange={onChange}
         onCompositionStart={onCompositionStart}
@@ -453,7 +464,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   ) : (
     <div className="guide">
       {level !== 'off' ? (
-        <p className="guide-line" lang="ja">
+        <p className="guide-line" lang={htmlLang}>
           {guideText(layout, seg)}
         </p>
       ) : (
@@ -484,8 +495,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         <select
           className="btn btn-sub"
           aria-label="목소리"
-          value={settings.voice.ja ?? 'female'}
-          onChange={(e) => setSettings({ voice: { ...settings.voice, ja: e.target.value as 'female' | 'male' } })}
+          value={settings.voice[lang] ?? 'female'}
+          onChange={(e) => setSettings({ voice: { ...settings.voice, [lang]: e.target.value as 'female' | 'male' } })}
         >
           <option value="female">여자 목소리</option>
           <option value="male">남자 목소리</option>
@@ -556,7 +567,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           </aside>
           <section className="study-center">
             {prev && (
-              <p className="sentence-prev" lang="ja">
+              <p className="sentence-prev" lang={htmlLang}>
                 {prev.src}
               </p>
             )}
@@ -616,10 +627,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         current={layoutId}
         onClose={() => setSheetOpen(false)}
         onPick={(id) => {
-          setSettings({ layout: { ...settings.layout, ja: id } })
+          setSettings({ layout: { ...settings.layout, [lang]: id } })
           setSheetOpen(false)
         }}
-        layouts={layoutsFor('ja', device)}
+        lang={lang}
+        layouts={layoutsFor(lang, device)}
       />
     </div>
   )

@@ -70,10 +70,10 @@ export default function Done({ materialId }: { materialId: string }) {
         </p>
         <div className="done-card">
           {cardOk ? (
-            <img src={card} alt={`${name}와 함께 받은 일본어 1급 카드`} onError={() => setCardOk(false)} />
+            <img src={card} alt={`${name}와 함께 받은 ${LANG_NAME[m.lang].ko} 1급 카드`} onError={() => setCardOk(false)} />
           ) : (
-            <div className="done-card-fallback" role="img" aria-label={`${name}와 함께 받은 일본어 1급 카드`}>
-              <span>일본어</span>
+            <div className="done-card-fallback" role="img" aria-label={`${name}와 함께 받은 ${LANG_NAME[m.lang].ko} 1급 카드`}>
+              <span>{LANG_NAME[m.lang].ko}</span>
               <b>1급</b>
               <span>{name}와 함께</span>
             </div>
@@ -105,7 +105,7 @@ export default function Done({ materialId }: { materialId: string }) {
             <ul>
               {wrong.map((l) => (
                 <li key={l.id}>
-                  <span lang="ja">{l.src}</span> <span className="done-ko">{l.ko}</span>
+                  <span lang={LANG_NAME[m.lang].htmlLang}>{l.src}</span> <span className="done-ko">{l.ko}</span>
                 </li>
               ))}
             </ul>

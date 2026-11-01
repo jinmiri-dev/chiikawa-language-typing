@@ -14,7 +14,7 @@ const TABS: { id: MaterialTab; label: string }[] = [
   { id: 'script', label: '대본' },
 ]
 
-const SOON = '지금은 일본어 기본 연습과 일본어 대본을 열었어요. 유튜브와 다른 언어는 곧 열려요.'
+const SOON = '유튜브는 곧 열려요. 지금은 기본 연습과 대본으로 연습할 수 있어요.'
 
 export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab }) {
   const { store } = useApp()

@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AppProvider } from '../../app/AppState'
 import { memoryStore, type Store } from '../../services/storage'
 import Study from './Study'
@@ -75,4 +75,21 @@ test('읽기 확인이 필요한 대본 줄도 화면이 멈추지 않는다', a
   })
   render(<AppProvider store={store}><Study materialId="ja-sx" /></AppProvider>)
   expect(await screen.findByText(/읽기를 확인하지 못한 줄이에요/)).toBeTruthy()
+})
+
+describe.each([
+  ['tw-greet', 'zh-TW', 'ㄗㄠˇ', '早安 → ㄗㄠˇ ㄢ → Y L 3 0 Space → Enter로 확정'],
+  ['zh-greet', 'zh-CN', 'zǎo shàng', '早上 → zǎo shàng → Z A O S H A N G → Space로 후보 선택'],
+  ['en-greet', 'en', undefined, 'Morning → Shift+M O R N I N G'],
+  ['mn-greet', 'mn', 'Öglöönii', '안내를 준비하고'],
+])('%s 학습 화면', (id, htmlLang, ruby, guide) => {
+  test('그 언어로 보이고 안내도 그 언어', async () => {
+    render(<AppProvider store={store}><Study materialId={id} /></AppProvider>)
+    const input = await screen.findByLabelText('여기에 쳐 보세요')
+    expect(input.getAttribute('lang')).toBe(htmlLang)
+    expect(document.querySelector('.sentence')?.getAttribute('lang')).toBe(htmlLang)
+    if (ruby) expect(document.querySelector('.sentence-src rt')?.textContent).toContain(ruby)
+    else expect(document.querySelector('.sentence-src rt')).toBeNull()
+    expect(document.querySelector('.guide-line, .notice')?.textContent).toContain(guide)
+  })
 })

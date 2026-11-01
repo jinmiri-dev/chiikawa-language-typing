@@ -33,3 +33,16 @@ describe('조합 중 읽기', () => {
   test('로마자 조합', () => expect(readingProgress('たべる', 'tab')).toEqual({ matches: true, at: 3 }))
   test('가나와 로마자가 섞인 조합', () => expect(readingProgress('たべる', 'たb')).toEqual({ matches: true, at: 3 }))
 })
+
+describe('다른 언어 틀린 이유', () => {
+  test('중국어·대만어 입력기 꺼짐', () => {
+    expect(explainMistake('zh', '你好', 'ni')).toBe('중국어 입력기가 꺼져 있어요. 켜고 다시 쳐 보세요(Windows: Win+Space).')
+    expect(explainMistake('tw', '你好', 'ni')).toBe('대만어(주음) 입력기가 꺼져 있어요. 켜고 다시 쳐 보세요(Windows: Win+Space).')
+  })
+  test('몽골어 자판 꺼짐', () => expect(explainMistake('mn', 'сайн', 'sain')).toBe('몽골어 자판이 꺼져 있어 영문이 들어가요. 자판을 바꿔 주세요(Windows: Win+Space).'))
+  test('영어에 한글', () => expect(explainMistake('en', 'hello', 'ㅗ')).toBe('한글이 들어가요. 한/영 키로 영어 입력으로 바꿔 주세요.'))
+  test('그 밖은 무엇을 쳤는지', () => {
+    expect(explainMistake('mn', 'сайн', 'сайм')).toBe('н 대신 м를 쳤어요')
+    expect(explainMistake('zh', '在', '再')).toBe('在 대신 再를 쳤어요')
+  })
+})

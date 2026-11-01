@@ -29,6 +29,16 @@ function explainJa(e: string, t: string, expected: string, typed: string, i: num
   return null
 }
 
+/** 입력기·자판이 다른 언어로 되어 있을 때 */
+function wrongInput(lang: Lang, e: string, t: string): string | null {
+  const latin = (c: string) => /[a-z]/i.test(c)
+  if ((lang === 'zh' || lang === 'tw') && latin(t) && /\p{Script=Han}/u.test(e))
+    return `${lang === 'tw' ? '대만어(주음)' : '중국어'} 입력기가 꺼져 있어요. 켜고 다시 쳐 보세요(Windows: Win+Space).`
+  if (lang === 'mn' && latin(t) && /\p{Script=Cyrillic}/u.test(e)) return '몽골어 자판이 꺼져 있어 영문이 들어가요. 자판을 바꿔 주세요(Windows: Win+Space).'
+  if (lang === 'en' && /[\p{Script=Hangul}ㄱ-ㆎ]/u.test(t)) return '한글이 들어가요. 한/영 키로 영어 입력으로 바꿔 주세요.'
+  return null
+}
+
 export function explainMistake(lang: Lang, expected: string, typed: string): string | null {
   const exp = [...expected]
   const got = [...typed]
@@ -38,5 +48,5 @@ export function explainMistake(lang: Lang, expected: string, typed: string): str
   const e = exp[i]
   const t = got[i]
   if (e === undefined) return `${t}를 더 쳤어요`
-  return (lang === 'ja' ? explainJa(e, t, expected, typed, i) : null) ?? `${e} 대신 ${t}를 쳤어요`
+  return (lang === 'ja' ? explainJa(e, t, expected, typed, i) : wrongInput(lang, e, t)) ?? `${e} 대신 ${t}를 쳤어요`
 }
