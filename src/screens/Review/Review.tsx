@@ -6,10 +6,10 @@ import { editLine, mergeUp, removeLines, restoreRemoved, shiftKo, splitAt, type 
 import { LANG_NAME } from '../../engine/lang'
 import type { Line, Material } from '../../engine/types'
 import { loadSegmenter } from '../../services/segmenter'
+import { readingOf } from './readingOf'
 import './Review.css'
 
 const fmt = (s?: number) => (s === undefined ? '' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`)
-const readingOf = (l: Line) => l.segments.map((g) => g.reading ?? g.text).join('')
 
 function warnings(l: Line): string[] {
   const w: string[] = []
@@ -165,7 +165,7 @@ export default function Review({ materialId }: { materialId: string }) {
                 ))}
               </span>
               <span role="cell" className="row-reading">
-                <Cell value={readingOf(l)} label="읽기" lang={lang} onSave={(v) => update(editLine(material.lines, i, { reading: v }, seg))} />
+                <Cell value={readingOf(material.lang, l)} label="읽기" lang={lang} onSave={(v) => update(editLine(material.lines, i, { reading: v }, seg))} />
               </span>
               <span role="cell" className="row-ko">
                 <Cell value={l.ko ?? ''} label="뜻" onSave={(v) => update(editLine(material.lines, i, { ko: v }, seg))} />
