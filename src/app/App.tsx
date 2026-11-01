@@ -17,10 +17,14 @@ function Home() {
   return (
     <section className="center">
       <h1>언어 1급</h1>
-      <p>좋아하는 영상 대사로 손이 먼저 외우는 외국어.</p>
-      <p className="sub">지금 만들고 있어요.</p>
+      <p>좋아하는 영상 대사를 따라 치며 외국어 타자와 키 누르는 법을 익히는 사이트예요.</p>
+      <p className="sub">
+        영어 · 일본어 · 중국어(간체) · 대만어(번체) · 몽골어
+        <br />
+        지금 만들고 있어요. 먼저 내 키보드로 입력을 시험해 볼 수 있어요.
+      </p>
       <a className="link" href="#/lab/input">
-        입력 시험 페이지
+        내 키보드로 입력 시험하기 →
       </a>
     </section>
   )

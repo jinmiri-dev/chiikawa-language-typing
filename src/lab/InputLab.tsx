@@ -58,7 +58,10 @@ export default function InputLab() {
   function reset() {
     loggerRef.current?.clear()
     setEvents([])
-    if (inputRef.current) inputRef.current.value = ''
+    if (inputRef.current) {
+      inputRef.current.value = ''
+      inputRef.current.focus()
+    }
   }
 
   function changeLang(next: Lang) {
@@ -123,7 +126,7 @@ export default function InputLab() {
       <dl className="lab-summary" aria-live="polite">
         <div>
           <dt>예문과 같음</dt>
-          <dd>{matches ? '✓ 같아요' : '아직 달라요'}</dd>
+          <dd>{matches ? '✓ 같아요' : summary.finalValue ? '아직 달라요' : '-'}</dd>
         </div>
         <div>
           <dt>조합 이벤트</dt>
@@ -138,8 +141,8 @@ export default function InputLab() {
           <dd lang={LANG_NAME[lang].htmlLang}>{summary.compositionSamples.join(' · ') || '없음'}</dd>
         </div>
         <div>
-          <dt>화면 높이(최소)</dt>
-          <dd>{summary.minViewportHeight ?? '-'}px</dd>
+          <dt>보이는 화면 높이(가장 작을 때)</dt>
+          <dd>{summary.minViewportHeight === null ? '-' : `${summary.minViewportHeight}px`}</dd>
         </div>
       </dl>
 
@@ -152,6 +155,11 @@ export default function InputLab() {
         />
       </label>
 
+      {matches && (
+        <p className="lab-done" role="status">
+          다 쳤어요! 결과를 내려받거나 다른 예문을 골라 보세요.
+        </p>
+      )}
       <p className="lab-sub">결과 파일에는 입력 기록과 브라우저 정보(기기 종류)가 들어가요. 어디에도 자동으로 보내지 않아요.</p>
       <div className="lab-actions">
         <button

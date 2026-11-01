@@ -12,3 +12,7 @@ test('병음처럼 로마자로 조합하면 그렇게 말한다', () => {
 test('가나·주음이 보이면 그렇게 말한다', () => {
   expect(compositionLabel(summarizeLog([{ t: 0, type: 'compositionupdate', data: 'ㄏㄜ' }], ['bopomofo']))).toBe('조합 중에 그 언어 글자가 보여요')
 })
+
+test('아무것도 안 쳤으면 "아직 입력 없음"이라고 말한다', () => {
+  expect(compositionLabel(summarizeLog([], ['kana']))).toBe('아직 입력 없음')
+})

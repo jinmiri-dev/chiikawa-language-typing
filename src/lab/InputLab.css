@@ -138,3 +138,9 @@
   color: #ffffff;
   font-weight: 700;
 }
+
+.lab-done {
+  margin: 0;
+  font-weight: 700;
+  color: var(--success);
+}

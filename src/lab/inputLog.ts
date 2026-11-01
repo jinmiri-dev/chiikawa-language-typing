@@ -100,6 +100,7 @@ export function summarizeLog(events: LoggedEvent[], target: Script[]): LogSummar
 
 /** 조합 결과를 사람이 읽을 말로. 조합이 없는 것도 정상이다(영어·몽골어 등). */
 export function compositionLabel(s: LogSummary): string {
+  if (s.compositionEvents === 0 && s.finalValue === '' && s.keydownKeys.length === 0) return '아직 입력 없음'
   if (s.compositionEvents === 0) return '조합 없이 바로 입력'
   if (s.targetInComposition) return '조합 중에 그 언어 글자가 보여요'
   if (s.latinInComposition) return '로마자로 조합해요'
