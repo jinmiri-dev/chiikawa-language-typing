@@ -4,6 +4,7 @@ import { href } from '../../app/routes'
 import { AppHeader, FriendImage, StatusNotice } from '../../components/components'
 import { getMaterial } from '../../services/materials'
 import { buildReviewMaterial, reviewCount } from '../../services/review'
+import { lineSpeedTrend } from '../../engine/stats/trend'
 import { KIND_NAME, LANG_NAME, LANGS, type Lang } from '../../engine/lang'
 import type { Material, Progress } from '../../engine/types'
 import './Home.css'
@@ -90,11 +91,13 @@ export default function Home() {
   const { store, settings } = useApp()
   const [last, setLast] = useState<{ p: Progress; m: Material } | null | undefined>(undefined)
   const [due, setDue] = useState(0)
+  const [trend, setTrend] = useState<string | null>(null)
   useEffect(() => {
     void (async () => {
       const p = await store.lastProgress()
       const m = p ? await getMaterial(store, p.materialId) : null
       setDue(await reviewCount(store))
+      if (m) setTrend(lineSpeedTrend(await store.listStats(m.lang), m.lang, Date.now())?.text ?? null)
       setLast(p && m ? { p, m } : null)
     })()
   }, [store])
@@ -123,6 +126,7 @@ export default function Home() {
                 </button>
               )}
               <Continue p={last.p} m={last.m} sub={due > 0} />
+              {trend && <p className="home-trend">{trend}</p>}
               <h2>다른 언어로 시작하기</h2>
             </>
           ) : (

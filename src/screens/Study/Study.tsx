@@ -11,6 +11,8 @@ import { judge, significantChars } from '../../engine/judge/judge'
 import { getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
 import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
+import { avgLineMs } from '../../engine/stats/compare'
+import { dayKey } from '../../engine/stats/trend'
 import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '../../engine/types'
 import { getMaterial } from '../../services/materials'
 import { speak } from '../../services/speech'
@@ -249,6 +251,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         if (item) void store.saveReview(schedule(item, r.mistakes === 0, t))
       })
     else if (r.mistakes > 0) void addReview()
+    // 효과 기록: 기본 연습 세트를 끝낼 때마다 한 줄 평균 시간과 정확도
+    if (material.kind === 'starter' && idx + 1 >= material.lines.length)
+      void store.addStat({
+        id: `${material.id}:${t}`,
+        lang: material.lang,
+        day: dayKey(t),
+        avgMs: avgLineMs(nextResults),
+        accuracy: nextResults.reduce((a, x) => a + x.firstTryAccuracy, 0) / nextResults.length,
+      })
 
     // 친구 반응: 5분 단계가 바뀌었으면 그것만, 아니면 연속·다시 맞힘·가끔 한마디
     const stage = stageOf(clock.current.activeMs)

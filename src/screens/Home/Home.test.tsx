@@ -32,3 +32,13 @@ test('저장이 안 되는 브라우저는 알린다', async () => {
   render(<AppProvider store={memoryStore()}><Home /></AppProvider>)
   expect(await screen.findByText('이 브라우저에서는 기록이 저장되지 않아요')).toBeTruthy()
 })
+
+test('기록이 3번 이상이고 빨라졌으면 효과를 보여 준다', async () => {
+  const store = memoryStore()
+  await store.saveProgress({ materialId: 'ja-plan', lineIndex: 10, results: [], activeMs: 0, friend: 'chiikawa', updatedAt: 1 })
+  const day = (n: number) => new Date(Date.now() - n * 86_400_000)
+  const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  for (const [n, ms] of [[3, 8000], [2, 7000], [1, 6000]] as const) await store.addStat({ id: `s${n}`, lang: 'ja', day: key(day(n)), avgMs: ms, accuracy: 1 })
+  render(<AppProvider store={store}><Home /></AppProvider>)
+  expect(await screen.findByText('일본어 · 처음보다 한 줄 1.5초 빨라졌어요')).toBeTruthy()
+})

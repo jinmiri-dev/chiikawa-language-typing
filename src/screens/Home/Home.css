@@ -255,3 +255,9 @@
 .continue-sub .continue-bar {
   background: var(--soft);
 }
+.home-trend {
+  margin: 8px 0 0;
+  font-size: var(--fs-sub);
+  color: var(--success);
+  font-weight: 700;
+}
