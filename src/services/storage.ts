@@ -25,7 +25,8 @@ const withDefaults = (s?: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS
 const langOf = (materialId: string) => materialId.split('-')[0]
 const latest = (list: Progress[]) => list.reduce<Progress | null>((a, p) => (!a || p.updatedAt > a.updatedAt ? p : a), null)
 
-function memoryStore(): Store {
+/** 저장이 안 되는 환경과 테스트용 */
+export function memoryStore(): Store {
   let settings = DEFAULT_SETTINGS
   const progress = new Map<string, Progress>()
   return {

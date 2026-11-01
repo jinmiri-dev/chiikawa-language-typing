@@ -25,6 +25,7 @@
   --fs-sub: 14px;
   --fs-h1: 32px;
   --fs-h2: 20px;
+  --gutter: 48px; /* 화면 좌우 여백(머리글과 본문이 같은 선) */
 
   --font-ui: 'Noto Sans KR', system-ui, sans-serif;
   --font-logo: 'Jua', 'Noto Sans KR', sans-serif;
@@ -34,5 +35,6 @@
   :root {
     --fs-body: 15px;
     --fs-h1: 24px;
+    --gutter: 16px;
   }
 }
