@@ -1,7 +1,7 @@
 /** 브라우저 저장 (프론트-설계 6장). IndexedDB 가 안 되면 메모리로 돌고 persistent:false 를 알린다. */
 import { openDB } from 'idb'
 import type { Lang } from '../engine/lang'
-import { DEFAULT_SETTINGS, type Material, type Progress, type ReviewItem, type Settings, type StatRecord, type Word } from '../engine/types'
+import { DEFAULT_SETTINGS, type Material, type Progress, type ReviewItem, type SavedVideo, type Settings, type StatRecord, type Word } from '../engine/types'
 
 const DB_NAME = 'language-grade1'
 const DB_VERSION = 1
@@ -42,6 +42,9 @@ export interface Store {
   deleteReview(id: string): Promise<void>
   listStats(lang?: Lang): Promise<StatRecord[]>
   addStat(r: StatRecord): Promise<void>
+  listSaved(lang?: Lang): Promise<SavedVideo[]>
+  saveVideo(v: SavedVideo): Promise<void>
+  deleteSaved(id: string): Promise<void>
   getMeta<T = unknown>(key: string): Promise<T | undefined>
   setMeta(key: string, value: unknown): Promise<void>
 }
@@ -91,6 +94,9 @@ function makeStore(raw: Backend, persistent: boolean): Store {
     deleteReview: (id) => raw.delete('review', id),
     listStats: async (lang) => byLang(await all<StatRecord>('stats'), lang),
     addStat: (r) => raw.put('stats', r),
+    listSaved: async (lang) => byLang(await all<SavedVideo>('saved'), lang).sort((a, b) => b.savedAt - a.savedAt),
+    saveVideo: (v) => raw.put('saved', v),
+    deleteSaved: (id) => raw.delete('saved', id),
     getMeta: async <T,>(key: string) => (await raw.get('settings', `meta:${key}`)) as T | undefined,
     setMeta: (key, value) => raw.put('settings', value, `meta:${key}`),
   }

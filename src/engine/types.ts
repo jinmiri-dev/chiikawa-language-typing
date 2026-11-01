@@ -137,3 +137,16 @@ export interface StatRecord {
   avgMs: number
   accuracy: number
 }
+
+/** 저장한 유튜브 영상(검색 한도를 쓰지 않으려고 제목·썸네일·길이를 함께 둔다) */
+export interface SavedVideo {
+  /** `<lang>:<videoId>` */
+  id: string
+  lang: Lang
+  videoId: string
+  title: string
+  channel: string
+  thumbnail: string
+  durationSec: number
+  savedAt: number
+}

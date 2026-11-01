@@ -6,6 +6,7 @@ import { starterSets } from '../../content/starter'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Progress } from '../../engine/types'
 import ScriptTab from './ScriptTab'
+import YouTubeTab from './YouTubeTab'
 import './Materials.css'
 
 const TABS: { id: MaterialTab; label: string }[] = [
@@ -66,6 +67,8 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
                 })}
               </ul>
             </>
+          ) : tab === 'youtube' ? (
+            <YouTubeTab lang={lang} />
           ) : tab === 'script' ? (
             <ScriptTab lang={lang} />
           ) : (

@@ -201,3 +201,8 @@ export function parseScript(text: string, lang: Lang, opts: { koText?: string } 
   const { lines, removedCount } = clean(cues)
   return { lines, removedCount, checkCount: lines.filter((l) => l.flags.length).length }
 }
+
+/** 유튜브 자막 줄도 대본과 같은 규칙으로 정리한다(소리 표시·화자·대시·빈 줄) */
+export function cleanCues(cues: { src: string; ko?: string; start?: number; end?: number }[]): DraftLine[] {
+  return clean(cues).lines
+}
