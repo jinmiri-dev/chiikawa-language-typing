@@ -32,6 +32,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+        env:
+          # Worker 주소(저장소 Variables). 비어 있으면 CSP는 self만 허용한다
+          VITE_WORKER_ORIGIN: ${{ vars.VITE_WORKER_ORIGIN }}
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
