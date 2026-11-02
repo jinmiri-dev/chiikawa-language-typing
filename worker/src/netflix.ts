@@ -44,7 +44,12 @@ export async function netflix(url: URL, lang: Lang, env: Env, deps: Deps): Promi
   }
   if (COUNTRY[lang]) params.with_origin_country = COUNTRY[lang]!
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v)
-  const found = await upstreamJson<Discover>(await deps.fetch(u, { headers: { authorization: `Bearer ${env.TMDB_TOKEN}`, accept: 'application/json' } }), 'TMDB')
+  // 긴 읽기 토큰(eyJ…)은 머리글로, 짧은 API 키(32자)는 주소로 보낸다
+  const token = env.TMDB_TOKEN.trim()
+  const headers: Record<string, string> = { accept: 'application/json' }
+  if (/^[0-9a-f]{32}$/i.test(token)) u.searchParams.set('api_key', token)
+  else headers.authorization = `Bearer ${token}`
+  const found = await upstreamJson<Discover>(await deps.fetch(u, { headers }), 'TMDB')
 
   const body = {
     region: 'KR',

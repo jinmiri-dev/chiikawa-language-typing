@@ -48,6 +48,10 @@ export function withCors(res: Response, origin: string | null, allowed: string[]
 
 /** 외부 서비스 응답이 실패면 502 로 */
 export async function upstreamJson<T>(res: Response, what: string): Promise<T> {
-  if (!res.ok) throw new ApiError('UPSTREAM_FAILED', `${what} 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.`)
+  if (!res.ok) {
+    // 키가 틀렸는지(401) 바깥 서비스 문제인지 wrangler tail 로 볼 수 있게 남긴다
+    console.warn(`${what} upstream ${res.status}`)
+    throw new ApiError('UPSTREAM_FAILED', `${what} 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.`)
+  }
   return (await res.json()) as T
 }

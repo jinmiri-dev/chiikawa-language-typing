@@ -65,6 +65,14 @@ describe('/netflix', () => {
       attribution: 'This product uses the TMDB API but is not endorsed or certified by TMDB.',
     })
   })
+  test('짧은 API 키(32자)를 넣어도 된다: 주소의 api_key 로 보낸다', async () => {
+    const f = fakeFetch([['api.themoviedb.org', () => json(tmdb)]])
+    // 붙여 넣을 때 앞뒤 공백·줄바꿈이 섞여도 된다
+    const env = testEnv({ TMDB_TOKEN: ` 0123456789abcdef0123456789abcdef${'\n'}` })
+    const r = await handle(req('/netflix?lang=ja'), env, { fetch: f, now })
+    expect(r.status).toBe(200)
+    expect(new URL(f.calls[0]).searchParams.get('api_key')).toBe('0123456789abcdef0123456789abcdef')
+  })
   test('하루 캐시', async () => {
     const env = testEnv()
     const f = fakeFetch([['api.themoviedb.org', () => json(tmdb)]])
