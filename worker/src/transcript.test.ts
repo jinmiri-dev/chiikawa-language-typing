@@ -131,6 +131,18 @@ describe('/transcript', () => {
     const body = await (await handle(req('/transcript?lang=ja&v=vvvvvvvvvvv'), testEnv(), { fetch: f, now })).json()
     expect(body.lines.map((l: { ko: string }) => l.ko)).toEqual(['안녕하세요.', '또 봐.'])
   })
+  test('줄과 거의 안 맞는 한국어(소리를 잘못 알아들은 자막)는 버린다', async () => {
+    const many = { transcripts: Array.from({ length: 10 }, (_, i) => ({ text: `行${i}。`, start: i * 3, duration: 2.5 })) }
+    const f = fakeFetch([
+      ['lang=ko', () => json({ transcripts: [{ text: '시가', start: 0, duration: 2 }] })],
+      [tr('ja'), () => json(many)],
+      ['/youtube/v3/videos', () => embed(true)],
+      ['microsofttranslator', () => json({}, 500)],
+    ])
+    const body = await (await handle(req('/transcript?lang=ja&v=vvvvvvvvvvv'), testEnv(), { fetch: f, now })).json()
+    expect(body.koSource).toBe('none')
+    expect(body.lines.every((l: { ko?: string }) => !l.ko)).toBe(true)
+  })
   test('끝내 로마자뿐이면 404 NO_TRACK 으로 알려 준다', async () => {
     const f = fakeFetch([[tr('ja'), () => json({ available_languages: [{ name: 'Japanese', lang: 'ja' }], transcripts: [{ text: 'Bokura mata', start: 0, duration: 2.5 }] })], ['/youtube/v3/videos', () => embed(true)]])
     const r = await handle(req('/transcript?lang=ja&v=vvvvvvvvvvv'), testEnv(), { fetch: f, now })

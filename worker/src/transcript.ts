@@ -209,7 +209,7 @@ async function embeddable(env: Env, deps: Deps, v: string): Promise<boolean> {
 export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Promise<Response> {
   const v = url.searchParams.get('v') ?? ''
   if (!/^[\w-]{11}$/.test(v)) throw new ApiError('BAD_REQUEST', '영상 id(v)가 잘못됐어요.')
-  const key = `transcript:v5:${v}:${lang}`
+  const key = `transcript:v6:${v}:${lang}`
   const hit = await cachedJson<unknown>(env.KV, key)
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
   if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
@@ -228,11 +228,20 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
 
   let koSource: 'youtube' | 'auto' | 'none' = 'none'
   let out: TranscriptLine[] = lines.map((l) => ({ start: l.start, end: l.end, src: l.text }))
-  // 한국어도 원문과 같은 종류 자막을 기준으로 받아야 시간이 맞는다
-  // 직접 올린 한국어가 없으면 유튜브 자동 번역 한국어라도 받는다
-  const ko = (await fetchTrack(env, deps, v, { lang: 'ko', type: auto ? 'auto' : 'manual' })) ?? (auto ? null : await fetchTrack(env, deps, v, { lang: 'ko', type: 'auto' }))
-  if (ko) {
-    out = pairKo(lines, tidyKo(ko.cues))
+  // 한국어도 원문과 같은 종류 자막을 기준으로 받아야 시간이 맞는다. 직접 올린 한국어가 없으면 자동 번역이라도 받는다.
+  // 소리를 한국어로 잘못 알아들은 자동 자막처럼 줄과 거의 안 맞는 한국어(30% 미만)는 버린다.
+  let paired: TranscriptLine[] | null = null
+  for (const type of auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
+    const ko = await fetchTrack(env, deps, v, { lang: 'ko', type })
+    if (!ko) continue
+    const p = pairKo(lines, tidyKo(ko.cues))
+    if (p.filter((l) => l.ko).length >= p.length * 0.3) {
+      paired = p
+      break
+    }
+  }
+  if (paired) {
+    out = paired
     koSource = 'youtube'
   } else {
     const t = await translate(env, deps, lang, out.map((l) => l.src))
