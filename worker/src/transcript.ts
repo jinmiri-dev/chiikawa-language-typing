@@ -48,6 +48,55 @@ export function mergeCues(cues: Cue[], lang: Lang = 'ja'): Cue[] {
   return out
 }
 
+/** 그 언어 글자. 이 글자가 하나도 없는 줄(통째로 영어·로마자)은 연습에서 건너뛴다 */
+const SCRIPT: Record<Lang, RegExp> = {
+  ja: /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u,
+  zh: /\p{Script=Han}/u,
+  tw: /\p{Script=Han}/u,
+  mn: /\p{Script=Cyrillic}/u,
+  en: /\p{Script=Latin}/u,
+}
+const LANG_KO: Record<Lang, string> = { ja: '일본어', zh: '중국어', tw: '대만어', mn: '몽골어', en: '영어' }
+/** [Music]·[音楽]·(박수) 같은 표시 */
+const TAGS = /\[[^\]]*\]|［[^］]*］|\([^)]*\)|（[^）]*）/g
+
+/** 칠 수 없는 글자(그림 문자·음표)와 줄 앞에 떨어져 붙은 문장부호를 지운다 */
+const clean = (s: string) =>
+  s.replace(/\p{Extended_Pictographic}️?|[♪♫♬♡]/gu, ' ').replace(/\s+/g, ' ').replace(/^[\s。、，,.]+/, '').trim()
+
+/** 연습할 줄만 남긴다. 다른 언어가 섞인 줄은 그대로 친다. */
+export function practiceLines(cues: Cue[], lang: Lang): Cue[] {
+  return cues.map((c) => ({ ...c, text: clean(c.text) })).filter((c) => SCRIPT[lang].test(c.text.replace(TAGS, '')))
+}
+
+/** 자막 대부분이 그 언어 글자인가(일본어 자막이 로마자뿐인 영상 걸러내기) */
+const native = (cues: Cue[], lang: Lang) => practiceLines(cues, lang).length >= cues.length * 0.5
+
+const SENT_END = /^(.*[.?!…。？！])\s+(\S.*)$/su
+/** 끝까지 문장이면 옮기지 않는다 */
+const ENDS = /[.?!…。？！]$/
+const FRAGMENT = /^\S{1,2}$/
+/**
+ * 유튜브 번역 자막은 원문 조각 경계에서 잘려 "같아요. 여 / 보세요"처럼 낱말이 갈린다.
+ * 문장 끝 뒤에 남은 조각(과 표시 뒤에 홀로 남은 짧은 조각)은 다음 자막 앞으로 옮긴다.
+ */
+export function tidyKo(ko: Cue[]): Cue[] {
+  const out: Cue[] = []
+  let carry = ''
+  const join = (a: string, b: string) => (!a ? b : !b ? a : FRAGMENT.test(a) ? a + b : `${a} ${b}`)
+  ko.forEach((k, i) => {
+    const raw = clean(k.text.replace(TAGS, ' '))
+    const last = i === ko.length - 1
+    let text = join(carry, raw)
+    carry = ''
+    const m = SENT_END.exec(text)
+    if (!last && m && !ENDS.test(m[2])) [text, carry] = [m[1], m[2]]
+    else if (!last && raw !== k.text.trim() && FRAGMENT.test(text)) [text, carry] = ['', text]
+    if (text) out.push({ ...k, text })
+  })
+  return out
+}
+
 /** 한국어 자막을 시간이 가장 많이 겹치는 원문 줄에 붙인다 */
 export function pairKo(lines: Cue[], ko: Cue[]): TranscriptLine[] {
   const parts: string[][] = lines.map(() => [])
@@ -67,26 +116,56 @@ export function pairKo(lines: Cue[], ko: Cue[]): TranscriptLine[] {
 /** 자동 자막처럼 보이나(문장부호가 없고 조각이 짧다) */
 const looksAuto = (cues: Cue[]) => !cues.some((c) => /[。！？!?.,、，]/.test(c.text)) && cues.reduce((a, c) => a + (c.end - c.start), 0) / cues.length < 2.5
 
-/** 자막 서비스 어댑터 (SearchAPI youtube_transcripts). 응답 모양은 실제 키로 확인한 뒤 맞춘다. */
-async function fetchTrack(env: Env, deps: Deps, v: string, code: string): Promise<Cue[] | null> {
+interface Track {
+  cues: Cue[]
+  /** 이 영상에 있는 자막 이름들 (자동 자막은 이름에 "(auto-generated)") */
+  available: { name: string; lang: string }[]
+}
+type Pick = { lang: string; type: 'manual' | 'auto' } | { name: string }
+const AUTO_NAME = /auto-generated/i
+
+/** 자막 서비스 어댑터 (SearchAPI youtube_transcripts) */
+async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): Promise<Track | null> {
   const u = new URL('https://www.searchapi.io/api/v1/search')
   u.searchParams.set('engine', 'youtube_transcripts')
   u.searchParams.set('video_id', v)
-  u.searchParams.set('lang', code)
+  if ('name' in pick) u.searchParams.set('transcript_name', pick.name)
+  else {
+    u.searchParams.set('lang', pick.lang)
+    u.searchParams.set('transcript_type', pick.type)
+  }
   u.searchParams.set('api_key', env.TRANSCRIPT_API_KEY!)
   const res = await deps.fetch(u)
   if (res.status === 404 || res.status === 400) return null
   if (!res.ok) throw new ApiError('UPSTREAM_FAILED', '자막 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.')
-  const body = (await res.json()) as { transcripts?: { text: string; start: number; duration: number }[]; error?: string }
+  const body = (await res.json()) as { transcripts?: { text: string; start: number; duration: number }[]; available_languages?: Track['available']; error?: string }
   if (body.error || !body.transcripts?.length) return null
-  return body.transcripts.filter((t) => t.text?.trim()).map((t) => ({ start: t.start, end: t.start + t.duration, text: t.text.replace(/\s*\n\s*/g, ' ') }))
+  const cues = body.transcripts.filter((t) => t.text?.trim()).map((t) => ({ start: t.start, end: t.start + t.duration, text: t.text.replace(/\s*\n\s*/g, ' ') }))
+  return { cues, available: body.available_languages ?? [] }
 }
 
-async function firstTrack(env: Env, deps: Deps, v: string, codes: string[]): Promise<Cue[] | null> {
-  for (const c of codes) {
-    const cues = await fetchTrack(env, deps, v, c)
-    if (cues) return cues
+/**
+ * 원문 자막: 직접 올린 자막을 먼저 받는다. 받은 자막이 로마자처럼 그 언어 글자가 아니면
+ * 같은 언어의 다른 자막(자동 자막 등)을 이름으로 두 개까지 더 찾아본다.
+ */
+async function sourceTrack(env: Env, deps: Deps, v: string, lang: Lang): Promise<{ cues: Cue[]; auto: boolean } | null> {
+  let foreign = false
+  for (const code of TRACK[lang]) {
+    const got = await fetchTrack(env, deps, v, { lang: code, type: 'manual' })
+    if (!got) continue
+    const names = got.available.filter((a) => a.lang === code)
+    // 직접 올린 자막이 하나라도 있으면 그걸 받은 것(manual 우선)
+    const auto = names.length > 0 && names.every((a) => AUTO_NAME.test(a.name))
+    if (native(got.cues, lang)) return { cues: got.cues, auto: auto || looksAuto(got.cues) }
+    foreign = true
+    const firstManual = names.find((a) => !AUTO_NAME.test(a.name))
+    const others = names.filter((a) => a !== firstManual).sort((a, b) => Number(AUTO_NAME.test(b.name)) - Number(AUTO_NAME.test(a.name)))
+    for (const o of others.slice(0, 2)) {
+      const alt = await fetchTrack(env, deps, v, { name: o.name })
+      if (alt && native(alt.cues, lang)) return { cues: alt.cues, auto: AUTO_NAME.test(o.name) || looksAuto(alt.cues) }
+    }
   }
+  if (foreign) throw new ApiError('NO_TRACK', `이 영상의 ${LANG_KO[lang]} 자막은 로마자 같은 다른 글자뿐이에요. ${LANG_KO[lang]} 글자 자막이 있는 영상을 골라 주세요.`)
   return null
 }
 
@@ -130,7 +209,7 @@ async function embeddable(env: Env, deps: Deps, v: string): Promise<boolean> {
 export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Promise<Response> {
   const v = url.searchParams.get('v') ?? ''
   if (!/^[\w-]{11}$/.test(v)) throw new ApiError('BAD_REQUEST', '영상 id(v)가 잘못됐어요.')
-  const key = `transcript:${v}:${lang}`
+  const key = `transcript:v5:${v}:${lang}`
   const hit = await cachedJson<unknown>(env.KV, key)
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
   if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
@@ -139,16 +218,21 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now())
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 새 영상 자막은 다 받았어요. 저장한 영상과 대본은 계속 쓸 수 있어요.', quota.resetSec)
 
-  const src = await firstTrack(env, deps, v, TRACK[lang])
+  const src = await sourceTrack(env, deps, v, lang)
   if (!src) throw new ApiError('NO_TRACK', '이 영상에는 그 언어 자막이 없어요.')
-  const auto = looksAuto(src)
-  const lines = auto ? mergeCues(src, lang) : src
+  const { auto } = src
+  // [Music]·통째로 다른 언어인 조각은 빼고, 자동 자막이면 문장 단위로 합친다
+  const kept = practiceLines(src.cues, lang)
+  const lines = auto ? mergeCues(kept, lang) : kept
+  if (!lines.length) throw new ApiError('NO_TRACK', `이 영상에는 연습할 ${LANG_KO[lang]} 줄이 없어요.`)
 
   let koSource: 'youtube' | 'auto' | 'none' = 'none'
   let out: TranscriptLine[] = lines.map((l) => ({ start: l.start, end: l.end, src: l.text }))
-  const ko = await firstTrack(env, deps, v, ['ko'])
+  // 한국어도 원문과 같은 종류 자막을 기준으로 받아야 시간이 맞는다
+  // 직접 올린 한국어가 없으면 유튜브 자동 번역 한국어라도 받는다
+  const ko = (await fetchTrack(env, deps, v, { lang: 'ko', type: auto ? 'auto' : 'manual' })) ?? (auto ? null : await fetchTrack(env, deps, v, { lang: 'ko', type: 'auto' }))
   if (ko) {
-    out = pairKo(lines, ko)
+    out = pairKo(lines, tidyKo(ko.cues))
     koSource = 'youtube'
   } else {
     const t = await translate(env, deps, lang, out.map((l) => l.src))
