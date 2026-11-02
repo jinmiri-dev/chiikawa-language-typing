@@ -14,7 +14,7 @@ export const FIX: Record<'zh' | 'tw', Record<string, string[]>> = {
     休息: ['xiu1', 'xi2'], 路上: ['lu4', 'shang4'],
     星期: ['xing1', 'qi2'], 垃圾: ['le4', 'se4'], 頭髮: ['tou2', 'fa3'], 期間: ['qi2', 'jian1'], 時期: ['shi2', 'qi2'], 企業: ['qi4', 'ye4'],
   },
-  zh: { 干嘛: ['gan4', 'ma2'], 得很: ['de0', 'hen3'], 啦: ['la0'], 吗: ['ma0'] },
+  zh: { 干嘛: ['gan4', 'ma2'], 得很: ['de0', 'hen3'], 啦: ['la0'], 吗: ['ma0'], 嗯: ['en1'] },
 }
 /** 이전 이름(테스트·문서) */
 export const TW_FIX = FIX.tw

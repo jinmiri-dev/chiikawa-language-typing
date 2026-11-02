@@ -69,13 +69,15 @@
   color: var(--ink-2);
   font-weight: 400;
 }
+/* 버튼 글자는 한 줄로: 자리가 모자라면 글자를 꺾지 않고 버튼째 다음 줄로 내린다 */
 .ctl-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .ctl-row > * {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 .ctl-note {
   margin: 0;

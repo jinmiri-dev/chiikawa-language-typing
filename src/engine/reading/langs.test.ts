@@ -93,6 +93,7 @@ describe('검수에서 찾은 읽기', () => {
     expect(tw('一起去吃飯吧！')).toContain('ㄧ ㄑㄧˇ')
     expect(tw('不會吧！')).toContain('ㄅㄨˋ ㄏㄨㄟˋ')
   })
+  test('간체 嗯은 ēn(병음 입력기가 en 으로 찾는다)', () => expect(zh('嗯，我很好。')).toContain('ēn'))
   test('간체: 干嘛 gàn, 玩得很 de', () => {
     expect(zh('你现在在干嘛？')).toContain('gàn')
     expect(zh('今天玩得很开心！')).toContain('de hěn')

@@ -270,6 +270,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     const before = results.find((x) => x.lineId === line.id)
     setResults(nextResults)
     setLineDone(true)
+    // 친 글자와 소리를 잇도록 맞힌 줄을 한 번 더 들려준다
+    if (settings.listenAfter) void listen()
     persist(idx + 1, nextResults)
     // 복습: 이 줄의 일정을 다시 잡는다. 일반 연습: 틀린 줄은 복습에 넣는다.
     if (isReview)

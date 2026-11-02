@@ -2,7 +2,10 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AppProvider } from '../../app/AppState'
 import { memoryStore, type Store } from '../../services/storage'
+import { speak } from '../../services/speech'
 import Study from './Study'
+
+vi.mock('../../services/speech', async (orig) => ({ ...(await orig<typeof import('../../services/speech')>()), speak: vi.fn(async () => ({ source: 'device' as const })) }))
 
 let store: Store
 beforeEach(() => {
@@ -51,6 +54,21 @@ test('첫 줄을 맞게 치면 맞았어요, 진도 저장', async () => {
   expect(screen.getByText(/맞았어요/)).toBeTruthy()
   await act(async () => {})
   expect((await store.getProgress('ja-greet'))?.lineIndex).toBe(1)
+})
+
+test('줄을 다 치면 그 줄을 한 번 더 들려준다(설정으로 끌 수 있다)', async () => {
+  vi.mocked(speak).mockClear()
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう！元気')())
+  expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['おはよう！元気？'])
+})
+
+test('다 치고 듣기를 끄면 들려주지 않는다', async () => {
+  await store.saveSettings({ ...(await store.getSettings()), listenAfter: false })
+  vi.mocked(speak).mockClear()
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう！元気')())
+  expect(vi.mocked(speak)).not.toHaveBeenCalled()
 })
 
 test('단어를 누르면 단어장에 담기고 그 줄이 복습에 들어간다', async () => {

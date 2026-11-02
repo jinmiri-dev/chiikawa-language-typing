@@ -87,6 +87,8 @@ export interface Settings {
   show: { ko: boolean; reading: boolean; src: boolean }
   strict: boolean
   autoListen: boolean
+  /** 줄을 다 치면 그 줄을 한 번 더 듣기 */
+  listenAfter: boolean
   reduceMotion: boolean
   voice: Partial<Record<Lang, 'female' | 'male'>>
   rate: 1 | 0.75
@@ -101,6 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   show: { ko: true, reading: true, src: true },
   strict: false,
   autoListen: false,
+  listenAfter: true,
   reduceMotion: false,
   voice: {},
   rate: 1,
