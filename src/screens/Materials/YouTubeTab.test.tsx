@@ -78,3 +78,10 @@ test('탭을 열면 검색 없이 자막 확인된 추천 영상이 먼저 보�
   await act(async () => fireEvent.click(screen.getByText('Маамуу - Найзууд').closest('button')!))
   expect(yt.openVideo).toHaveBeenCalledWith(store, 'mn', '80Mp2clgjWg', expect.objectContaining({ title: 'Маамуу - Найзууд' }))
 })
+
+test('추천 영상은 종류별로 묶어 보여 준다(언어마다 그 언어 영상)', async () => {
+  render(<AppProvider store={store}><YouTubeTab lang="ja" /></AppProvider>)
+  expect(await screen.findByRole('heading', { name: '동요·동화' })).toBeTruthy()
+  for (const name of ['노래', '명언·이야기', '뉴스', '영화·방송', '일상']) expect(screen.getByRole('heading', { name })).toBeTruthy()
+  expect(screen.getByText(/やさしいことばニュース.歌舞伎/)).toBeTruthy()
+})

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { StatusNotice, Sentences } from '../../components/components'
-import { pickThumb, YOUTUBE_PICKS } from '../../content/youtubePicks'
+import { PICK_KIND_NAME, PICK_KINDS, pickThumb, YOUTUBE_PICKS } from '../../content/youtubePicks'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { SavedVideo } from '../../engine/types'
 import { ApiFailure, noticeFor, searchVideos, workerOrigin, type VideoItem } from '../../services/api'
@@ -85,8 +85,27 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
     }
   }
 
-  const picks: VideoItem[] = YOUTUBE_PICKS[lang].map((p) => ({ ...p, thumbnail: pickThumb(p.videoId), embeddable: true }))
+  const picks = YOUTUBE_PICKS[lang].map((p) => ({ ...p, thumbnail: pickThumb(p.videoId), embeddable: true }))
   const shown: VideoItem[] = view === 'saved' ? saved.map((s) => ({ ...s, embeddable: true })) : view === 'picks' ? picks : items
+  function card(v: VideoItem) {
+    const isSaved = saved.some((s) => s.videoId === v.videoId)
+    return (
+      <li key={v.videoId} className="yt-card">
+        <button type="button" className="yt-open" onClick={() => void open(v.videoId, v)} disabled={!!busy}>
+          <span className="yt-thumb">
+            <img src={v.thumbnail} alt="" loading="lazy" />
+            {v.durationSec > 0 && <span className="yt-time">{time(v.durationSec)}</span>}
+          </span>
+          <b className="yt-title">{v.title}</b>
+          <span className="yt-channel">{v.channel}</span>
+        </button>
+        <button type="button" className="yt-save" aria-pressed={isSaved} aria-label={`${v.title} ${isSaved ? '저장 취소' : '저장'}`} onClick={() => void toggleSave(v)}>
+          {isSaved ? '★ 저장됨' : '☆ 저장'}
+        </button>
+      </li>
+    )
+  }
+
   return (
     <div className="yt-tab">
       <form className="yt-search" role="search" onSubmit={submit}>
@@ -119,26 +138,17 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
       {busy && <p className="busy" aria-live="polite">{busy}</p>}
       {view === 'picks' && !busy && <p className="page-lead"><Sentences text={`${LANG_NAME[lang].ko} 자막과 한국어 뜻이 붙는 걸 확인한 영상이에요. 태그나 검색으로 더 찾을 수 있어요.`} /></p>}
       {view === 'saved' && !saved.length && <p className="page-lead"><Sentences text="마음에 드는 영상의 저장 버튼을 누르면 여기에 모여요. 저장한 영상은 검색 한도를 쓰지 않아요." /></p>}
-      <ul className="yt-grid">
-        {shown.map((v) => {
-          const isSaved = saved.some((s) => s.videoId === v.videoId)
-          return (
-            <li key={v.videoId} className="yt-card">
-              <button type="button" className="yt-open" onClick={() => void open(v.videoId, v)} disabled={!!busy}>
-                <span className="yt-thumb">
-                  <img src={v.thumbnail} alt="" loading="lazy" />
-                  {v.durationSec > 0 && <span className="yt-time">{time(v.durationSec)}</span>}
-                </span>
-                <b className="yt-title">{v.title}</b>
-                <span className="yt-channel">{v.channel}</span>
-              </button>
-              <button type="button" className="yt-save" aria-pressed={isSaved} aria-label={`${v.title} ${isSaved ? '저장 취소' : '저장'}`} onClick={() => void toggleSave(v)}>
-                {isSaved ? '★ 저장됨' : '☆ 저장'}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+      {view === 'picks' ? (
+        // 추천: 종류별로(동요·노래·명언·뉴스·영화·일상)
+        PICK_KINDS.filter((k) => picks.some((p) => p.kind === k)).map((k) => (
+          <section key={k} className="yt-pick-group" aria-label={PICK_KIND_NAME[k]}>
+            <h3>{PICK_KIND_NAME[k]}</h3>
+            <ul className="yt-grid">{picks.filter((p) => p.kind === k).map(card)}</ul>
+          </section>
+        ))
+      ) : (
+        <ul className="yt-grid">{shown.map(card)}</ul>
+      )}
     </div>
   )
 }

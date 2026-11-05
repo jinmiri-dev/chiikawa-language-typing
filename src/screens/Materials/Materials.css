@@ -347,3 +347,12 @@
   border-radius: 6px;
   margin-bottom: 4px;
 }
+
+/* 추천 영상: 종류별 묶음 */
+.yt-pick-group + .yt-pick-group {
+  margin-top: 28px;
+}
+.yt-pick-group h3 {
+  margin: 0 0 12px;
+  font-size: var(--fs-h2);
+}
