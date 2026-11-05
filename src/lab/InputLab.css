@@ -144,3 +144,12 @@
   font-weight: 700;
   color: var(--success);
 }
+
+.lab-howto {
+  margin: 0 0 12px;
+  padding: 10px 12px 10px 32px;
+  border-radius: var(--radius);
+  background: var(--soft);
+  font-size: var(--fs-sub);
+  line-height: 1.7;
+}

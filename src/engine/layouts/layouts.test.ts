@@ -34,7 +34,9 @@ test('휴대폰 배열 순서와 검증 상태', () => {
   expect(layoutsFor('ja', 'mobile').map((l) => l.id)).toEqual(['ja-flick', 'ja-tap', 'ja-mobile-romaji'])
   expect(layoutsFor('ja', 'pc').map((l) => l.id)).toEqual(['ja-pc-romaji'])
   expect(getLayout('ja-pc-romaji').verified).toBe(true)
-  for (const id of ['ja-flick', 'ja-tap', 'ja-mobile-romaji'] as const) expect(getLayout(id).verified).toBe(false)
+  for (const id of ['ja-flick', 'ja-tap', 'ja-mobile-romaji'] as const) expect(getLayout(id).verified).toBe(true)
+  // 아직 기기로 확인하지 못한 자판은 글로만 안내한다
+  expect(getLayout('tw-zhuyin-mobile').verified).toBe(false)
 })
 
 test('확신 없는 조각은 결과도 확신 없음', () =>

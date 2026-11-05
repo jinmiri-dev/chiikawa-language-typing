@@ -19,6 +19,6 @@ const rows: KeyDef[][] = [
   [fn('globe', '🌐', 3, 0), fn('mod', '゛゜小', 3, 1), kanaKey('wa', 3, 2), kanaKey('punct', 3, 3)],
 ]
 
-/** 실제 기기 검증(기획안 15장) 전이라 verified: false */
-export const jaFlick: Layout = { id: 'ja-flick', lang: 'ja', device: 'mobile', verified: false, rows }
-export const jaTap: Layout = { id: 'ja-tap', lang: 'ja', device: 'mobile', verified: false, rows }
+/** 가나 키 자리는 실제 기기(삼성 3x4 플릭, 2026-11-05 입력 시험)와 같다. 둘레 기능 키는 기기마다 조금 다르다 */
+export const jaFlick: Layout = { id: 'ja-flick', lang: 'ja', device: 'mobile', verified: true, rows }
+export const jaTap: Layout = { id: 'ja-tap', lang: 'ja', device: 'mobile', verified: true, rows }

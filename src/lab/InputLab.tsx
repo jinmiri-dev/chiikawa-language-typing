@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LANGS, LANG_NAME, type Lang } from '../engine/lang'
+import { DEFAULT_LAYOUT, getLayout } from '../engine/layouts'
+import { guideText } from '../engine/layouts/guide'
+import { loadSegmenter } from '../services/segmenter'
 import { compositionLabel, createInputLogger, summarizeLog, type LoggedEvent } from './inputLog'
 import { labSamples, LAB_TARGET } from './samples'
 import './InputLab.css'
@@ -37,6 +40,21 @@ export default function InputLab() {
   const loggerRef = useRef<Logger | null>(null)
 
   const sample = samples.find((s) => s.id === sampleId) ?? samples[0]
+
+  // 무엇을 칠지 모르면 칠 수 없다: 휴대폰 기본 자판으로 낱말마다 누를 순서를 보여 준다
+  const [howTo, setHowTo] = useState<string[]>([])
+  useEffect(() => {
+    let alive = true
+    setHowTo([])
+    void loadSegmenter(lang).then((segment) => {
+      if (!alive) return
+      const layout = getLayout(DEFAULT_LAYOUT[lang].mobile)
+      setHowTo(segment(sample.text).filter((g) => g.isWord && g.confident).map((g) => guideText(layout, g)))
+    }, () => {})
+    return () => {
+      alive = false
+    }
+  }, [lang, sample.text])
 
   useEffect(() => {
     const el = inputRef.current
@@ -107,6 +125,13 @@ export default function InputLab() {
       <p ref={targetRef} className="lab-target" lang={LANG_NAME[lang].htmlLang}>
         {sample.text}
       </p>
+      {howTo.length > 0 && (
+        <ol className="lab-howto" aria-label="이렇게 쳐요" lang={LANG_NAME[lang].htmlLang}>
+          {howTo.map((h, i) => (
+            <li key={i}>{h}</li>
+          ))}
+        </ol>
+      )}
 
       <label className="lab-field">
         여기에 쳐 보세요

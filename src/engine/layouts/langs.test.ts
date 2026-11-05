@@ -33,9 +33,9 @@ describe('중국어 병음', () => {
     expect(guideText(getLayout('zh-pinyin-9key'), nihao)).toBe('你好 → nǐ hǎo → 6 4 4 2 6 → 후보에서 你好 선택')
   })
   test('문장부호', () => expect(ids(pc, seg('？'))).toBe('shift slash'))
-  test('PC 는 검증, 휴대폰은 준비 중', () => {
+  test('PC·휴대폰 쿼티는 확인됨, 9키는 아직(글로만 안내)', () => {
     expect(pc.verified).toBe(true)
-    expect(layoutsFor('zh', 'mobile').map((l) => [l.id, l.verified])).toEqual([['zh-pinyin-mobile', false], ['zh-pinyin-9key', false]])
+    expect(layoutsFor('zh', 'mobile').map((l) => [l.id, l.verified])).toEqual([['zh-pinyin-mobile', true], ['zh-pinyin-9key', false]])
   })
 })
 
@@ -75,9 +75,9 @@ describe('몽골어 키릴', () => {
     expect(ids(pc, seg(',', ',', { isWord: false }))).toBe('shift 8')
   })
   test('한 줄 안내: 글자와 같은 자리의 영문 키', () => expect(guideText(pc, seg('сайн', 'сайн', { romaji: 'sain' }))).toBe('сайн (sain) → с(V) а(G) й(A) н(Y)'))
-  test('PC 는 Windows 표준 배열로 확인됨, 휴대폰은 기기 확인 전', () => {
+  test('PC 는 Windows 표준 배열, 휴대폰은 삼성 키보드로 확인됨', () => {
     expect(pc.verified).toBe(true)
-    expect(layoutsFor('mn', 'mobile').every((l) => !l.verified)).toBe(true)
+    expect(layoutsFor('mn', 'mobile').every((l) => l.verified)).toBe(true)
     expect(layoutsFor('mn', 'mobile').map((l) => l.id)).toEqual(['mn-cyrillic-mobile'])
   })
 })

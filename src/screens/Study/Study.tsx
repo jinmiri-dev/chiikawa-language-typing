@@ -560,7 +560,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       {(material.kind === 'script' ? '대본 정리 화면에서 읽기를 고치면 키 안내가 나와요. ' : '') + '타자와 채점은 그대로 돼요.'}
     </StatusNotice>
   ) : !layout.verified ? (
-    <StatusNotice title="이 키보드는 안내를 준비하고 있어요">타자와 채점은 그대로 돼요. 입력 시험 결과를 받으면 키 안내를 열어요.</StatusNotice>
+    // 키 자리를 아직 확인하지 못한 자판: 그림 대신 무엇을 칠지(읽기·입력 순서)를 글로 알려 준다
+    <div className="guide">
+      <p className="guide-line" lang={htmlLang}>
+        {guideText(layout, seg)}
+      </p>
+      <p className="guide-note">자판 그림은 기기마다 달라 아직 준비 중이에요. 위 순서대로 쳐 보세요.</p>
+    </div>
   ) : (
     <div className="guide">
       {level !== 'off' ? (

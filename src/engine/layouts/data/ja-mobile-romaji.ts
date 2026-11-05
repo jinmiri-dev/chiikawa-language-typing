@@ -8,7 +8,7 @@ export const jaMobileRomaji: Layout = {
   id: 'ja-mobile-romaji',
   lang: 'ja',
   device: 'mobile',
-  verified: false,
+  verified: true,
   rows: [
     letters(0, 'qwertyuiop'),
     letters(1, 'asdfghjkl'),

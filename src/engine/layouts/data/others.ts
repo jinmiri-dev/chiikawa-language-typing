@@ -1,4 +1,8 @@
-/** 영어·중국어·대만어·몽골어 배열 데이터 (기획안 6·11.4장). 휴대폰 배열은 기기 확인 전이라 verified: false. */
+/**
+ * 영어·중국어·대만어·몽골어 배열 데이터 (기획안 6·11.4장).
+ * 휴대폰 쿼티(영어·병음)와 몽골어 키릴은 실제 기기(삼성 키보드, 2026-11-05 입력 시험)로 확인했다.
+ * 병음 9키와 대만 주음 휴대폰 자판은 아직이라 verified: false(글로 읽기만 안내).
+ */
 import type { KeyDef, Layout } from '../types'
 import { jaMobileRomaji } from './ja-mobile-romaji'
 import { pcRows } from './ja-pc-romaji'
@@ -8,12 +12,12 @@ const mobileQwerty = (labels: Record<string, string> = {}): KeyDef[][] =>
   jaMobileRomaji.rows.map((r) => r.map((k) => (labels[k.id] ? { ...k, label: labels[k.id] } : k)))
 
 export const enQwerty: Layout = { id: 'en-qwerty', lang: 'en', device: 'pc', verified: true, rows: pcRows() }
-export const enQwertyMobile: Layout = { id: 'en-qwerty-mobile', lang: 'en', device: 'mobile', verified: false, rows: mobileQwerty() }
+export const enQwertyMobile: Layout = { id: 'en-qwerty-mobile', lang: 'en', device: 'mobile', verified: true, rows: mobileQwerty() }
 
 export const zhPinyin: Layout = { id: 'zh-pinyin', lang: 'zh', device: 'pc', verified: true, rows: pcRows() }
-export const zhPinyinMobile: Layout = { id: 'zh-pinyin-mobile', lang: 'zh', device: 'mobile', verified: false, rows: mobileQwerty() }
+export const zhPinyinMobile: Layout = { id: 'zh-pinyin-mobile', lang: 'zh', device: 'mobile', verified: true, rows: mobileQwerty() }
 export const twPinyin: Layout = { id: 'tw-pinyin', lang: 'tw', device: 'pc', verified: true, rows: pcRows() }
-export const twPinyinMobile: Layout = { id: 'tw-pinyin-mobile', lang: 'tw', device: 'mobile', verified: false, rows: mobileQwerty() }
+export const twPinyinMobile: Layout = { id: 'tw-pinyin-mobile', lang: 'tw', device: 'mobile', verified: true, rows: mobileQwerty() }
 
 /** 병음 9키: 숫자 키에 글자가 묶여 있다 */
 export const NINE_KEY: Record<string, string> = Object.fromEntries(
@@ -73,7 +77,7 @@ export const mnCyrillicMobile: Layout = {
   id: 'mn-cyrillic-mobile',
   lang: 'mn',
   device: 'mobile',
-  verified: false,
+  verified: true,
   rows: [
     ...pcRows(MN_KEYS)
       .slice(0, 4)
