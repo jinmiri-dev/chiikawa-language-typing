@@ -89,6 +89,10 @@ export interface Settings {
   autoListen: boolean
   /** 줄을 다 치면 그 줄을 한 번 더 듣기 */
   listenAfter: boolean
+  /** 단어를 다 칠 때마다 그 단어 읽기 */
+  speakWords: boolean
+  /** 줄을 다 치고 듣기가 끝나면 다음 줄로 */
+  autoNext: boolean
   reduceMotion: boolean
   voice: Partial<Record<Lang, 'female' | 'male'>>
   rate: 1 | 0.75
@@ -104,6 +108,8 @@ export const DEFAULT_SETTINGS: Settings = {
   strict: false,
   autoListen: false,
   listenAfter: true,
+  speakWords: true,
+  autoNext: true,
   reduceMotion: false,
   voice: {},
   rate: 1,

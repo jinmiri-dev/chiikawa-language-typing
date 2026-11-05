@@ -37,7 +37,7 @@ test('처음 방문 → 일본어 → 인사와 대답 10줄 → 완료 → 시�
       fireEvent.change(input, { target: { value: line.src } })
       fireEvent.compositionEnd(input, { data: line.src })
     })
-    const next = await screen.findByRole('button', { name: /다음 줄|결과 보기/ })
+    const next = await screen.findByRole('button', { name: /(다음 줄|결과 보기) Enter$/ })
     await act(async () => fireEvent.click(next))
   }
 

@@ -18,7 +18,7 @@ import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '..
 import { getMaterial } from '../../services/materials'
 import YouTubePlayer, { type PlayerHandle } from '../../components/YouTubePlayer'
 import { workerOrigin } from '../../services/api'
-import { speak } from '../../services/speech'
+import { speak, stopSpeaking } from '../../services/speech'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
 import WordDrawer from './WordDrawer'
@@ -105,6 +105,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [committed, setCommitted] = useState('')
   const [composing, setComposing] = useState('')
   const [lineDone, setLineDone] = useState(false)
+  /** 이 줄에서 이미 읽어 준 마지막 단어 조각 */
+  const spokenSeg = useRef(-1)
+  /** 자동으로 넘어갈 때 그 사이 다른 줄로 옮겼는지 보려고 */
+  const idxRef = useRef(idx)
+  idxRef.current = idx
   const [hintMem, setHintMem] = useState<HintMemory>({})
   const [lastInputAt, setLastInputAt] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
@@ -171,11 +176,12 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     }
   }, [])
 
+  /** 이 줄 듣기. 다 들으면 풀린다(자동으로 다음 줄로 넘어갈 때 기다린다). */
   const listen = useCallback(async () => {
     // 유튜브 재료는 영상의 그 줄 구간을 들려준다
     if (material.youtubeId && line.start !== undefined && player.current) {
-      player.current.playSegment(line.start, line.end ?? line.start + 5, settings.rate)
       setVoiceNote('')
+      await player.current.playSegment(line.start, line.end ?? line.start + 5, settings.rate)
       return
     }
     const r = await speak(line.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
@@ -195,6 +201,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setComposing('')
     setLineDone(false)
     oopsSaid.current = false
+    spokenSeg.current = -1
+    stopSpeaking()
     // 줄 시작 때 자동으로 듣기: 설정, 또는 유튜브 재료는 기본으로(기획안 10장)
     if (settings.autoListen || material.kind === 'youtube') void listen()
     inputRef.current?.focus({ preventScroll: true })
@@ -213,6 +221,20 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
   const guide = seg && seg.confident && layout.verified ? guideFor(layout, seg, segComposing) : null
   const nextStep = guide?.steps[guide.nextIndex]
+
+  // 단어를 다 칠 때마다 그 단어를 읽어 준다(타자 게임처럼). 줄을 다 치면 줄 전체를 들려주니 그때는 읽지 않는다.
+  useEffect(() => {
+    if (!settings.speakWords || res.done) return
+    let last = spokenSeg.current
+    line.segments.forEach((s, i) => {
+      if (s.isWord && starts[i] + s.text.length <= res.okUpTo) last = Math.max(last, i)
+    })
+    if (last <= spokenSeg.current) return
+    const words = line.segments.slice(spokenSeg.current + 1, last + 1).filter((s) => s.isWord).map((s) => s.text)
+    spokenSeg.current = last
+    void speak(words.join(material.lang === 'en' || material.lang === 'mn' ? ' ' : ''), { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [res.okUpTo, res.done, idx])
   const idle = now - lastInputAt >= 2000
   const fading = seg ? (hintMem[seg.reading ?? seg.text]?.level ?? 'full') : 'full'
   const level: HintLevel = !settings.hintFading ? settings.hintMode : idle || mistake ? 'full' : fading
@@ -270,8 +292,14 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     const before = results.find((x) => x.lineId === line.id)
     setResults(nextResults)
     setLineDone(true)
-    // 친 글자와 소리를 잇도록 맞힌 줄을 한 번 더 들려준다
-    if (settings.listenAfter) void listen()
+    // 친 글자와 소리를 잇도록 맞힌 줄을 한 번 더 들려주고, 다 들으면 다음 줄로(그 사이 Enter 를 누르면 바로)
+    const doneAt = idx
+    void (async () => {
+      if (settings.listenAfter) await listen()
+      if (!settings.autoNext) return
+      await new Promise((r) => setTimeout(r, settings.listenAfter ? 600 : 900))
+      if (idxRef.current === doneAt) goTo(doneAt + 1)
+    })()
     persist(idx + 1, nextResults)
     // 복습: 이 줄의 일정을 다시 잡는다. 일반 연습: 틀린 줄은 복습에 넣는다.
     if (isReview)
@@ -532,7 +560,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           ← 이전 줄
         </button>
         <button type="button" className="btn btn-sub" onClick={() => goTo(idx + 1)}>
-          건너뛰기 →
+          다음 줄 →
         </button>
       </div>
       <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
@@ -613,10 +641,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
               ▶ 듣기
             </button>
             <button type="button" className="btn btn-sub" disabled={idx === 0} onClick={() => goTo(idx - 1)}>
-              이전 줄
+              ← 이전
             </button>
             <button type="button" className="btn btn-sub" onClick={() => goTo(idx + 1)}>
-              건너뛰기
+              다음 →
             </button>
             <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
               {lineSaved ? '✓ 담음' : '줄 담기'}

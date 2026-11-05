@@ -55,7 +55,7 @@ test('대본 붙여넣기 → 확인 → 연습 2줄 → 단어 담기 → CSV �
       fireEvent.change(input, { target: { value: src } })
       fireEvent.compositionEnd(input, { data: src })
     })
-    await act(async () => fireEvent.click(await screen.findByRole('button', { name: /다음 줄|결과 보기/ })))
+    await act(async () => fireEvent.click(await screen.findByRole('button', { name: /(다음 줄|결과 보기) Enter$/ })))
   }
   expect(location.hash).toMatch(/^#\/done\/ja-s/)
 

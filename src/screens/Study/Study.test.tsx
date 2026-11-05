@@ -63,6 +63,30 @@ test('줄을 다 치면 그 줄을 한 번 더 들려준다(설정으로 끌 수
   expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['おはよう！元気？'])
 })
 
+test('단어를 다 칠 때마다 그 단어를 읽어 준다', async () => {
+  vi.mocked(speak).mockClear()
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう')())
+  expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['おはよう！'])
+  // 같은 단어를 지웠다 다시 쳐도 또 읽지 않는다
+  await act(async () => compose(input, 'おはよう', 'おはよう')())
+  expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
+})
+
+test('줄을 다 치고 듣기가 끝나면 다음 줄로 넘어간다', async () => {
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう！元気')())
+  expect(await screen.findByText(/^2 \/ \d+줄$/, undefined, { timeout: 2000 })).toBeTruthy()
+})
+
+test('자동으로 넘어가기를 끄면 그 줄에 머문다', async () => {
+  await store.saveSettings({ ...(await store.getSettings()), autoNext: false })
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう！元気')())
+  await act(async () => new Promise((r) => setTimeout(r, 1200)))
+  expect(screen.getByText(/^1 \/ \d+줄$/)).toBeTruthy()
+})
+
 test('다 치고 듣기를 끄면 들려주지 않는다', async () => {
   await store.saveSettings({ ...(await store.getSettings()), listenAfter: false })
   vi.mocked(speak).mockClear()

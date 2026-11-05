@@ -46,13 +46,16 @@ function playWorker(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.
   })
 }
 
+/** 중계 목소리가 한 번 안 되면(키 없음 등) 이번 방문 동안은 기기 목소리만 쓴다. 단어마다 읽을 때 기다리지 않게. */
+let workerDown = false
+
 export async function speak(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'worker' | 'device' | 'none' }> {
-  if (workerOrigin()) {
+  if (workerOrigin() && !workerDown) {
     try {
       await playWorker(text, opts)
       return { source: 'worker' }
     } catch {
-      /* 기기 목소리로 */
+      workerDown = true
     }
   }
   return speakDevice(text, opts)

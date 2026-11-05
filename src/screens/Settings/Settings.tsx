@@ -69,7 +69,9 @@ export default function Settings() {
         <section aria-label="듣기">
           <h2>듣기</h2>
           <Toggle label="줄 시작할 때 자동으로 듣기" on={s.autoListen} onChange={(autoListen) => set({ autoListen })} />
+          <Toggle label="단어마다 읽어 주기" sub="단어를 다 칠 때마다 그 단어를 읽어 줘요." on={s.speakWords} onChange={(speakWords) => set({ speakWords })} />
           <Toggle label="다 치면 한 번 더 듣기" sub="맞힌 줄을 다시 들으며 글자와 소리를 이어요." on={s.listenAfter} onChange={(listenAfter) => set({ listenAfter })} />
+          <Toggle label="다 들으면 다음 줄로" sub="Enter를 누르면 기다리지 않고 바로 넘어가요." on={s.autoNext} onChange={(autoNext) => set({ autoNext })} />
           <Choice
             label="목소리 (모든 언어)"
             value={s.voice.ja ?? 'female'}
