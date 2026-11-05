@@ -56,12 +56,20 @@ export default function LearnSheet({ native }: { native: Lang }) {
       <main className="learn-sheet-main">
         <div className="learn-sheet-tools no-print">
           <h1>{t.savedTitle}</h1>
-          <button type="button" className="btn btn-primary" disabled={!list?.length} onClick={() => window.print()}>
-            {t.print}
-          </button>
+          {/* 저장한 문장이 없으면 인쇄 버튼 대신 영상으로 가는 길만 */}
+          {!!list?.length && (
+            <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+              {t.print}
+            </button>
+          )}
         </div>
         {list && !list.length ? (
-          <p className="page-lead">{t.savedEmpty}</p>
+          <>
+            <p className="page-lead">{t.savedEmpty}</p>
+            <a className="btn btn-sub learn-back" href={href({ name: 'learn-list', native })}>
+              ← {t.title}
+            </a>
+          </>
         ) : (
           <article className="ws">
             <header className="ws-head">

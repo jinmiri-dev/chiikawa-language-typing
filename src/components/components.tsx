@@ -51,13 +51,17 @@ export function AppHeader({ back, title, right }: { back?: string; title?: React
 }
 
 const FRIEND_ORDER = Object.keys(FRIEND_INFO)
+/** 한 번 못 받은 그림 주소. 다시 요청하지 않는다(그림을 아직 올리지 않은 배포에서 404 가 쌓이지 않게) */
+const missing = new Set<string>()
 
 /**
  * 포즈 그림. 그림 파일이 없으면(사용권 확인 전 배포) 이름 배지로 대신한다.
  * 늘 천천히 숨 쉬고, 말하거나(cue 가 바뀜) 자세가 바뀌면 한 번 통 튄다. 처음 그릴 때는 튀지 않는다.
  */
 export function FriendImage({ friend, stage = 0, size = 120, cue = 0 }: { friend: FriendId; stage?: number; size?: number; cue?: number }) {
-  const [broken, setBroken] = useState(false)
+  const src = `${BASE}friends/${friend}-${String(stage).padStart(2, '0')}.webp`
+  const [, setFailed] = useState(0)
+  const broken = missing.has(src)
   const moveKey = `${stage}:${cue}`
   const [firstKey] = useState(moveKey)
   const name = FRIEND_INFO[friend].name
@@ -75,11 +79,14 @@ export function FriendImage({ friend, stage = 0, size = 120, cue = 0 }: { friend
         ) : (
           <img
             className="friend-img"
-            src={`${BASE}friends/${friend}-${String(stage).padStart(2, '0')}.webp`}
+            src={src}
             alt={alt}
             width={size}
             height={size}
-            onError={() => setBroken(true)}
+            onError={() => {
+              missing.add(src)
+              setFailed((n) => n + 1)
+            }}
           />
         )}
       </span>

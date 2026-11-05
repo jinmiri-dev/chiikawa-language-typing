@@ -531,3 +531,8 @@
     print-color-adjust: exact;
   }
 }
+.learn-back {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+}
