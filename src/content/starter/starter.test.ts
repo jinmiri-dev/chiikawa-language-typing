@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { DEFAULT_LAYOUT, getLayout, keySteps } from '../../engine/layouts'
 import data from './ja.json'
 import { starterMaterial, starterSets } from './index'
 
@@ -75,4 +76,19 @@ describe('다른 언어 기본 연습', () => {
     expect(mn.map((l) => l.src).join('')).toMatch(/[өү]/)
     for (const l of mn) for (const g of l.segments) if (g.isWord) expect(g.romaji).toBeTruthy()
   })
+})
+
+describe('다섯 언어 기본 연습 키 안내', () => {
+  for (const lang of ['ja', 'en', 'zh', 'tw', 'mn'] as const) {
+    test(`${lang}: 기본 PC 키보드는 확인된 배열이고, 모든 줄의 낱말에 키 안내가 있다`, () => {
+      const layout = getLayout(DEFAULT_LAYOUT[lang].pc)
+      expect(layout.verified, layout.id).toBe(true)
+      for (const set of starterSets(lang))
+        for (const line of starterMaterial(set.id)!.lines)
+          for (const seg of line.segments.filter((g) => g.isWord)) {
+            const r = keySteps(layout, seg)
+            expect(r.confident && r.steps.length > 0, `${line.id} ${seg.text}`).toBe(true)
+          }
+    })
+  }
 })

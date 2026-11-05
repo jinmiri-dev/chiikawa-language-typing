@@ -123,7 +123,7 @@ describe.each([
   ['tw-greet', 'zh-TW', 'ㄗㄠˇ', '早安 → ㄗㄠˇ ㄢ → Y L 3 0 Space → Enter로 확정'],
   ['zh-greet', 'zh-CN', 'zǎo shàng', '早上 → zǎo shàng → Z A O S H A N G → Space로 후보 선택'],
   ['en-greet', 'en', undefined, 'Morning → Shift+M O R N I N G'],
-  ['mn-greet', 'mn', 'Öglöönii', '안내를 준비하고'],
+  ['mn-greet', 'mn', 'Öglöönii', 'Өглөөний (Öglöönii) → Ө(Shift+F) г(U)'],
 ])('%s 학습 화면', (id, htmlLang, ruby, guide) => {
   test('그 언어로 보이고 안내도 그 언어', async () => {
     render(<AppProvider store={store}><Study materialId={id} /></AppProvider>)

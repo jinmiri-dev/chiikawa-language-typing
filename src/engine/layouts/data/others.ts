@@ -1,4 +1,4 @@
-/** 영어·중국어·대만어·몽골어 배열 데이터 (기획안 6·11.4장). 휴대폰 배열과 몽골어는 기기 확인 전이라 verified: false. */
+/** 영어·중국어·대만어·몽골어 배열 데이터 (기획안 6·11.4장). 휴대폰 배열은 기기 확인 전이라 verified: false. */
 import type { KeyDef, Layout } from '../types'
 import { jaMobileRomaji } from './ja-mobile-romaji'
 import { pcRows } from './ja-pc-romaji'
@@ -67,7 +67,8 @@ export const MN_KEYS: Record<string, string> = {
   z: 'я', x: 'ч', c: 'ё', v: 'с', b: 'м', n: 'и', m: 'т', comma: 'ь', period: 'в', slash: 'ю',
   minus: 'е', equal: 'щ',
 }
-export const mnCyrillic: Layout = { id: 'mn-cyrillic', lang: 'mn', device: 'pc', verified: false, rows: pcRows(MN_KEYS) }
+// Windows 몽골어(키릴) 배열(kbdmon)과 글자 키를 맞춰 확인함(2026-11-05)
+export const mnCyrillic: Layout = { id: 'mn-cyrillic', lang: 'mn', device: 'pc', verified: true, rows: pcRows(MN_KEYS) }
 export const mnCyrillicMobile: Layout = {
   id: 'mn-cyrillic-mobile',
   lang: 'mn',

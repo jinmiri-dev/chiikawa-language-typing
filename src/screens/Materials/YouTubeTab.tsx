@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { StatusNotice, Sentences } from '../../components/components'
+import { pickThumb, YOUTUBE_PICKS } from '../../content/youtubePicks'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { SavedVideo } from '../../engine/types'
 import { ApiFailure, noticeFor, searchVideos, workerOrigin, type VideoItem } from '../../services/api'
@@ -29,7 +30,8 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<VideoItem[]>([])
   const [saved, setSaved] = useState<SavedVideo[]>([])
-  const [view, setView] = useState<'results' | 'saved'>('results')
+  // 처음에는 자막을 확인해 둔 추천 영상(검색 한도를 쓰지 않는다)
+  const [view, setView] = useState<'picks' | 'results' | 'saved'>('picks')
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState(() => (workerOrigin() ? null : noticeFor(new ApiFailure('NOT_CONNECTED', ''), lang)))
   useEffect(() => {
@@ -83,7 +85,8 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
     }
   }
 
-  const shown: VideoItem[] = view === 'saved' ? saved.map((s) => ({ ...s, embeddable: true })) : items
+  const picks: VideoItem[] = YOUTUBE_PICKS[lang].map((p) => ({ ...p, thumbnail: pickThumb(p.videoId), embeddable: true }))
+  const shown: VideoItem[] = view === 'saved' ? saved.map((s) => ({ ...s, embeddable: true })) : view === 'picks' ? picks : items
   return (
     <div className="yt-tab">
       <form className="yt-search" role="search" onSubmit={submit}>
@@ -100,6 +103,9 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
         </button>
       </form>
       <div className="yt-tags" role="group" aria-label="태그">
+        <button type="button" className="chip-btn" aria-pressed={view === 'picks'} onClick={() => setView('picks')}>
+          추천
+        </button>
         <button type="button" className="chip-btn" aria-pressed={view === 'saved'} onClick={() => setView('saved')}>
           저장한 영상 {saved.length}
         </button>
@@ -111,6 +117,7 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
       </div>
       {notice && <StatusNotice title={notice.title} tone="warn">{notice.body}</StatusNotice>}
       {busy && <p className="busy" aria-live="polite">{busy}</p>}
+      {view === 'picks' && !busy && <p className="page-lead"><Sentences text={`${LANG_NAME[lang].ko} 자막과 한국어 뜻이 붙는 걸 확인한 영상이에요. 태그나 검색으로 더 찾을 수 있어요.`} /></p>}
       {view === 'saved' && !saved.length && <p className="page-lead"><Sentences text="마음에 드는 영상의 저장 버튼을 누르면 여기에 모여요. 저장한 영상은 검색 한도를 쓰지 않아요." /></p>}
       <ul className="yt-grid">
         {shown.map((v) => {

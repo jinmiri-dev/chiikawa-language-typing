@@ -69,3 +69,12 @@ test('중계 서버가 없으면 처음부터 알린다', async () => {
   await open()
   expect(screen.getByText('유튜브 연결은 아직 준비 중이에요')).toBeTruthy()
 })
+
+test('탭을 열면 검색 없이 자막 확인된 추천 영상이 먼저 보인다', async () => {
+  render(<AppProvider store={store}><YouTubeTab lang="mn" /></AppProvider>)
+  expect(await screen.findByText('Маамуу - Найзууд')).toBeTruthy()
+  expect(screen.getByRole('button', { name: '추천' }).getAttribute('aria-pressed')).toBe('true')
+  expect(api.searchVideos).not.toHaveBeenCalled()
+  await act(async () => fireEvent.click(screen.getByText('Маамуу - Найзууд').closest('button')!))
+  expect(yt.openVideo).toHaveBeenCalledWith(store, 'mn', '80Mp2clgjWg', expect.objectContaining({ title: 'Маамуу - Найзууд' }))
+})

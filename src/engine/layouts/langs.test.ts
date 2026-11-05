@@ -70,8 +70,9 @@ describe('몽골어 키릴', () => {
   })
   test('대문자는 Shift', () => expect(ids(pc, seg('Сайн'))).toBe('shift v g a y'))
   test('한 줄 안내: 글자와 같은 자리의 영문 키', () => expect(guideText(pc, seg('сайн', 'сайн', { romaji: 'sain' }))).toBe('сайн (sain) → с(V) а(G) й(A) н(Y)'))
-  test('기기 확인 전', () => {
-    expect(pc.verified).toBe(false)
+  test('PC 는 Windows 표준 배열로 확인됨, 휴대폰은 기기 확인 전', () => {
+    expect(pc.verified).toBe(true)
+    expect(layoutsFor('mn', 'mobile').every((l) => !l.verified)).toBe(true)
     expect(layoutsFor('mn', 'mobile').map((l) => l.id)).toEqual(['mn-cyrillic-mobile'])
   })
 })
