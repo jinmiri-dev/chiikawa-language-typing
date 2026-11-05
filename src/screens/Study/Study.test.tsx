@@ -149,3 +149,15 @@ test('유튜브 재료는 연습 화면에서 영상을 저장할 수 있고, �
   expect(screen.getByRole('button', { name: '영상 저장 취소' })).toBeTruthy()
   expect(screen.getByRole('link', { name: '뒤로' }).getAttribute('href')).toContain('tab=youtube')
 })
+
+test('0.75배는 누르면 켜지고 다시 누르면 보통 빠르기로 돌아온다(누를 때마다 그 빠르기로 다시 들려준다)', async () => {
+  await open()
+  vi.mocked(speak).mockClear()
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '0.75배' })))
+  expect((await store.getSettings()).rate).toBe(0.75)
+  expect(screen.getByRole('button', { name: '✓ 0.75배 켜짐' }).getAttribute('aria-pressed')).toBe('true')
+  expect(vi.mocked(speak).mock.calls.at(-1)?.[1]).toMatchObject({ rate: 0.75 })
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '✓ 0.75배 켜짐' })))
+  expect((await store.getSettings()).rate).toBe(1)
+  expect(vi.mocked(speak).mock.calls.at(-1)?.[1]).toMatchObject({ rate: 1 })
+})

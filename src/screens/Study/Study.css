@@ -29,7 +29,7 @@
   margin: 0 auto;
   padding: 32px var(--gutter);
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 240px;
+  grid-template-columns: 220px minmax(0, 1fr);
   gap: 40px;
   align-items: center;
 }
@@ -53,10 +53,37 @@
   flex-direction: column;
   gap: 16px;
 }
-.study-controls {
+/* 조작 한 줄: 입력칸 바로 아래(듣기 · 줄 옮기기·담기 · 키보드) */
+.study-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.tb-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tb-group .btn {
+  white-space: nowrap;
+}
+.tb-toggle[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.tb-keyboard {
+  margin-left: auto;
+}
+.tb-note {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.study-toolbar .ctl-note {
+  flex-basis: 100%;
 }
 .ctl-group {
   display: flex;
@@ -281,13 +308,6 @@ select.btn {
   .study-friend .friend-badge {
     width: 96px !important;
     height: 96px !important;
-  }
-  .study-controls {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .study-controls .ctl-group {
-    flex: 1 1 200px;
   }
 }
 

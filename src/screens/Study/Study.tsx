@@ -20,6 +20,7 @@ import { getMaterial } from '../../services/materials'
 import YouTubePlayer, { type PlayerHandle } from '../../components/YouTubePlayer'
 import { workerOrigin } from '../../services/api'
 import { speak, stopSpeaking } from '../../services/speech'
+import { syncStep } from '../../services/youtubeSync'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
 import WordDrawer from './WordDrawer'
@@ -198,6 +199,27 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           : '',
     )
   }, [line, material, settings.voice, settings.rate])
+
+  // 유튜브 재료: 영상이 지금 줄 끝을 지나면 멈추고, 진행 막대를 끌어 다른 줄로 가면 그 줄로(함께 가기)
+  const lastVideoT = useRef(0)
+  const onVideoTime = (t: number) => {
+    const prevT = lastVideoT.current
+    lastVideoT.current = t
+    const step = syncStep(material.lines, idxRef.current, prevT, t)
+    if (step.pause) player.current?.pause()
+    if (step.goTo !== undefined) setIdx(step.goTo)
+  }
+
+  // 0.75배를 누르면 그 빠르기로 바로 다시 들려준다(눌렀는데 아무 일 없지 않게)
+  const firstRate = useRef(true)
+  useEffect(() => {
+    if (firstRate.current) {
+      firstRate.current = false
+      return
+    }
+    void listen()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.rate])
 
   // 줄이 바뀌면 입력을 비우고, 설정이 켜져 있으면 듣기
   useEffect(() => {
@@ -554,55 +576,41 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     </div>
   )
 
-  const listenGroup = (
-    <div className="ctl-group" role="group" aria-label="듣기">
-      <h2>듣기</h2>
-      <button type="button" className="btn btn-sub" onClick={() => void listen()}>
-        ▶ 다시 듣기
-      </button>
-      <div className="ctl-row">
-        <button type="button" className="btn btn-sub" aria-pressed={settings.rate === 0.75} onClick={() => setSettings({ rate: settings.rate === 1 ? 0.75 : 1 })}>
-          0.75배
+  // 조작은 한곳에: 입력칸 바로 아래 한 줄(PC). 키보드가 하나뿐이면 바꾸기 버튼은 두지 않는다
+  const canChangeKeyboard = layoutsFor(lang, device).length > 1
+  const toolbar = (
+    <div className="study-toolbar" role="group" aria-label="조작">
+      <div className="tb-group">
+        <button type="button" className="btn btn-sub" onClick={() => void listen()}>
+          ▶ 다시 듣기 <span className="key-hint">Ctrl+Space</span>
         </button>
-        <select
-          className="btn btn-sub"
-          aria-label="목소리"
-          value={settings.voice[lang] ?? 'female'}
-          onChange={(e) => setSettings({ voice: { ...settings.voice, [lang]: e.target.value as 'female' | 'male' } })}
-        >
-          <option value="female">여자 목소리</option>
-          <option value="male">남자 목소리</option>
-        </select>
+        {/* 누르면 0.75배, 다시 누르면 보통 빠르기. 지금 상태를 글로도 보여 준다 */}
+        <button type="button" className="btn btn-sub tb-toggle" aria-pressed={settings.rate === 0.75} onClick={() => setSettings({ rate: settings.rate === 1 ? 0.75 : 1 })}>
+          {settings.rate === 0.75 ? '✓ 0.75배 켜짐' : '0.75배'}
+        </button>
       </div>
-      {voiceNote && <p className="ctl-note"><Sentences text={voiceNote} /></p>}
-    </div>
-  )
-
-  const lineGroup = (
-    <div className="ctl-group" role="group" aria-label="이 줄">
-      <h2>이 줄</h2>
-      <div className="ctl-row">
+      <div className="tb-group">
         <button type="button" className="btn btn-sub" disabled={idx === 0} onClick={() => goTo(idx - 1)}>
           ← 이전 줄
         </button>
         <button type="button" className="btn btn-sub" onClick={() => goTo(idx + 1)}>
           다음 줄 →
         </button>
+        <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
+          {lineSaved ? '✓ 담은 줄' : '이 줄 담기'}
+        </button>
       </div>
-      <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
-        {lineSaved ? '✓ 담은 줄' : '이 줄 담기'}
-      </button>
-      <p className="ctl-note">단어를 누르면 단어장에 담겨요.</p>
-    </div>
-  )
-
-  const keyboardGroup = (
-    <div className="ctl-group" role="group" aria-label="키보드">
-      <h2>키보드</h2>
-      <button type="button" className="btn btn-sub" onClick={() => setSheetOpen(true)}>
-        {LAYOUT_LABEL[layoutId].name} 바꾸기
-      </button>
-      <p className="ctl-note">안내 단계: {LEVEL_NAME[level]}</p>
+      <div className="tb-group tb-keyboard">
+        {canChangeKeyboard ? (
+          <button type="button" className="btn btn-sub" onClick={() => setSheetOpen(true)}>
+            ⌨ {LAYOUT_LABEL[layoutId].name}
+          </button>
+        ) : (
+          <span className="tb-note">⌨ {LAYOUT_LABEL[layoutId].name}</span>
+        )}
+        <span className="tb-note">안내 {LEVEL_NAME[level]}</span>
+      </div>
+      {voiceNote && <p className="ctl-note"><Sentences text={voiceNote} /></p>}
     </div>
   )
 
@@ -643,7 +651,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             </a>
           </aside>
           <section className="study-center">
-            {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} />}
+            {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
             {prev && (
               <p className="sentence-prev" lang={htmlLang}>
                 {prev.src}
@@ -652,17 +660,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             {sentence}
             {input}
             {status}
+            {toolbar}
             {guidePanel}
           </section>
-          <aside className="study-controls" aria-label="조작">
-            {listenGroup}
-            {lineGroup}
-            {keyboardGroup}
-          </aside>
         </main>
       ) : (
         <main className="study-mobile">
-          {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} />}
+          {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
           {sentence}
           {input}
           {status}

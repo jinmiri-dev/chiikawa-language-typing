@@ -21,7 +21,11 @@ export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId
     done.current?.()
     done.current = null
   }
-  const send = (msg: string) => frame.current?.contentWindow?.postMessage(msg, PLAYER_ORIGIN)
+  // 플레이어가 준비되기 전 명령은 잃어버리므로 모아 두었다가 준비되면 보낸다(영상을 열자마자 첫 줄 듣기)
+  const ready = useRef(false)
+  const queue = useRef<string[]>([])
+  const post = (msg: string) => frame.current?.contentWindow?.postMessage(msg, PLAYER_ORIGIN)
+  const send = (msg: string) => (ready.current ? post(msg) : void queue.current.push(msg))
 
   useImperativeHandle(ref, () => ({
     playSegment(start, end, rate) {
@@ -30,6 +34,8 @@ export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId
       send(command('seekTo', [start, true]))
       send(command('setPlaybackRate', [rate]))
       send(command('playVideo'))
+      // 재생 전에 받은 빠르기를 무시하는 경우가 있어 재생 직후 한 번 더
+      setTimeout(() => send(command('setPlaybackRate', [rate])), 300)
       return new Promise<void>((resolve) => {
         done.current = resolve
         // 플레이어가 시각을 못 알려 줘도 멈춰 서지 않게 구간 길이만큼 뒤에 푼다
@@ -61,6 +67,10 @@ export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId
       } catch {
         return
       }
+      if (!ready.current) {
+        ready.current = true
+        queue.current.splice(0).forEach(post)
+      }
       const t = data.info?.currentTime
       if (typeof t === 'number') onTimeRef.current?.(t)
       if (endAt.current !== null && typeof t === 'number' && segmentDone(t, endAt.current)) {
@@ -70,7 +80,16 @@ export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId
       }
     }
     window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
+    // 불러온 직후 플레이어 스크립트가 아직이면 'listening' 을 놓친다. 답이 올 때까지 몇 번 더 알린다
+    let tries = 0
+    const hello = setInterval(() => {
+      if (ready.current || ++tries > 20) clearInterval(hello)
+      else post(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }))
+    }, 500)
+    return () => {
+      window.removeEventListener('message', onMessage)
+      clearInterval(hello)
+    }
   }, [])
 
   return (
@@ -82,7 +101,7 @@ export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId
         allow="autoplay; encrypted-media; picture-in-picture"
         referrerPolicy="strict-origin-when-cross-origin"
         // 플레이어가 현재 시각을 알려 주게 한다
-        onLoad={() => send(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }))}
+        onLoad={() => post(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }))}
       />
     </div>
   )
