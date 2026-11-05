@@ -165,7 +165,7 @@ export default function Review({ materialId }: { materialId: string }) {
                 ))}
               </span>
               <span role="cell" className="row-reading">
-                <Cell value={readingOf(material.lang, l)} label="읽기" lang={lang} onSave={(v) => update(editLine(material.lines, i, { reading: v }, seg))} />
+                <Cell value={readingOf(material.lang, l)} label="읽기" lang={lang} onSave={(v) => update(editLine(material.lines, i, { reading: v }, seg, material.lang))} />
               </span>
               <span role="cell" className="row-ko">
                 <Cell value={l.ko ?? ''} label="뜻" onSave={(v) => update(editLine(material.lines, i, { ko: v }, seg))} />

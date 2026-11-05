@@ -1,4 +1,5 @@
 /** 나눈 결과 정리 (기획안 7.6). 모두 새 배열을 돌려주고, 줄 번호(id)는 순서대로 다시 매긴다. */
+import type { Lang } from '../lang'
 import type { Line, Segment } from '../types'
 
 /** 원문이 바뀌면 조각·읽기를 다시 만든다 */
@@ -69,13 +70,37 @@ export function restoreRemoved(line: Line, tag: string, seg: Segmenter): Line {
 }
 
 /** 줄 하나 고치기(원문·뜻·읽기). 읽기를 직접 고치면 그 줄은 한 조각으로 확정한다. */
-export function editLine(lines: Line[], i: number, patch: { src?: string; ko?: string; reading?: string }, seg: Segmenter): Line[] {
+const HAN = /\p{Script=Han}/u
+const hanCount = (s: string) => [...s].filter((c) => HAN.test(c)).length
+
+/**
+ * 읽기 고치기. 중국어·대만어는 띄어 쓴 음절을 한자 수대로 낱말에 나눠 준다(대만어는 주음, 중국어는 병음).
+ * 그래야 낱말마다 키 안내가 남는다. 음절 수가 한자 수와 안 맞거나 다른 언어면 줄 전체를 한 조각으로.
+ */
+function withReading(l: Line, reading: string, lang?: Lang): Line {
+  const text = reading.trim()
+  const syl = text.split(/\s+/).filter(Boolean)
+  const total = l.segments.reduce((a, g) => a + hanCount(g.text), 0)
+  if ((lang === 'tw' || lang === 'zh') && total > 0 && total === syl.length) {
+    let k = 0
+    const segments = l.segments.map((g): Segment => {
+      const n = hanCount(g.text)
+      if (!n) return g
+      const part = syl.slice(k, (k += n)).join(' ')
+      return lang === 'tw' ? { ...g, zhuyin: part, confident: true } : { ...g, reading: part, confident: true }
+    })
+    return { ...l, segments }
+  }
+  return { ...l, segments: [{ text: l.src, reading: text, isWord: true, confident: true }] }
+}
+
+export function editLine(lines: Line[], i: number, patch: { src?: string; ko?: string; reading?: string }, seg: Segmenter, lang?: Lang): Line[] {
   let l = lines[i]
   if (patch.src !== undefined) l = withSrc(l, patch.src.trim(), seg)
   if (patch.ko !== undefined) {
     const { ko: _old, ...rest } = l
     l = patch.ko.trim() ? { ...rest, ko: patch.ko.trim() } : rest
   }
-  if (patch.reading !== undefined) l = { ...l, segments: [{ text: l.src, reading: patch.reading.trim(), isWord: true, confident: true }] }
+  if (patch.reading !== undefined) l = withReading(l, patch.reading, lang)
   return renumber(lines.map((x, k) => (k === i ? l : x)))
 }

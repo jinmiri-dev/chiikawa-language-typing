@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { mergeUp, removeLines, restoreRemoved, shiftKo, splitAt, type Segmenter } from './edit'
+import { editLine, mergeUp, removeLines, restoreRemoved, shiftKo, splitAt, type Segmenter } from './edit'
 import type { Line } from '../types'
 
 const seg: Segmenter = (src) => [{ text: src, reading: src, isWord: true, confident: true }]
@@ -41,4 +41,25 @@ test('원래 배열은 바꾸지 않는다', () => {
   const lines = [L('a', '1'), L('b', '2')]
   mergeUp(lines, 1, seg)
   expect(lines.map((l) => l.src)).toEqual(['a', 'b'])
+})
+
+test('대만어 읽기 고치기: 띄어 쓴 주음을 한자 수대로 낱말에 나눠 키 안내가 남는다', () => {
+  const line: Line = {
+    id: 'l001', src: '早安！你好', ko: '안녕',
+    segments: [
+      { text: '早安', reading: 'zǎo ān', zhuyin: 'ㄗㄠˇ ㄢ', isWord: true, confident: true },
+      { text: '！', reading: '！', isWord: false, confident: true },
+      { text: '你好', reading: '', isWord: true, confident: false },
+    ],
+  }
+  const [r] = editLine([line], 0, { reading: 'ㄗㄠˇ ㄢ ㄋㄧˇ ㄏㄠˇ' }, seg, 'tw')
+  expect(r.segments.map((g) => g.zhuyin)).toEqual(['ㄗㄠˇ ㄢ', undefined, 'ㄋㄧˇ ㄏㄠˇ'])
+  expect(r.segments.every((g) => g.confident)).toBe(true)
+  expect(r.needsCheck).toBeUndefined()
+})
+
+test('중국어 읽기 고치기는 병음을 낱말에, 음절 수가 안 맞으면 한 조각으로', () => {
+  const line: Line = { id: 'l001', src: '你好', ko: '안녕', segments: [{ text: '你好', reading: '', isWord: true, confident: false }] }
+  expect(editLine([line], 0, { reading: 'nǐ hǎo' }, seg, 'zh')[0].segments[0]).toMatchObject({ text: '你好', reading: 'nǐ hǎo', confident: true })
+  expect(editLine([line], 0, { reading: 'nǐhǎo' }, seg, 'zh')[0].segments).toEqual([{ text: '你好', reading: 'nǐhǎo', isWord: true, confident: true }])
 })

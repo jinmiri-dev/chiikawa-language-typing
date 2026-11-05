@@ -135,3 +135,17 @@ describe.each([
     expect(document.querySelector('.guide-line, .notice')?.textContent).toContain(guide)
   })
 })
+
+test('유튜브 재료는 연습 화면에서 영상을 저장할 수 있고, 뒤로 가면 유튜브 탭', async () => {
+  await store.saveMaterial({
+    id: 'ja-yvvvvvvvvvvv', lang: 'ja', kind: 'youtube', title: '영상 제목', youtubeId: 'vvvvvvvvvvv', koSource: 'youtube', createdAt: 1,
+    lines: [{ id: 'l001', src: 'こんにちは', ko: '안녕', start: 0, end: 2, segments: [{ text: 'こんにちは', reading: 'こんにちは', isWord: true, confident: true }] }],
+  })
+  render(<AppProvider store={store}><Study materialId="ja-yvvvvvvvvvvv" /></AppProvider>)
+  // 앞 시험의 자동 넘김 타이머가 남아 있어도 화면이 다 그려질 때까지 act 안에서 기다린다
+  await act(async () => new Promise((r) => setTimeout(r, 1500)))
+  await act(async () => fireEvent.click(await screen.findByRole('button', { name: '영상 저장' })))
+  expect((await store.listSaved('ja')).map((v) => [v.videoId, v.title])).toEqual([['vvvvvvvvvvv', '영상 제목']])
+  expect(screen.getByRole('button', { name: '영상 저장 취소' })).toBeTruthy()
+  expect(screen.getByRole('link', { name: '뒤로' }).getAttribute('href')).toContain('tab=youtube')
+})

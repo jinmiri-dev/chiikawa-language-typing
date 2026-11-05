@@ -105,6 +105,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [committed, setCommitted] = useState('')
   const [composing, setComposing] = useState('')
   const [lineDone, setLineDone] = useState(false)
+  const [videoSaved, setVideoSaved] = useState(false)
+  useEffect(() => {
+    if (material.youtubeId) void store.listSaved(material.lang).then((list) => setVideoSaved(list.some((v) => v.videoId === material.youtubeId)))
+  }, [store, material])
   /** 이 줄에서 이미 읽어 준 마지막 단어 조각 */
   const spokenSeg = useRef(-1)
   /** 자동으로 넘어갈 때 그 사이 다른 줄로 옮겼는지 보려고 */
@@ -405,6 +409,16 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     return () => window.removeEventListener('keydown', onKey)
   }, [lineDone, idx, goTo, listen])
 
+  /** 유튜브 재료: 연습하다가 영상을 저장(유튜브 탭의 '저장한 영상'에 모인다) */
+  async function toggleVideo() {
+    const videoId = material.youtubeId!
+    const id = `${material.lang}:${videoId}`
+    if (videoSaved) await store.deleteSaved(id)
+    else
+      await store.saveVideo({ id, lang: material.lang, videoId, title: material.title, channel: '', thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, durationSec: 0, savedAt: Date.now() })
+    setVideoSaved(!videoSaved)
+  }
+
   const lineSaved = words.some((w) => w.id === `${material.id}|${line.id}`)
   const progressText = `${Math.min(idx + 1, material.lines.length)} / ${material.lines.length}줄`
   const stage = stageOf(activeMs)
@@ -583,11 +597,16 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   return (
     <div className={`study study-${device}`}>
       <AppHeader
-        back={isReview ? '#/' : href({ name: 'materials', lang: material.lang, tab: material.kind === 'starter' ? 'starter' : 'script' })}
+        back={isReview ? '#/' : href({ name: 'materials', lang: material.lang, tab: material.kind })}
         title={<span className="study-title">{material.title}</span>}
         right={
           <>
             <span className="study-meta">{progressText}</span>
+            {material.youtubeId && (
+              <button type="button" className="study-words" aria-pressed={videoSaved} aria-label={videoSaved ? '영상 저장 취소' : '영상 저장'} onClick={() => void toggleVideo()}>
+                {videoSaved ? '★' : '☆'}
+              </button>
+            )}
             <button type="button" className="study-words" onClick={() => setWordsOpen(true)}>
               단어 {words.length}
             </button>
