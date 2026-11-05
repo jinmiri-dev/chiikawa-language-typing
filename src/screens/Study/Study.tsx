@@ -125,7 +125,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [bubble, setBubble] = useState<{ line: FriendLine | null; at: number }>({ line: null, at: 0 })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [voiceNote, setVoiceNote] = useState('')
-  const [mobileMap, setMobileMap] = useState(false)
+  // 휴대폰도 처음부터 자판 그림을 펼쳐 둔다(무엇을 누를지 바로 보이게). 접을 수 있다
+  const [mobileMap, setMobileMap] = useState(true)
   const [words, setWords] = useState<Word[]>([])
   const [wordsOpen, setWordsOpen] = useState(false)
 
