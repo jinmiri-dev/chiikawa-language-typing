@@ -76,7 +76,7 @@ const zh: LearnText = {
   tapWord: '点单词听发音',
   tapBlank: '点空格看答案',
   loading: '正在准备歌词…',
-  noMeaning: '这个视频暂时没有中文意思。',
+  noMeaning: '这个视频暂时没有中文翻译。',
   wordAdded: (w) => `「${w}」已加入单词本`,
   words: '单词本',
   errors: {
@@ -126,7 +126,7 @@ const tw: LearnText = {
   tapWord: '點單字聽發音',
   tapBlank: '點空格看答案',
   loading: '正在準備歌詞…',
-  noMeaning: '這個影片暫時沒有中文意思。',
+  noMeaning: '這個影片暫時沒有中文翻譯。',
   wordAdded: (w) => `「${w}」已加入單字本`,
   words: '單字本',
   errors: {
@@ -148,14 +148,14 @@ const mn: LearnText = {
   choose: 'Хэлээ сонгоно уу',
   change: 'Хэл солих',
   all: 'Бүгд',
-  tags: { greet: 'Танилцах·мэндлэх', family: 'Гэр бүл', body: 'Бие·эмнэлэг', number: 'Тоо·цаг', nature: 'Амьтан·байгаль', season: 'Улирал·баяр', feeling: 'Сэтгэл' },
+  tags: { greet: 'Танилцах·мэндлэх', family: 'Гэр бүл', body: 'Бие·эмнэлэг', number: 'Тоо·цаг', nature: 'Амьтан·байгаль', season: 'Улирал·баяр', feeling: 'Сэтгэл хөдлөл' },
   kinds: { song: 'Дуу', cartoon: 'Хүүхэлдэйн кино', story: 'Үлгэр' },
   min: (m) => `${m} мин`,
   pasteLink: 'YouTube холбоос оруулах (солонгос хадмалтай)',
   open: 'Нээх',
   modes: { listen: 'Сонсох', line: 'Мөр мөрөөр', sing: 'Дагаж дуулах' },
   modeHelp: {
-    listen: 'Үгийг харж эцэс хүртэл сонсоорой. Одоо дуулж буй мөр тодорно.',
+    listen: 'Дууны үгийг харж эцэс хүртэл сонсоорой. Одоо дуулж буй мөр тодорно.',
     line: 'Мөр дээр дарвал тэр мөр 3 удаа давтагдана.',
     sing: 'Зарим үг хоосон болно. Утгыг нь харж дагаж дуулаарай. Хоосон зай дээр дарвал хариу гарна.',
   },
@@ -168,14 +168,14 @@ const mn: LearnText = {
   save: 'Хадгалах',
   saved: 'Хадгалсан',
   savedTitle: 'Хадгалсан өгүүлбэрүүд',
-  savedEmpty: 'Өгүүлбэрийн хажуугийн ☆ дээр дарж хадгалбал бичих дасгалын хуудас болгоно.',
+  savedEmpty: 'Өгүүлбэрийн хажуугийн ☆ дээр дарж хадгалбал бичих дасгалын хуудас болно.',
   worksheet: 'Бичих дасгал',
   print: 'Хэвлэх / PDF хадгалах',
   remove: 'Устгах',
   tapWord: 'Үг дээр дарвал дуудлагыг сонсоно',
   tapBlank: 'Хоосон зай дээр дарж хариуг харна',
   loading: 'Дууны үгийг бэлдэж байна…',
-  noMeaning: 'Энэ бичлэгт монгол утга одоохондоо алга.',
+  noMeaning: 'Энэ бичлэгт монгол орчуулга одоохондоо алга.',
   wordAdded: (w) => `"${w}" үгийн санд нэмэгдлээ`,
   words: 'Үгийн сан',
   errors: {
@@ -185,7 +185,7 @@ const mn: LearnText = {
     blocked: 'Бичлэгийн эзэн өөр сайтад тоглуулахыг хориглосон.',
     other: 'Алдаа гарлаа. Дахин оролдоно уу.',
   },
-  sheet: { heading: 'Солонгос бичих дасгал', guide: 'Өгүүлбэрийг уншингаа аажмаар бичээрэй.', name: 'Нэр', date: 'Огноо', month: 'сар', day: 'өдөр', empty: 'Хадгалсан өгүүлбэр алга.' },
+  sheet: { heading: 'Солонгос бичгийн дасгал', guide: 'Өгүүлбэрийг уншингаа аажмаар бичээрэй.', name: 'Нэр', date: 'Огноо', month: 'сар', day: 'өдөр', empty: 'Хадгалсан өгүүлбэр алга.' },
   back: 'Буцах',
 }
 
@@ -224,7 +224,7 @@ const ja: LearnText = {
   tapWord: '単語を押すと発音が聞けます',
   tapBlank: '空欄を押すと答えが出ます',
   loading: '歌詞を準備しています…',
-  noMeaning: 'この動画にはまだ日本語の意味がありません。',
+  noMeaning: 'この動画にはまだ日本語訳がありません。',
   wordAdded: (w) => `「${w}」を単語帳に入れました`,
   words: '単語帳',
   errors: {
@@ -273,7 +273,7 @@ const en: LearnText = {
   tapWord: 'Tap a word to hear it',
   tapBlank: 'Tap a blank to see the answer',
   loading: 'Getting the lyrics ready…',
-  noMeaning: 'This video has no English meaning yet.',
+  noMeaning: 'This video has no English translation yet.',
   wordAdded: (w) => `Added “${w}” to your word list`,
   words: 'Word list',
   errors: {
