@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { AppProvider } from '../app/AppState'
 import * as api from '../services/api'
@@ -9,6 +9,11 @@ import { LearnList, LearnStart } from './LearnList'
 import LearnVideo from './LearnVideo'
 import { getNative, listLearnWords, listSentences } from './learnStore'
 
+const player = vi.hoisted(() => ({ playSegment: vi.fn(async (_start: number, _end: number, _rate: number) => {}), playFrom: vi.fn(), setRate: vi.fn(), pause: vi.fn() }))
+vi.mock('../components/YouTubePlayer', async () => {
+  const { useImperativeHandle } = await import('react')
+  return { default: ({ ref }: { ref?: React.Ref<unknown> }) => { useImperativeHandle(ref, () => player); return null } }
+})
 vi.mock('../services/api', async (orig) => ({ ...(await orig<typeof import('../services/api')>()), getLyrics: vi.fn() }))
 vi.mock('../services/speech', async (orig) => ({ ...(await orig<typeof import('../services/speech')>()), speakKo: vi.fn(async () => ({ source: 'device' as const })) }))
 
@@ -97,3 +102,15 @@ test('학습지는 연 사람 모국어로 뜻을 보여 준다(다른 말로 �
   expect(api.getLyrics).toHaveBeenLastCalledWith('mn', 'Wdsyfs3JCkQ')
   expect((await listSentences(store))[0].meanings).toEqual({ zh: '三只熊住在一个家里', mn: 'Нэг байшинд гурван баавгай' })
 })
+
+test('따라 읽기: 문장마다 2번씩 듣고 다음 문장으로', async () => {
+  vi.mocked(api.getLyrics).mockResolvedValue({ ...lyrics, lines: [{ start: 0, end: 0.3, ko: '곰 세 마리', meaning: '三只熊' }, { start: 0.3, end: 0.6, ko: '아빠 곰', meaning: '熊爸爸' }] })
+  player.playSegment.mockClear()
+  wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
+  await screen.findByText('三只熊')
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '2遍' })))
+  expect(screen.getByText('每句播放2遍，每遍之后留出跟读的时间。')).toBeTruthy()
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '▶ 播放' })))
+  await waitFor(() => expect(player.playSegment).toHaveBeenCalledTimes(4), { timeout: 6000 })
+  expect(player.playSegment.mock.calls.map((c) => c[0])).toEqual([0, 0, 0.3, 0.3])
+}, 10000)

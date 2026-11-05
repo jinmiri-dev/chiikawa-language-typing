@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { StatusNotice, Sentences } from '../../components/components'
+import { CERTS } from '../../content/certs'
 import { PICK_KIND_NAME, PICK_KINDS, pickThumb, YOUTUBE_PICKS } from '../../content/youtubePicks'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { SavedVideo } from '../../engine/types'
@@ -33,6 +34,10 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
   // 처음에는 자막을 확인해 둔 추천 영상(검색 한도를 쓰지 않는다)
   const [view, setView] = useState<'picks' | 'results' | 'saved'>('picks')
   const [busy, setBusy] = useState('')
+  // 자격증 태그: 펼치면 시험·급수 버튼이 나온다(그 언어 시험이 있을 때만)
+  const certs = CERTS[lang] ?? []
+  const [certOpen, setCertOpen] = useState(false)
+  const [certPicked, setCertPicked] = useState('')
   const [notice, setNotice] = useState(() => (workerOrigin() ? null : noticeFor(new ApiFailure('NOT_CONNECTED', ''), lang)))
   useEffect(() => {
     void store.listSaved(lang).then(setSaved)
@@ -128,12 +133,44 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
         <button type="button" className="chip-btn" aria-pressed={view === 'saved'} onClick={() => setView('saved')}>
           저장한 영상 {saved.length}
         </button>
+        {certs.length > 0 && (
+          <button type="button" className="chip-btn" aria-expanded={certOpen} aria-pressed={certOpen} onClick={() => setCertOpen((v) => !v)}>
+            자격증
+          </button>
+        )}
         {TAGS.map(([id, label]) => (
           <button key={id} type="button" className="chip-btn" onClick={() => void run({ tag: id })}>
             {label}
           </button>
         ))}
       </div>
+      {certOpen && (
+        <div className="yt-certs" role="group" aria-label="자격증 급수">
+          {certs.map((c) => (
+            <div key={c.name} className="yt-cert">
+              <b>{c.name}</b>
+              {c.levels.map((lv) => {
+                const id = `${c.name} ${lv.label}`
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className="chip-btn"
+                    aria-label={id}
+                    aria-pressed={certPicked === id}
+                    onClick={() => {
+                      setCertPicked(id)
+                      void run({ q: lv.q })
+                    }}
+                  >
+                    {lv.label}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
       {notice && <StatusNotice title={notice.title} tone="warn">{notice.body}</StatusNotice>}
       {busy && <p className="busy" aria-live="polite">{busy}</p>}
       {view === 'picks' && !busy && <p className="page-lead"><Sentences text={`${LANG_NAME[lang].ko} 자막과 한국어 뜻이 붙는 걸 확인한 영상이에요. 태그나 검색으로 더 찾을 수 있어요.`} /></p>}

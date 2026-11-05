@@ -18,6 +18,12 @@ export interface LearnText {
   modes: { listen: string; line: string; sing: string }
   modeHelp: { listen: string; line: string; sing: string }
   speed: string
+  /** 한 문장을 몇 번씩 들을지(따라 읽기) */
+  each: string
+  times: (n: number) => string
+  play: string
+  stop: string
+  shadowHelp: (n: number) => string
   showMeaning: string
   showSound: string
   playLine: string
@@ -61,6 +67,11 @@ const zh: LearnText = {
     sing: '部分歌词变成空格。看着意思跟着唱，点空格可以看答案。',
   },
   speed: '速度',
+  each: '每句',
+  times: (n) => `${n}遍`,
+  play: '▶ 播放',
+  stop: '■ 停止',
+  shadowHelp: (n) => `每句播放${n}遍，每遍之后留出跟读的时间。`,
   showMeaning: '意思',
   showSound: '发音',
   playLine: '播放这一句',
@@ -111,6 +122,11 @@ const tw: LearnText = {
     sing: '部分歌詞變成空格。看著意思跟著唱，點空格可以看答案。',
   },
   speed: '速度',
+  each: '每句',
+  times: (n) => `${n}遍`,
+  play: '▶ 播放',
+  stop: '■ 停止',
+  shadowHelp: (n) => `每句播放${n}遍，每遍之後留出跟讀的時間。`,
   showMeaning: '意思',
   showSound: '發音',
   playLine: '播放這一句',
@@ -160,6 +176,11 @@ const mn: LearnText = {
     sing: 'Зарим үг хоосон болно. Утгыг нь харж дагаж дуулаарай. Хоосон зай дээр дарвал хариу гарна.',
   },
   speed: 'Хурд',
+  each: 'Мөр бүр',
+  times: (n) => `${n} удаа`,
+  play: '▶ Тоглуулах',
+  stop: '■ Зогсоох',
+  shadowHelp: (n) => `Мөр бүрийг ${n} удаа тоглуулж, удаа бүрийн дараа дагаж унших завсар өгнө.`,
   showMeaning: 'Утга',
   showSound: 'Дуудлага',
   playLine: 'Энэ мөрийг тоглуулах',
@@ -209,6 +230,11 @@ const ja: LearnText = {
     sing: '歌詞の一部が空欄になります。意味を見ながら歌いましょう。空欄を押すと答えが出ます。',
   },
   speed: '速さ',
+  each: '1文ごと',
+  times: (n) => `${n}回`,
+  play: '▶ 再生',
+  stop: '■ 停止',
+  shadowHelp: (n) => `1文を${n}回ずつ流し、毎回あとについて読む間をあけます。`,
   showMeaning: '意味',
   showSound: '発音',
   playLine: 'この行を再生',
@@ -258,6 +284,11 @@ const en: LearnText = {
     sing: 'Some words turn into blanks. Sing along using the meaning. Tap a blank to see the answer.',
   },
   speed: 'Speed',
+  each: 'Each line',
+  times: (n) => `${n}×`,
+  play: '▶ Play',
+  stop: '■ Stop',
+  shadowHelp: (n) => `Each line plays ${n} times, with a pause after each to repeat it aloud.`,
   showMeaning: 'Meaning',
   showSound: 'Pronunciation',
   playLine: 'Play this line',

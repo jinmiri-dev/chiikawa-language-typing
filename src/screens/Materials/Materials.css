@@ -356,3 +356,23 @@
   margin: 0 0 12px;
   font-size: var(--fs-h2);
 }
+
+/* 자격증: 시험마다 한 줄, 급수 버튼 */
+.yt-certs {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.yt-cert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.yt-cert b {
+  min-width: 48px;
+}

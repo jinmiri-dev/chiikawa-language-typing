@@ -536,3 +536,33 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* 따라 읽기: 문장마다 몇 번 들을지 + 재생/멈춤 */
+.learn-each {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.learn-each > span {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  margin-right: 2px;
+}
+.learn-each .chip-btn {
+  padding: 0 12px;
+}
+.learn-playall {
+  margin-left: auto;
+  min-height: 38px;
+  white-space: nowrap;
+}
+@media (max-width: 899px) {
+  .learn-each .chip-btn {
+    min-height: 34px;
+    padding: 0 10px;
+  }
+  .learn-each > span {
+    display: none;
+  }
+}

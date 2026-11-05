@@ -50,9 +50,11 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
   const [error, setError] = useState('')
   const [mode, setMode] = useState<Mode>('listen')
   const [rate, setRate] = useState<number>(1)
+  // 따라 읽기: 한 문장을 몇 번씩 들을지(1이면 멈추지 않고 이어 듣기)
+  const [each, setEach] = useState<1 | 2 | 3>(1)
   const [show, setShow] = useState({ meaning: true, sound: true })
   const [cur, setCur] = useState(-1)
-  const [repeat, setRepeat] = useState<{ i: number; n: number } | null>(null)
+  const [repeat, setRepeat] = useState<{ i: number; n: number; of: number } | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState('')
@@ -75,7 +77,7 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
   // 지금 부르는 줄을 화면 가운데로(한 줄씩 모드에서는 누른 줄에 머문다)
   useEffect(() => {
     if (cur < 0 || mode === 'line') return
-    lineRefs.current[cur]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    lineRefs.current[cur]?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }, [cur, mode])
 
   const lines = data?.lines ?? []
@@ -95,17 +97,38 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
     const l = lines[i]
     setCur(i)
     const id = ++runId.current
-    if (mode !== 'line') {
+    if (mode === 'line') {
+      for (let n = 1; n <= 3 && id === runId.current; n++) {
+        setRepeat({ i, n, of: 3 })
+        await player.current?.playSegment(l.start, l.end, rate)
+      }
+      if (id === runId.current) setRepeat(null)
+      return
+    }
+    if (each === 1) {
       setRepeat(null)
       player.current?.setRate(rate)
       player.current?.playFrom(l.start)
       return
     }
-    for (let n = 1; n <= 3 && id === runId.current; n++) {
-      setRepeat({ i, n })
-      await player.current?.playSegment(l.start, l.end, rate)
+    // 따라 읽기: 이 줄부터 끝까지, 문장마다 each 번 듣고 그때마다 따라 읽을 틈(문장 길이만큼, 0.8~4초)
+    for (let j = i; j < lines.length && id === runId.current; j++) {
+      const s = lines[j]
+      setCur(j)
+      for (let n = 1; n <= each && id === runId.current; n++) {
+        setRepeat({ i: j, n, of: each })
+        await player.current?.playSegment(s.start, s.end, rate)
+        const gap = Math.min(4000, Math.max(800, ((s.end - s.start) * 1000) / rate))
+        await new Promise((r) => setTimeout(r, gap))
+      }
     }
     if (id === runId.current) setRepeat(null)
+  }
+
+  function stopAll() {
+    runId.current++
+    setRepeat(null)
+    player.current?.pause()
   }
 
   function sayWord(w: string, line: { start: number }) {
@@ -161,7 +184,35 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
               </button>
             ))}
           </div>
-          <p className="learn-help">{t.modeHelp[mode]}</p>
+          <p className="learn-help">{mode !== 'line' && each > 1 ? t.shadowHelp(each) : t.modeHelp[mode]}</p>
+          {mode !== 'line' && (
+            <div className="learn-each" role="group" aria-label={t.each}>
+              <span>{t.each}</span>
+              {([1, 2, 3] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className="chip-btn"
+                  aria-pressed={each === n}
+                  onClick={() => {
+                    stopAll()
+                    setEach(n)
+                  }}
+                >
+                  {t.times(n)}
+                </button>
+              ))}
+              {repeat ? (
+                <button type="button" className="btn btn-sub learn-playall" onClick={stopAll}>
+                  {t.stop}
+                </button>
+              ) : (
+                <button type="button" className="btn btn-primary learn-playall" onClick={() => void openLine(Math.max(0, cur))} disabled={!lines.length}>
+                  {t.play}
+                </button>
+              )}
+            </div>
+          )}
           <div className="learn-controls">
             <div className="learn-rates" role="group" aria-label={t.speed}>
               <span>{t.speed}</span>
@@ -202,7 +253,7 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
                     <li key={id} ref={(el) => void (lineRefs.current[i] = el)} className="learn-line" data-current={cur === i || undefined}>
                       <div className="learn-line-main">
                         <button type="button" className="learn-play" aria-label={mode === 'line' ? t.repeat3 : t.playLine} onClick={() => void openLine(i)}>
-                          {repeat?.i === i ? `${repeat.n}/3` : '▶'}
+                          {repeat?.i === i ? `${repeat.n}/${repeat.of}` : '▶'}
                         </button>
                         <div className="learn-text">
                           <p className="learn-ko" lang="ko">

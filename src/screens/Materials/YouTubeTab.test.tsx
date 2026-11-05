@@ -85,3 +85,15 @@ test('추천 영상은 종류별로 묶어 보여 준다(언어마다 그 언어
   for (const name of ['노래', '명언·이야기', '뉴스', '영화·방송', '일상']) expect(screen.getByRole('heading', { name })).toBeTruthy()
   expect(screen.getByText(/やさしいことばニュース.歌舞伎/)).toBeTruthy()
 })
+
+test('자격증 태그: 시험·급수를 고르면 그 급수 영상을 찾는다(시험이 없는 언어는 태그 없음)', async () => {
+  render(<AppProvider store={store}><YouTubeTab lang="ja" /></AppProvider>)
+  const tag = await screen.findByText('자격증')
+  await act(async () => fireEvent.click(tag))
+  await act(async () => fireEvent.click(screen.getByLabelText('JLPT N3')))
+  expect(api.searchVideos).toHaveBeenLastCalledWith('ja', { q: 'JLPT N3 単語 聴解' })
+  cleanup()
+  render(<AppProvider store={store}><YouTubeTab lang="mn" /></AppProvider>)
+  await screen.findByText('추천')
+  expect(screen.queryByText('자격증')).toBeNull()
+})
