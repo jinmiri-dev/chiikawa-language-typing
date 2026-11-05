@@ -46,3 +46,16 @@ describe('다른 언어 틀린 이유', () => {
     expect(explainMistake('zh', '在', '再')).toBe('在 대신 再를 쳤어요')
   })
 })
+
+describe('기본 채점: 띄어쓰기와 문장부호도 친다', () => {
+  const full = { strict: true }
+  test('띄어쓰기를 빼먹으면 틀린다', () => expect(judge('I am', 'Iam', full).wrongAt).toBe(1))
+  test('문장부호를 빼먹으면 다 친 것이 아니다', () => expect(judge('Yeah, good.', 'Yeah good', full).done).toBe(false))
+  test('전각·반각, 굽은 따옴표 차이는 같다고 본다', () => {
+    expect(judge('早上好！你好吗？', '早上好!你好吗?', full).done).toBe(true)
+    expect(judge('I’m home.', "I'm home.", full).done).toBe(true)
+  })
+  test('띄어쓰기 여러 칸은 한 칸으로 본다', () => expect(judge('a  b', 'a b', full).done).toBe(true))
+  test('그 키보드에 없는 글자는 건너뛴다(몽골어 키릴 PC 의 !)', () => expect(judge('Сайн уу!', 'Сайн уу', { strict: true, skip: /[!]/ }).done).toBe(true))
+  test('대소문자는 맞아야 한다', () => expect(judge('Yeah', 'yeah', full).wrongAt).toBe(0))
+})

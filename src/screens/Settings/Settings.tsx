@@ -64,7 +64,7 @@ export default function Settings() {
           <Toggle label="한국어 뜻 보기" on={s.show.ko} onChange={show('ko')} />
           <Toggle label="발음(읽기) 보기" on={s.show.reading} onChange={show('reading')} />
           <Toggle label="원문 보기" sub="끄면 받아쓰기처럼 연습해요." on={s.show.src} onChange={show('src')} />
-          <Toggle label="엄격하게 채점" sub="문장부호와 띄어쓰기까지 맞아야 해요." on={s.strict} onChange={(strict) => set({ strict })} />
+          <Toggle label="쉽게 채점" sub="띄어쓰기와 문장부호는 건너뛰고, 대소문자도 보지 않아요." on={s.easyGrading} onChange={(easyGrading) => set({ easyGrading })} />
         </section>
         <section aria-label="듣기">
           <h2>듣기</h2>

@@ -48,6 +48,9 @@ function useVisualViewport() {
   }, [])
 }
 
+/** 키보드에 없어 칠 수 없는 글자 */
+const SKIP_CHARS: Partial<Record<LayoutId, RegExp>> = { 'mn-cyrillic': /[!]/ }
+
 /** 조각마다 원문에서 시작 위치 */
 function segmentStarts(segs: Segment[]): number[] {
   let at = 0
@@ -138,13 +141,16 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const player = useRef<PlayerHandle>(null)
 
   const line = material.lines[idx]
-  const recorder = useMemo(() => lineRecorder(line.src, settings.strict), [line, settings.strict])
 
   const lang = material.lang
   const htmlLang = LANG_NAME[lang].htmlLang
   const saved = settings.layout[lang]
   const layoutId: LayoutId = saved && getLayout(saved).lang === lang && getLayout(saved).device === device ? saved : DEFAULT_LAYOUT[lang][device]
   const layout = getLayout(layoutId)
+  // 채점: 기본은 띄어쓰기·문장부호까지. 그 키보드로 칠 수 없는 글자(몽골어 키릴 PC 의 !)는 건너뛴다
+  const strict = !settings.easyGrading
+  const skip = SKIP_CHARS[layoutId]
+  const recorder = useMemo(() => lineRecorder(line.src, strict, skip), [line, strict, skip])
 
   const say = useCallback(
     (situation: Situation, override?: FriendLine) => {
@@ -236,11 +242,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx])
 
-  const res = judge(line.src, committed, { strict: settings.strict })
+  const res = judge(line.src, committed, { strict, skip })
   const starts = segmentStarts(line.segments)
   const segIndex = res.done ? -1 : Math.max(0, starts.findLastIndex((s) => s <= res.okUpTo))
   const seg = segIndex >= 0 ? line.segments[segIndex] : null
-  const strip = (s: string) => significantChars(s, settings.strict).join('')
+  const strip = (s: string) => significantChars(s, strict, skip).join('')
   const mistake = res.wrongAt !== undefined ? explainMistake(lang, strip(line.src), strip(committed)) : null
 
   // 지금 칠 조각의 안내
@@ -371,7 +377,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setLastInputAt(t)
     setCommitted(v)
     recorder.onCommit(v, t)
-    const r = judge(line.src, v, { strict: settings.strict })
+    const r = judge(line.src, v, { strict, skip })
 
     // 안내 줄이기: 새로 지나간 조각은 맞음, 틀린 자리가 있는 조각은 틀림
     if (seg) {

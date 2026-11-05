@@ -85,7 +85,8 @@ export interface Settings {
   hintMode: 'full' | 'line' | 'off'
   hintFading: boolean
   show: { ko: boolean; reading: boolean; src: boolean }
-  strict: boolean
+  /** 쉽게 채점: 띄어쓰기·문장부호를 건너뛰고 대소문자도 보지 않는다(기본은 끔: 다 친다) */
+  easyGrading: boolean
   autoListen: boolean
   /** 줄을 다 치면 그 줄을 한 번 더 듣기 */
   listenAfter: boolean
@@ -105,7 +106,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hintMode: 'full',
   hintFading: true,
   show: { ko: true, reading: true, src: true },
-  strict: false,
+  easyGrading: false,
   autoListen: false,
   listenAfter: true,
   speakWords: true,

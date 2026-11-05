@@ -124,6 +124,10 @@ const HAN = /\p{Script=Han}/u
 const invert = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).map(([k, v]) => [v, k]))
 const ZHUYIN_KEY = invert(DAQIAN)
 const MN_KEY = invert(MN_KEYS)
+/** Windows 몽골어(키릴) 배열은 문장부호가 숫자 줄 Shift 에 있다(kbdmon). ! 키는 없다(채점에서 건너뜀) */
+const MN_PC_PUNCT: Record<string, string[]> = {
+  '?': ['shift', '0'], '.': ['shift', '6'], ',': ['shift', '8'], '"': ['shift', '3'], ':': ['shift', '5'], '-': ['shift', '2'], '_': ['shift', '7'], '%': ['shift', '9'],
+}
 const TONE_KEY: Record<string, string> = { 'ˊ': '6', 'ˇ': '3', 'ˋ': '4', '˙': '7' }
 /** 전각 문장부호 → PC 키 (중국어 입력기에서 같은 키로 친다) */
 const FULL: Record<string, string> = { '，': ',', '。': '.', '？': '?', '！': '!', '：': ':', '；': ';', '、': '/', '“': '"', '”': '"', '（': '(', '）': ')' }
@@ -168,7 +172,7 @@ function otherSteps(layout: Layout, seg: Segment): KeyStep[] {
     case 'en-qwerty-mobile':
       return per((c) => mobileChar(c, latin))
     case 'mn-cyrillic':
-      return per((c) => pcChar(c, (l) => MN_KEY[l]))
+      return per((c) => (MN_PC_PUNCT[c] ? MN_PC_PUNCT[c].map((id, i, all) => ({ keyId: id, text: i === all.length - 1 ? c : '' })) : pcChar(c, (l) => MN_KEY[l])))
     case 'mn-cyrillic-mobile':
       return per((c) => mobileChar(c, (l) => (MN_KEY[l] ? MN_KEY[l] : undefined)))
     case 'zh-pinyin':

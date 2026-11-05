@@ -2,8 +2,8 @@
 import { significantChars } from '../../engine/judge/judge'
 import type { LineResult } from '../../engine/types'
 
-export function lineRecorder(expected: string, strict: boolean) {
-  const exp = significantChars(expected, strict)
+export function lineRecorder(expected: string, strict: boolean, skip?: RegExp) {
+  const exp = significantChars(expected, strict, skip)
   /** 글자 자리마다 처음 확정했을 때 맞았는가 */
   const firstTry: (boolean | undefined)[] = []
   const wrongSeen = new Set<number>()
@@ -13,7 +13,7 @@ export function lineRecorder(expected: string, strict: boolean) {
   return {
     onCommit(committed: string, now: number) {
       startAt ??= now
-      const got = significantChars(committed, strict)
+      const got = significantChars(committed, strict, skip)
       got.forEach((ch, i) => {
         const ok = ch === exp[i]
         firstTry[i] ??= ok

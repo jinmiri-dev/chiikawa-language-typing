@@ -9,30 +9,39 @@ export function normalizeLoose(s: string): string {
   return s.normalize('NFKC').toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
 }
 
-/** 비교할 글자와 원래 위치 */
-function significant(s: string, strict: boolean): { ch: string; at: number }[] {
+/** 띄어쓰기·문장부호까지 볼 때: 전각→반각, 굽은 따옴표만 맞춘다(대소문자는 그대로) */
+const normalizeFull = (s: string) => s.normalize('NFKC').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+
+/**
+ * 비교할 글자와 원래 위치.
+ * strict(기본): 띄어쓰기·문장부호도 친다. 띄어쓰기 여러 칸은 한 칸, skip 은 그 키보드로 칠 수 없어 건너뛰는 글자.
+ * 아니면(쉽게): 문장부호·기호·공백을 빼고 대소문자도 보지 않는다.
+ */
+function significant(s: string, strict: boolean, skip?: RegExp): { ch: string; at: number }[] {
   const out: { ch: string; at: number }[] = []
   let at = 0
   for (const raw of s) {
-    const ch = strict ? raw : normalizeLoose(raw)
-    if (strict || !IGNORABLE.test(ch)) out.push({ ch, at })
+    const ch = strict ? normalizeFull(raw) : normalizeLoose(raw)
+    const space = /\s/.test(ch)
+    const keep = strict ? !(skip?.test(ch)) && !(space && (out.length === 0 || /\s/.test(out[out.length - 1].ch))) : !IGNORABLE.test(ch)
+    if (keep) out.push({ ch: space ? ' ' : ch, at })
     at += raw.length
   }
   return out
 }
 
 /** 비교하는 글자만(너그러우면 문장부호·공백을 빼고 맞춘 글자) */
-export function significantChars(s: string, strict: boolean): string[] {
-  return significant(s, strict).map((x) => x.ch)
+export function significantChars(s: string, strict: boolean, skip?: RegExp): string[] {
+  return significant(s, strict, skip).map((x) => x.ch)
 }
 
 export function judge(
   expected: string,
   committed: string,
-  opts: { strict: boolean },
+  opts: { strict: boolean; skip?: RegExp },
 ): { okUpTo: number; wrongAt?: number; done: boolean } {
-  const exp = significant(expected, opts.strict)
-  const got = significant(committed, opts.strict)
+  const exp = significant(expected, opts.strict, opts.skip)
+  const got = significant(committed, opts.strict, opts.skip)
   let i = 0
   while (i < exp.length && i < got.length && exp[i].ch === got[i].ch) i++
 

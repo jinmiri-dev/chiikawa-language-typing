@@ -69,6 +69,11 @@ describe('몽골어 키릴', () => {
     expect(ids(pc, seg('үнэн'))).toBe('o y t y')
   })
   test('대문자는 Shift', () => expect(ids(pc, seg('Сайн'))).toBe('shift v g a y'))
+  test('문장부호는 Windows 몽골어 자리: ? Shift+0, . Shift+6, , Shift+8', () => {
+    expect(ids(pc, seg('?', '?', { isWord: false }))).toBe('shift 0')
+    expect(ids(pc, seg('.', '.', { isWord: false }))).toBe('shift 6')
+    expect(ids(pc, seg(',', ',', { isWord: false }))).toBe('shift 8')
+  })
   test('한 줄 안내: 글자와 같은 자리의 영문 키', () => expect(guideText(pc, seg('сайн', 'сайн', { romaji: 'sain' }))).toBe('сайн (sain) → с(V) а(G) й(A) н(Y)'))
   test('PC 는 Windows 표준 배열로 확인됨, 휴대폰은 기기 확인 전', () => {
     expect(pc.verified).toBe(true)
