@@ -7,5 +7,6 @@ Copyright (c) 2026 진미리 (jinmiri-dev). All rights reserved.
 The code, documents, design and learning data in this repository may not be copied,
 modified, distributed or used in other services without the copyright holder's permission.
 
-캐릭터(먼작귀, ちいかわ)의 권리는 원작자에게 있으며 이 저장소에는 캐릭터 그림을 넣지 않습니다.
+캐릭터(먼작귀, ちいかわ)의 권리는 원작자(나가노)에게 있습니다. 이 사이트의 캐릭터 그림은 비상업 개인 학습용으로만 쓰며,
+이 저장소의 저작권 고지는 캐릭터 그림에 적용되지 않습니다.
 Third-party libraries keep their own licenses (see package.json and node_modules).

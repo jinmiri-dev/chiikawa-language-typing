@@ -56,7 +56,7 @@ export default function Done({ materialId }: { materialId: string }) {
   const accuracy = Math.round((p.results.reduce((a, r) => a + r.firstTryAccuracy, 0) / p.results.length) * 100)
   const wrong = m.lines.filter((l) => p.results.find((r) => r.lineId === l.id && r.mistakes > 0))
   const nn = String(FRIENDS.indexOf(p.friend) + 1).padStart(2, '0')
-  const card = `${BASE}cards/${nn}-${p.friend}.png`
+  const card = `${BASE}cards/${nn}-${p.friend}.webp`
   const name = FRIEND_INFO[p.friend].name
 
   return (
@@ -126,7 +126,7 @@ export default function Done({ materialId }: { materialId: string }) {
         )}
         <div className="done-actions">
           {cardOk && (
-            <a className="btn btn-primary" href={card} download={`언어1급-${LANG_NAME[m.lang].ko}-${p.friend}.png`}>
+            <a className="btn btn-primary" href={card} download={`언어1급-${LANG_NAME[m.lang].ko}-${p.friend}.webp`}>
               카드 이미지 저장
             </a>
           )}

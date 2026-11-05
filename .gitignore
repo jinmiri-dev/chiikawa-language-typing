@@ -33,7 +33,6 @@ spike-output/
 public/_audit/
 public/_measure.html
 
-# 캐릭터 그림·완료 카드: 사용권 확인 전에는 커밋하지 않는다(로컬 개발에서만 씀)
-public/friends/
-public/cards/
+# 카드 원본(PNG)은 크므로 올리지 않고, 줄인 WebP 만 배포한다
+public/cards/*.png
 public/dict/
