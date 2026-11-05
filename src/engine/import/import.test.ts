@@ -74,3 +74,24 @@ describe('정리', () => {
     expect(r.checkCount).toBe(2)
   })
 })
+
+describe('유튜브 스크립트 붙여넣기(무료 자막)', () => {
+  const yt = '0:00\nIf you\'re happy and you know it\n0:04\nclap your hands\n0:08\n[Music]\n1:02\nstomp your feet'
+  test('시간 줄과 글 줄이 번갈아 나오면 유튜브 스크립트로 읽고, 시간을 줄에 붙인다', () => {
+    expect(detectFormat(yt)).toBe('youtube')
+    const r = parseScript(yt, 'en')
+    expect(r.lines.map((l) => [l.src, l.start, l.end])).toEqual([
+      ["If you're happy and you know it", 0, 4],
+      ['clap your hands', 4, 8],
+      ['stomp your feet', 62, undefined],
+    ])
+  })
+  test('한 줄에 시간과 글이 함께 있어도 읽는다', () => {
+    const r = parseScript('0:01 おはよう\n0:03 元気？\n0:06 うん', 'ja')
+    expect(r.lines.map((l) => [l.src, l.start])).toEqual([['おはよう', 1], ['元気？', 3], ['うん', 6]])
+  })
+  test('한국어 스크립트를 함께 붙이면 시간으로 짝지어 뜻을 채운다', () => {
+    const r = parseScript('0:00\nおはよう\n0:03\n元気？', 'ja', { koText: '0:00\n좋은 아침\n0:03\n잘 지내?' })
+    expect(r.lines.map((l) => l.ko)).toEqual(['좋은 아침', '잘 지내?'])
+  })
+})

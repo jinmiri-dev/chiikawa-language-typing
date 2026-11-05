@@ -90,7 +90,7 @@ export function noticeFor(e: unknown, lang: Lang): { title: string; body: string
     case 'QUOTA_EXCEEDED':
       return { title: '오늘 검색은 다 썼어요', body: `${f.retryAfter ? `${wait(f.retryAfter)} 다시 채워져요. ` : '내일 다시 채워져요. '}링크 붙여넣기, 저장한 영상, 대본은 계속 쓸 수 있어요.` }
     case 'NO_TRACK':
-      return { title: `이 영상에는 ${name} 자막이 없어요`, body: '자막이 있어야 한 줄씩 칠 수 있어요. 다른 영상을 고르거나 대본으로 연습해 보세요.' }
+      return { title: `이 영상에는 ${name} 자막이 없어요`, body: '다른 영상을 고르거나, 유튜브의 "스크립트 표시"를 복사해 대본 탭에 붙여 넣으면 무료로 연습할 수 있어요.' }
     case 'EMBED_BLOCKED':
       return { title: '이 영상은 사이트에서 재생할 수 없어요', body: '영상 주인이 외부 재생을 막아 두었어요. 비슷한 영상을 고르거나 대본만으로 연습해요.' }
     case 'NOT_CONNECTED':
@@ -99,6 +99,6 @@ export function noticeFor(e: unknown, lang: Lang): { title: string; body: string
     case 'OFFLINE':
       return { title: '인터넷 연결을 확인해 주세요', body: '이미 저장한 연습은 인터넷 없이도 칠 수 있어요.' }
     default:
-      return { title: '잠시 문제가 생겼어요', body: '조금 뒤 다시 해 보세요. 그동안 기본 연습과 대본은 그대로 쓸 수 있어요.' }
+      return { title: '잠시 문제가 생겼어요', body: '조금 뒤 다시 해 보세요. 자막이 안 열리면 유튜브의 "스크립트 표시"를 복사해 대본 탭에 붙여 넣어도 돼요.' }
   }
 }

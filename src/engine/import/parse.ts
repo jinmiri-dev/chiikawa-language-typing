@@ -1,7 +1,7 @@
 /** 대본 가져오기 (기획안 9장): 형식 판별, 원문·뜻 나누기, 자동 정리. */
 import type { Lang } from '../lang'
 
-export type ScriptFormat = 'table' | 'csv' | 'srt' | 'vtt' | 'text'
+export type ScriptFormat = 'table' | 'csv' | 'srt' | 'vtt' | 'youtube' | 'text'
 export type LineFlag = 'title' | 'no-ko' | 'reading'
 
 export interface DraftLine {
@@ -71,6 +71,7 @@ export function detectFormat(text: string): ScriptFormat {
   if (TIME_LINE.test(t)) return 'srt'
   const lines = nonEmpty(t)
   if (lines.length && lines.filter((l) => l.includes('\t')).length >= lines.length * 0.8) return 'table'
+  if (lines.length >= 2 && lines.filter((l) => YT_STAMP.test(l)).length >= Math.max(2, lines.length * 0.3)) return 'youtube'
   const commas = lines.map((l) => splitCsv(l).length - 1)
   if (lines.length >= 3 && commas[0] >= 1 && commas.every((c) => c === commas[0])) return 'csv'
   return 'text'
@@ -143,9 +144,33 @@ function fromText(text: string, lang: Lang): Cue[] {
   return cues
 }
 
+/** 유튜브 "스크립트 표시"를 복사한 글: `0:04` 줄(또는 `0:04 글`) 다음에 글 줄. 읽어 주는 시간(“4초”, “1 minute, 2 seconds”) 줄은 버린다 */
+const YT_STAMP = /^(\d{1,2}:\d{2}(?::\d{2})?)(?:\s+(.*))?$/
+const YT_SPOKEN = /^(\d+\s*(시간|분|초)\s*)+$|^\d+\s*(hours?|minutes?|seconds?)(,?\s*\d+\s*(minutes?|seconds?))*$/i
+
+function fromYouTube(text: string): Cue[] {
+  const cues: Cue[] = []
+  for (const line of nonEmpty(text)) {
+    const m = line.match(YT_STAMP)
+    if (m) {
+      cues.push({ src: m[2]?.trim() ?? '', start: parseTime(m[1]) })
+      continue
+    }
+    if (YT_SPOKEN.test(line) || !cues.length) continue
+    const c = cues[cues.length - 1]
+    c.src = c.src ? `${c.src} ${line}` : line
+  }
+  const out = cues.filter((c) => c.src)
+  out.forEach((c, i) => {
+    if (out[i + 1]) c.end = out[i + 1].start
+  })
+  return out
+}
+
 /** 원문 SRT 와 한국어 SRT 를 시간이 가장 많이 겹치는 것끼리 짝짓는다 */
 function pairByTime(src: Cue[], ko: Cue[]): Cue[] {
-  const overlap = (a: Cue, b: Cue) => Math.max(0, Math.min(a.end ?? 0, b.end ?? 0) - Math.max(a.start ?? 0, b.start ?? 0))
+  const endOf = (c: Cue) => c.end ?? (c.start ?? 0) + 5
+  const overlap = (a: Cue, b: Cue) => Math.max(0, Math.min(endOf(a), endOf(b)) - Math.max(a.start ?? 0, b.start ?? 0))
   return src.map((c) => {
     const best = ko.reduce<Cue | undefined>((m, k) => (overlap(c, k) > (m ? overlap(c, m) : 0) ? k : m), undefined)
     return { ...c, ko: best ? [best.src, best.ko].filter(Boolean).join(' ') : c.ko }
@@ -196,8 +221,9 @@ export function parseScript(text: string, lang: Lang, opts: { koText?: string } 
   if (format === 'srt' || format === 'vtt') cues = fromSubtitles(text, lang)
   else if (format === 'table') cues = fromCells(nonEmpty(text).map((l) => l.split('\t')), lang)
   else if (format === 'csv') cues = fromCells(nonEmpty(text).map(splitCsv), lang)
+  else if (format === 'youtube') cues = fromYouTube(text)
   else cues = fromText(text, lang)
-  if (opts.koText) cues = pairByTime(cues, fromSubtitles(opts.koText, lang))
+  if (opts.koText) cues = pairByTime(cues, detectFormat(opts.koText) === 'youtube' ? fromYouTube(opts.koText) : fromSubtitles(opts.koText, lang))
   const { lines, removedCount } = clean(cues)
   return { lines, removedCount, checkCount: lines.filter((l) => l.flags.length).length }
 }

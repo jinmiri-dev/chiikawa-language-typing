@@ -447,3 +447,9 @@ select.btn {
 .sentence-src .word + .word {
   margin-left: 0.12em;
 }
+/* 입력기로 조합 중인 글자(아직 확정 전): 친 것처럼 진하게, 밑줄로 '조합 중' 표시 */
+.ch-typing {
+  color: var(--ink);
+  text-decoration: underline dotted;
+  text-underline-offset: 6px;
+}

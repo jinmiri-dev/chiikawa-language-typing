@@ -161,3 +161,17 @@ test('0.75배는 누르면 켜지고 다시 누르면 보통 빠르기로 돌아
   expect((await store.getSettings()).rate).toBe(1)
   expect(vi.mocked(speak).mock.calls.at(-1)?.[1]).toMatchObject({ rate: 1 })
 })
+
+test('입력기로 조합 중인 가나도 문장 강조가 따라간다(확정 전)', async () => {
+  const input = await open()
+  compose(input, 'おはよう', '')
+  expect(document.querySelectorAll('.ch-typing').length).toBe(4)
+  expect(document.querySelector('.ch-now')?.textContent).toBe('！')
+})
+
+test('Esc 로 다시 듣기', async () => {
+  await open()
+  vi.mocked(speak).mockClear()
+  await act(async () => fireEvent.keyDown(window, { key: 'Escape' }))
+  expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
+})

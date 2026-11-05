@@ -31,7 +31,9 @@ function allVoices(): Promise<SpeechSynthesisVoice[]> {
 
 async function voicesFor(lang: Lang | 'ko'): Promise<SpeechSynthesisVoice[]> {
   const prefix = lang === 'ko' ? 'ko' : LANG_NAME[lang].htmlLang.toLowerCase()
-  return (await allVoices()).filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(prefix))
+  const list = (await allVoices()).filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(prefix))
+  // Edge 의 온라인 자연 음성(…Online (Natural))이 더 또렷하다. 몽골어는 Edge 에만 있는 경우가 많다
+  return [...list].sort((a, b) => Number(/Natural|Online/i.test(b.name)) - Number(/Natural|Online/i.test(a.name)))
 }
 
 async function pickVoice(lang: Lang, voice: Voice): Promise<SpeechSynthesisVoice | null> {

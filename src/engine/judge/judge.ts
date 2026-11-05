@@ -76,3 +76,15 @@ export function readingProgress(expectedReading: string, composing: string): { m
   const at = commonPrefix(target, typed)
   return { matches: at === typed.length, at }
 }
+
+/**
+ * 입력기로 조합 중인(아직 확정 안 한) 글자가 원문과 몇 글자 맞는지. 문장 강조가 확정만 기다리지 않고 따라가게.
+ * 끝에 남은 로마자(가나로 바뀌기 전)는 빼고, 원문 글자와 그대로 같은 것만 센다(한자 읽기·병음·주음은 0).
+ */
+export function composingAhead(expected: string, okUpTo: number, composing: string): number {
+  const typed = [...composing.replace(/[A-Za-z]+$/, '')]
+  const rest = [...expected.slice(okUpTo)]
+  let n = 0
+  while (n < typed.length && n < rest.length && typed[n].normalize('NFKC') === rest[n].normalize('NFKC')) n++
+  return rest.slice(0, n).join('').length
+}

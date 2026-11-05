@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { judge, normalizeLoose, readingProgress } from './judge'
+import { composingAhead, judge, normalizeLoose, readingProgress } from './judge'
 import { explainMistake } from './explain'
 
 const loose = { strict: false }
@@ -58,4 +58,17 @@ describe('기본 채점: 띄어쓰기와 문장부호도 친다', () => {
   test('띄어쓰기 여러 칸은 한 칸으로 본다', () => expect(judge('a  b', 'a b', full).done).toBe(true))
   test('그 키보드에 없는 글자는 건너뛴다(몽골어 키릴 PC 의 !)', () => expect(judge('Сайн уу!', 'Сайн уу', { strict: true, skip: /[!]/ }).done).toBe(true))
   test('대소문자는 맞아야 한다', () => expect(judge('Yeah', 'yeah', full).wrongAt).toBe(0))
+})
+
+describe('조합 중인 글자도 문장 강조에 반영', () => {
+  test('가나로 조합 중이면 맞는 만큼 앞으로(끝의 로마자는 아직 글자가 아니라 뺀다)', () => {
+    expect(composingAhead('おはよう！元気？', 0, 'おはy')).toBe(2)
+    expect(composingAhead('おはよう！元気？', 0, 'おはよう')).toBe(4)
+    expect(composingAhead('おはよう！元気？', 5, 'げんき')).toBe(0) // 한자 읽기는 글자와 달라 앞으로 가지 않는다
+  })
+  test('병음·주음처럼 로마자·기호로 조합 중이면 그대로', () => {
+    expect(composingAhead('早上好', 0, 'zao')).toBe(0)
+    expect(composingAhead('你好', 0, 'ㄋㄧˇ')).toBe(0)
+  })
+  test('틀린 글자에서 멈춘다', () => expect(composingAhead('おはよう', 0, 'おひ')).toBe(1))
 })

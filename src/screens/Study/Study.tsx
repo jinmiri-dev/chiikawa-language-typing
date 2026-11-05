@@ -7,7 +7,7 @@ import { pickLine, STAGE_LINES, type FriendLine, type Situation } from '../../co
 import { clockEvent, stageOf, type ClockState } from '../../engine/friend/clock'
 import { nextHintLevel, type HintLevel, type HintMemory } from '../../engine/hint/hint'
 import { explainMistake } from '../../engine/judge/explain'
-import { judge, significantChars } from '../../engine/judge/judge'
+import { composingAhead, judge, significantChars } from '../../engine/judge/judge'
 import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { LANG_NAME } from '../../engine/lang'
 import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
@@ -217,7 +217,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     const r = await speak(line.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
     setVoiceNote(
       r.source === 'none'
-        ? `이 기기에는 ${LANG_NAME[material.lang].ko} 목소리가 없어요. 다른 브라우저에서 들어 보세요.`
+        ? // 크롬·삼성 인터넷에는 몽골어 등 목소리가 없는 경우가 많다. PC 의 Edge 는 무료 온라인 목소리를 갖고 있다
+          `이 브라우저에는 ${LANG_NAME[material.lang].ko} 목소리가 없어요. PC의 Microsoft Edge로 열면 ${LANG_NAME[material.lang].ko} 목소리로 들을 수 있어요.`
         : r.source === 'device' && workerOrigin()
           ? '기기 목소리로 읽고 있어요.'
           : '',
@@ -269,6 +270,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
 
   // 지금 칠 조각의 안내
   const inSeg = seg ? res.okUpTo - starts[segIndex] : 0
+  // 문장 강조는 조합 중인 가나도 따라간다(확정 전에도 어디까지 쳤는지 보이게)
+  const shownUpTo = res.wrongAt === undefined ? res.okUpTo + composingAhead(line.src, res.okUpTo, composing) : res.okUpTo
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
   const guide = seg && seg.confident && layout.verified ? guideFor(layout, seg, segComposing) : null
   const nextStep = guide?.steps[guide.nextIndex]
@@ -439,14 +442,14 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     [material],
   )
 
-  // 단축키(PC): Enter 다음 줄, Ctrl+Space 듣기, Ctrl+←/→ 이전·다음 줄
+  // 단축키(PC): Enter 다음 줄, Esc 다시 듣기(입력기 조합 중이면 조합 취소로 둔다), Ctrl+←/→ 이전·다음 줄
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing) return
       if (e.key === 'Enter' && lineDone) {
         e.preventDefault()
         goTo(idx + 1)
-      } else if (e.ctrlKey && e.code === 'Space') {
+      } else if (e.key === 'Escape' && !sheetOpen && !wordsOpen) {
         e.preventDefault()
         void listen()
       } else if (e.ctrlKey && e.key === 'ArrowLeft') goTo(idx - 1)
@@ -454,7 +457,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [lineDone, idx, goTo, listen])
+  }, [lineDone, idx, goTo, listen, sheetOpen, wordsOpen])
 
   /** 유튜브 재료: 연습하다가 영상을 저장(유튜브 탭의 '저장한 영상'에 모인다) */
   async function toggleVideo() {
@@ -474,7 +477,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   function renderSeg(g: Segment, si: number) {
     const chars = [...g.text].map((ch, ci) => {
       const at = starts[si] + ci
-      const state = res.done || at < res.okUpTo ? 'done' : at === res.wrongAt ? 'wrong' : at === res.okUpTo ? 'now' : 'rest'
+      const state = res.done || at < res.okUpTo ? 'done' : at === res.wrongAt ? 'wrong' : at < shownUpTo ? 'typing' : at === shownUpTo ? 'now' : 'rest'
       return (
         <span key={ci} className={`ch ch-${state}`} data-wrong={state === 'wrong' || undefined}>
           {ch}
@@ -612,7 +615,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     <div className="study-toolbar" role="group" aria-label="조작">
       <div className="tb-group">
         <button type="button" className="btn btn-sub" onClick={() => void listen()}>
-          ▶ 다시 듣기 <span className="key-hint">Ctrl+Space</span>
+          ▶ 다시 듣기 <span className="key-hint">Esc</span>
         </button>
         {/* 누르면 0.75배, 다시 누르면 보통 빠르기. 지금 상태를 글로도 보여 준다 */}
         <button type="button" className="btn btn-sub tb-toggle" aria-pressed={settings.rate === 0.75} onClick={() => setSettings({ rate: settings.rate === 1 ? 0.75 : 1 })}>

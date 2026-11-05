@@ -17,6 +17,7 @@ const ACCEPT = '.txt,.srt,.vtt,.csv,.tsv,.pdf,.json,text/plain,application/pdf,a
 export default function ScriptTab({ lang }: { lang: Lang }) {
   const { store } = useApp()
   const [text, setText] = useState('')
+  const [koPaste, setKoPaste] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState('')
   const [yt, setYt] = useState('')
@@ -43,7 +44,7 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
         location.hash = href({ name: 'study', materialId: shared.id })
         return
       }
-      const texts = files.length ? await Promise.all(files.slice(0, 2).map(readScriptFile)) : [text]
+      const texts = files.length ? await Promise.all(files.slice(0, 2).map(readScriptFile)) : [text, koPaste].filter((t) => t.trim())
       const { text: src, koText } = pairTexts(texts, lang)
       const parsed = parseScript(src, lang, { koText })
       if (!parsed.lines.length) {
@@ -101,6 +102,24 @@ export default function ScriptTab({ lang }: { lang: Lang }) {
           placeholder={'예)\nおはよう！ 좋은 아침!\n元気？ 잘 지내?'}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          disabled={!!files.length}
+        />
+        <details className="script-yt-help">
+          <summary>유튜브 자막을 무료로 가져오는 법</summary>
+          <ol>
+            <li>유튜브에서 영상을 열고, 설명란 아래의 <b>스크립트 표시</b>를 눌러요.</li>
+            <li>오른쪽에 나온 스크립트를 처음부터 끝까지 끌어 복사해 위 칸에 붙여 넣어요. 시간(0:04)도 같이 복사되면 영상과 줄이 맞춰져요.</li>
+            <li>스크립트 언어를 한국어로 바꿀 수 있으면, 한 번 더 복사해 아래 한국어 칸에 넣어요. 뜻이 줄마다 붙어요.</li>
+            <li>아래 유튜브 링크 칸에 영상 주소를 넣으면 연습할 때 영상이 같이 나와요.</li>
+          </ol>
+        </details>
+        <textarea
+          className="script-paste script-paste-ko"
+          aria-label="한국어 자막 붙여넣기(있으면)"
+          lang="ko"
+          placeholder={'한국어 자막 (있으면)\n0:00\n좋은 아침!'}
+          value={koPaste}
+          onChange={(e) => setKoPaste(e.target.value)}
           disabled={!!files.length}
         />
         <div className="script-files">
