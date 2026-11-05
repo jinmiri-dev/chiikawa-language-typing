@@ -15,6 +15,7 @@ import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
 import { avgLineMs } from '../../engine/stats/compare'
 import { dayKey } from '../../engine/stats/trend'
 import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '../../engine/types'
+import { sentenceGroups } from '../../engine/text'
 import { getMaterial } from '../../services/materials'
 import YouTubePlayer, { type PlayerHandle } from '../../components/YouTubePlayer'
 import { workerOrigin } from '../../services/api'
@@ -424,49 +425,60 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const stage = stageOf(activeMs)
   const prev = material.lines[idx - 1]
 
+  function renderSeg(g: Segment, si: number) {
+    const chars = [...g.text].map((ch, ci) => {
+      const at = starts[si] + ci
+      const state = res.done || at < res.okUpTo ? 'done' : at === res.wrongAt ? 'wrong' : at === res.okUpTo ? 'now' : 'rest'
+      return (
+        <span key={ci} className={`ch ch-${state}`} data-wrong={state === 'wrong' || undefined}>
+          {ch}
+        </span>
+      )
+    })
+    const ruby = settings.show.reading ? rubyOf(lang, g) : undefined
+    const body = ruby ? (
+      <ruby>
+        {chars}
+        <rt>{ruby}</rt>
+      </ruby>
+    ) : (
+      chars
+    )
+    return g.isWord ? (
+      <button
+        key={si}
+        type="button"
+        className="word"
+        data-saved={savedText.has(g.text) || undefined}
+        aria-label={`${g.text} ${savedText.has(g.text) ? '단어장에서 빼기' : '단어장에 담기'}`}
+        onClick={() => void toggleWord(g.text, g.reading, false)}
+      >
+        {body}
+      </button>
+    ) : (
+      <span key={si}>{body}</span>
+    )
+  }
+
   const sentence = (
     <div className="sentence" lang={htmlLang}>
       {settings.show.src && (
         <p className="sentence-src">
-          {line.segments.map((g, si) => {
-            const chars = [...g.text].map((ch, ci) => {
-              const at = starts[si] + ci
-              const state = res.done || at < res.okUpTo ? 'done' : at === res.wrongAt ? 'wrong' : at === res.okUpTo ? 'now' : 'rest'
-              return (
-                <span key={ci} className={`ch ch-${state}`} data-wrong={state === 'wrong' || undefined}>
-                  {ch}
-                </span>
-              )
-            })
-            const ruby = settings.show.reading ? rubyOf(lang, g) : undefined
-            const body = ruby ? (
-              <ruby>
-                {chars}
-                <rt>{ruby}</rt>
-              </ruby>
+          {/* 문장마다 묶어 문장 가운데서 줄이 바뀌지 않게 한다 */}
+          {sentenceGroups(line.segments).map((group, gi) =>
+            group === ' ' ? (
+              ' '
             ) : (
-              chars
-            )
-            return g.isWord ? (
-              <button
-                key={si}
-                type="button"
-                className="word"
-                data-saved={savedText.has(g.text) || undefined}
-                aria-label={`${g.text} ${savedText.has(g.text) ? '단어장에서 빼기' : '단어장에 담기'}`}
-                onClick={() => void toggleWord(g.text, g.reading, false)}
-              >
-                {body}
-              </button>
-            ) : (
-              <span key={si}>{body}</span>
-            )
-          })}
+              <span key={gi} className="sent">
+                {group.map((si) => renderSeg(line.segments[si], si))}
+              </span>
+            ),
+          )}
         </p>
       )}
       {settings.show.ko && line.ko && (
         <p className="sentence-ko" lang="ko">
-          {line.ko}
+          <Sentences text={line.ko} />
         </p>
       )}
     </div>

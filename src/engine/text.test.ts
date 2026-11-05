@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { splitSentences } from './text'
+import { sentenceGroups, splitSentences } from './text'
 
 test('문장 끝(!?.…)과 띄어쓰기에서 나눈다', () => {
   expect(splitSentences('30분이나 했어! 간식 먹고 잠깐 쉴까?')).toEqual(['30분이나 했어!', '간식 먹고 잠깐 쉴까?'])
@@ -11,3 +11,10 @@ test('숫자 속 점이나 가운뎃점에서는 나누지 않는다', () => {
 })
 test('닫는 괄호·따옴표는 앞 문장에 붙인다', () => expect(splitSentences('좋아요!) 다음 줄')).toEqual(['좋아요!)', '다음 줄']))
 test('한 문장이면 그대로', () => expect(splitSentences('와아…!')).toEqual(['와아…!']))
+
+test('조각을 문장별로 묶는다: 문장 끝 조각 뒤에서 나누고, 사이 띄어쓰기는 묶음 밖에', () => {
+  const segs = ['Өглөөний', ' ', 'мэнд', '!', ' ', 'Сайн', ' ', 'уу', '?'].map((text) => ({ text }))
+  expect(sentenceGroups(segs)).toEqual([[0, 1, 2, 3], ' ', [5, 6, 7, 8]])
+  expect(sentenceGroups(['早上好', '！', '你好吗', '？'].map((text) => ({ text })))).toEqual([[0, 1], [2, 3]])
+  expect(sentenceGroups([{ text: '1.2초' }])).toEqual([[0]])
+})
