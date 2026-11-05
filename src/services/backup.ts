@@ -1,7 +1,7 @@
 /** 백업·복원·공유 (기획안 16장, 프론트-설계 6장). 받은 파일은 검사한 뒤에만 저장소를 바꾼다. */
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 import { LANGS, type Lang } from '../engine/lang'
-import type { Line, Material, Progress, Settings } from '../engine/types'
+import { DEFAULT_SETTINGS, FRIENDS, type Line, type Material, type Progress, type Segment, type Settings } from '../engine/types'
 import { downloadText } from './files'
 import { newScriptId } from './materials'
 import type { Store, StoreName } from './storage'
@@ -78,8 +78,32 @@ export async function importBackup(
       counts[name]++
     }
   }
-  if (data.settings && mode === 'overwrite') await store.saveSettings(data.settings)
+  if (data.settings && mode === 'overwrite') await store.saveSettings(cleanSettings(data.settings))
   return { ok: true, counts }
+}
+
+/** 백업의 설정: 아는 항목만, 기본값과 같은 모양일 때만 받는다(고친 파일이 화면을 깨지 않게) */
+const CHOICES: Partial<Record<keyof Settings, readonly unknown[]>> = {
+  device: ['auto', 'pc', 'mobile'],
+  hintMode: ['full', 'line', 'off'],
+  rate: [1, 0.75],
+  friend: FRIENDS,
+}
+const isPlain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
+export function cleanSettings(raw: unknown): Settings {
+  const s = isPlain(raw) ? raw : {}
+  const out: Record<string, unknown> = { ...DEFAULT_SETTINGS }
+  for (const [k, def] of Object.entries(DEFAULT_SETTINGS) as [keyof Settings, unknown][]) {
+    const v = s[k]
+    if (CHOICES[k]) {
+      if (CHOICES[k]!.includes(v)) out[k] = v
+    } else if (isPlain(def)) {
+      // show 는 참/거짓, layout·voice 는 언어별 글
+      if (isPlain(v)) out[k] = Object.fromEntries(Object.entries(v).filter(([kk, vv]) => (k === 'show' ? kk in def && typeof vv === 'boolean' : LANGS.includes(kk as Lang) && typeof vv === 'string')))
+      if (k === 'show') out[k] = { ...def, ...(out[k] as object) }
+    } else if (typeof v === typeof def) out[k] = v
+  }
+  return out as unknown as Settings
 }
 
 /** 공유에는 연습에 필요한 것만 담는다 */
@@ -87,19 +111,44 @@ function slim(m: Material) {
   return { lang: m.lang, title: m.title, lines: m.lines.map(({ src, ko, start, end, segments }) => ({ src, ko, start, end, segments })) }
 }
 
+/** 공유로 받는 양의 끝(줄 수, 줄 길이, 제목 길이) */
+const SHARE_MAX = { lines: 1000, src: 300, ko: 300, title: 100 }
+
+/** 조각이 모양이 맞고 이으면 원문과 같을 때만 쓴다. 아니면 읽기 확인이 필요한 한 조각 */
+function cleanSegments(src: string, segs: unknown): Segment[] {
+  const ok =
+    Array.isArray(segs) &&
+    segs.length > 0 &&
+    segs.every((g) => isPlain(g) && typeof g.text === 'string' && typeof g.isWord === 'boolean' && (g.reading === undefined || typeof g.reading === 'string')) &&
+    (segs as Segment[]).map((g) => g.text).join('') === src
+  if (!ok) return [{ text: src, reading: src, isWord: true, confident: false }]
+  return (segs as Segment[]).map((g) => ({
+    text: g.text,
+    isWord: g.isWord,
+    confident: g.confident === true,
+    ...(typeof g.reading === 'string' ? { reading: g.reading } : {}),
+    ...(typeof g.zhuyin === 'string' ? { zhuyin: g.zhuyin } : {}),
+    ...(typeof g.romaji === 'string' ? { romaji: g.romaji } : {}),
+  }))
+}
+
 function fromShared(s: unknown): Material | null {
   const v = s as ReturnType<typeof slim> | null
   if (!v || !LANGS.includes(v.lang as Lang) || typeof v.title !== 'string' || !Array.isArray(v.lines) || !v.lines.length) return null
-  if (v.lines.some((l) => typeof l?.src !== 'string' || !Array.isArray(l.segments))) return null
-  const lines: Line[] = v.lines.map((l, i) => ({
-    id: `l${String(i + 1).padStart(3, '0')}`,
-    src: l.src,
-    ...(typeof l.ko === 'string' ? { ko: l.ko } : {}),
-    ...(typeof l.start === 'number' ? { start: l.start } : {}),
-    ...(typeof l.end === 'number' ? { end: l.end } : {}),
-    segments: l.segments,
-  }))
-  return { id: newScriptId(v.lang), lang: v.lang, kind: 'script', title: v.title, koSource: lines.some((l) => l.ko) ? 'given' : 'none', lines, createdAt: Date.now() }
+  if (v.lines.some((l) => typeof l?.src !== 'string')) return null
+  const lines: Line[] = v.lines.slice(0, SHARE_MAX.lines).map((l, i) => {
+    const src = l.src.slice(0, SHARE_MAX.src)
+    return {
+      id: `l${String(i + 1).padStart(3, '0')}`,
+      src,
+      ...(typeof l.ko === 'string' ? { ko: l.ko.slice(0, SHARE_MAX.ko) } : {}),
+      ...(typeof l.start === 'number' && Number.isFinite(l.start) ? { start: l.start } : {}),
+      ...(typeof l.end === 'number' && Number.isFinite(l.end) ? { end: l.end } : {}),
+      segments: cleanSegments(src, l.segments),
+    }
+  })
+  const title = v.title.slice(0, SHARE_MAX.title)
+  return { id: newScriptId(v.lang), lang: v.lang, kind: 'script', title, koSource: lines.some((l) => l.ko) ? 'given' : 'none', lines, createdAt: Date.now() }
 }
 
 const LINK_MAX = 6000

@@ -55,3 +55,30 @@ describe('하루 상한', async () => {
     expect((await takeQuota(env.KV, 'search', 1, Date.UTC(2026, 10, 3, 1))).ok).toBe(true)
   })
 })
+
+describe('보안 강화', () => {
+  const yt = () => fakeFetch([['/youtube/v3/search', () => new Response(JSON.stringify({ items: [] }))]])
+  test('브라우저 출처(Origin) 없이 키 쓰는 경로를 부르면 403 (목소리 audio 는 예외)', async () => {
+    const r = await handle(new Request('https://w.example/search?lang=ja&q=a'), testEnv(), deps(yt()))
+    expect(r.status).toBe(403)
+    expect((await handle(new Request('https://w.example/health'), testEnv(), deps())).status).toBe(200)
+    expect((await handle(new Request('https://w.example/tts?lang=ja&voice=female&text=a'), testEnv({ AZURE_SPEECH_KEY: undefined }), deps())).status).toBe(503)
+  })
+  test('모든 응답에 보안 헤더', async () => {
+    const r = await handle(req('/health'), testEnv(), deps())
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(r.headers.get('referrer-policy')).toBe('no-referrer')
+    expect(r.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+  })
+  test('한 사람(IP)이 하루에 쓸 수 있는 양도 막는다(전체 상한과 따로)', async () => {
+    const env = testEnv()
+    const d = { ...deps(yt()), ip: '203.0.113.7' }
+    for (let i = 0; i < 30; i++) expect((await handle(req(`/search?lang=ja&q=a${i}`), env, d)).status).toBe(200)
+    const r = await handle(req('/search?lang=ja&q=last'), env, d)
+    expect(r.status).toBe(429)
+    // 다른 사람은 그대로
+    expect((await handle(req('/search?lang=ja&q=other'), env, { ...d, ip: '198.51.100.2' })).status).toBe(200)
+    // IP 는 그대로 저장하지 않는다
+    expect([...(env.KV as unknown as { data: Map<string, string> }).data.keys()].some((k) => k.includes('203.0.113.7'))).toBe(false)
+  })
+})

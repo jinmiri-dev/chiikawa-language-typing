@@ -15,11 +15,23 @@ const ROUTES: Record<string, () => Promise<Handler>> = {
   '/lyrics': async () => (await import('./lyrics')).lyrics,
 }
 
+/** 모든 응답에 붙이는 보안 헤더(내용 추측 금지, 출처 안 보냄, 다른 사이트에 끼워 넣기 금지) */
+function secure(res: Response): Response {
+  const out = new Response(res.body, res)
+  out.headers.set('x-content-type-options', 'nosniff')
+  out.headers.set('referrer-policy', 'no-referrer')
+  out.headers.set('content-security-policy', "default-src 'none'; frame-ancestors 'none'")
+  return out
+}
+
+/** 브라우저 audio 요소는 출처(Origin)를 보내지 않으므로 목소리만 예외 */
+const NO_ORIGIN_OK = new Set(['/health', '/tts'])
+
 export async function handle(req: Request, env: Env, deps: Deps): Promise<Response> {
   const origin = req.headers.get('origin')
   const allowed = env.ALLOWED_ORIGINS.split(',').map((s) => s.trim())
   const url = new URL(req.url)
-  const respond = (res: Response) => withCors(res, origin, allowed)
+  const respond = (res: Response) => secure(withCors(res, origin, allowed))
 
   if (req.method === 'OPTIONS') {
     const res = new Response(null, { status: 204, headers: { 'access-control-allow-methods': 'GET', 'access-control-max-age': '86400' } })
@@ -31,7 +43,7 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
     const route = ROUTES[url.pathname]
     if (!route) throw new ApiError('NOT_FOUND', '없는 주소예요.')
     // 브라우저에서 부를 때는 허용 출처만(키를 쓰는 경로를 남이 쓰지 못하게)
-    if (origin && !allowed.includes(origin)) throw new ApiError('FORBIDDEN', '이 사이트에서만 쓸 수 있어요.')
+    if (origin ? !allowed.includes(origin) : !NO_ORIGIN_OK.has(url.pathname)) throw new ApiError('FORBIDDEN', '이 사이트에서만 쓸 수 있어요.')
     const lang = url.searchParams.get('lang')
     if (!isLang(lang)) throw new ApiError('BAD_REQUEST', '언어(lang)가 잘못됐어요.')
     return respond(await (await route())(url, lang, env, deps))
@@ -42,5 +54,6 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
 }
 
 export default {
-  fetch: (req: Request, env: Env) => handle(req, env, { fetch: (...a) => fetch(...a), now: () => Date.now() }),
+  fetch: (req: Request, env: Env) =>
+    handle(req, env, { fetch: (...a) => fetch(...a), now: () => Date.now(), ip: req.headers.get('cf-connecting-ip') ?? undefined }),
 }

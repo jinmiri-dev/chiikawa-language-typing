@@ -33,7 +33,7 @@ export async function tts(url: URL, lang: Lang, env: Env, deps: Deps): Promise<R
   if (hit) return new Response(hit, { headers: { ...headers, 'x-cache': 'hit' } })
   if (!env.AZURE_SPEECH_KEY || !env.AZURE_SPEECH_REGION) throw new ApiError('NOT_CONFIGURED', '음성 합성 키가 아직 없어요.')
 
-  const quota = await takeQuota(env.KV, 'tts', LIMITS.tts, deps.now(), [...text].length)
+  const quota = await takeQuota(env.KV, 'tts', LIMITS.tts, deps.now(), [...text].length, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 목소리 만들기는 다 썼어요. 기기 목소리로 들을 수 있어요.', quota.resetSec)
 
   const res = await deps.fetch(`https://${env.AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {

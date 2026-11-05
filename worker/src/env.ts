@@ -25,6 +25,8 @@ export interface Env {
 export interface Deps {
   fetch: typeof fetch
   now: () => number
+  /** 부른 사람 IP(Cloudflare 가 알려 준다). 한 사람 하루 상한에 쓴다 */
+  ip?: string
 }
 
 export const LANGS = ['en', 'ja', 'zh', 'tw', 'mn'] as const

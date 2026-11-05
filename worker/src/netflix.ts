@@ -35,7 +35,7 @@ export async function netflix(url: URL, lang: Lang, env: Env, deps: Deps): Promi
   const hit = await cachedJson<unknown>(env.KV, key)
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
   if (!env.TMDB_TOKEN) throw new ApiError('NOT_CONFIGURED', 'TMDB 키가 아직 없어요.')
-  const quota = await takeQuota(env.KV, 'netflix', LIMITS.netflix, deps.now())
+  const quota = await takeQuota(env.KV, 'netflix', LIMITS.netflix, deps.now(), 1, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 추천은 더 불러올 수 없어요.', quota.resetSec)
 
   const u = new URL(`https://api.themoviedb.org/3/discover/${type}`)

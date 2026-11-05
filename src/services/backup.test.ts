@@ -72,3 +72,28 @@ describe('공유', () => {
     expect(readShareFile({ app: 'x' })).toBeNull()
   })
 })
+
+describe('밖에서 온 데이터 지키기', () => {
+  test('공유 링크의 조각이 이상하면(원문과 안 맞거나 모양이 틀리면) 읽기 확인이 필요한 한 조각으로', () => {
+    const bad = { lang: 'ja', title: 't', lines: [{ src: 'こんにちは', segments: [{ text: '<img src=x>', reading: 1, isWord: 'y' }] }] }
+    const m = readShareFile({ app: 'language-grade1-share', material: bad })!
+    expect(m.lines[0].segments).toEqual([{ text: 'こんにちは', reading: 'こんにちは', isWord: true, confident: false }])
+  })
+  test('공유 링크는 줄 수와 줄 길이를 넘치게 받지 않는다', () => {
+    const lines = Array.from({ length: 3000 }, () => ({ src: 'あ'.repeat(800), segments: [] }))
+    const m = readShareFile({ app: 'language-grade1-share', material: { lang: 'ja', title: 'x'.repeat(500), lines } })!
+    expect(m.lines.length).toBeLessThanOrEqual(1000)
+    expect(m.lines[0].src.length).toBeLessThanOrEqual(300)
+    expect(m.title.length).toBeLessThanOrEqual(100)
+  })
+  test('백업의 설정은 아는 항목·맞는 모양만 받는다', async () => {
+    const store = memoryStore()
+    const file = { app: 'language-grade1', version: 1, data: { settings: { ...DEFAULT_SETTINGS, rate: 'fast', friend: 'hacker', reduceMotion: true, evil: '<script>' } } }
+    expect((await importBackup(store, file, 'overwrite')).ok).toBe(true)
+    const s = await store.getSettings()
+    expect(s.rate).toBe(DEFAULT_SETTINGS.rate)
+    expect(s.friend).toBe(DEFAULT_SETTINGS.friend)
+    expect(s.reduceMotion).toBe(true)
+    expect((s as unknown as Record<string, unknown>).evil).toBeUndefined()
+  })
+})

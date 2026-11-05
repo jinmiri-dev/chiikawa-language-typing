@@ -58,7 +58,7 @@ export async function search(url: URL, lang: Lang, env: Env, deps: Deps): Promis
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
   if (!env.YOUTUBE_API_KEY) throw new ApiError('NOT_CONFIGURED', '유튜브 검색 키가 아직 없어요.')
 
-  const quota = await takeQuota(env.KV, 'search', LIMITS.search, deps.now())
+  const quota = await takeQuota(env.KV, 'search', LIMITS.search, deps.now(), 1, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 검색은 다 썼어요. 링크 붙여넣기와 대본은 계속 쓸 수 있어요.', quota.resetSec)
 
   const s = new URL('https://www.googleapis.com/youtube/v3/search')

@@ -27,7 +27,7 @@ export async function lyrics(url: URL, lang: Lang, env: Env, deps: Deps): Promis
   if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
 
   if (!(await embeddable(env, deps, v))) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
-  const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now())
+  const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now(), 1, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 새 영상 자막은 다 받았어요.', quota.resetSec)
 
   // 한국어 자막은 영상마다 한 번만 받아 둔다(모국어가 달라도 같다)
