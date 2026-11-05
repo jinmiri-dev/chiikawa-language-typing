@@ -84,3 +84,25 @@ test('중계 함수 목소리가 실패하면 기기 목소리', async () => {
   expect(spoken[0].voice?.name).toContain('Nanami')
   vi.unstubAllEnvs()
 })
+
+test('목소리 목록이 처음에 비어 있어도(크롬) 목록이 차면 읽는다', async () => {
+  let voices: FakeVoice[] = []
+  const listeners: (() => void)[] = []
+  install([])
+  vi.stubGlobal('speechSynthesis', {
+    getVoices: () => voices,
+    cancel: () => {},
+    addEventListener: (_: string, f: () => void) => listeners.push(f),
+    removeEventListener: () => {},
+    speak: (u: { text: string; voice: FakeVoice | null; rate: number; lang: string; onend?: () => void }) => {
+      spoken.push({ text: u.text, voice: u.voice, rate: u.rate, lang: u.lang })
+      u.onend?.()
+    },
+  })
+  setTimeout(() => {
+    voices = [{ name: 'Google US English', lang: 'en-US' }]
+    listeners.forEach((f) => f())
+  }, 50)
+  expect(await speak('Morning', { lang: 'en', voice: 'female', rate: 1 })).toEqual({ source: 'device' })
+  expect(spoken[0].text).toBe('Morning')
+})

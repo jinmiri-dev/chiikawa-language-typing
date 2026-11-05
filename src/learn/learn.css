@@ -1,0 +1,533 @@
+/* 외국인 한국어 배우기 */
+.learn,
+.learn-video,
+.learn-sheet-main {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px var(--gutter) 48px;
+}
+.learn h1 {
+  margin: 0;
+  font-size: var(--fs-h1);
+  line-height: 1.3;
+}
+.learn .page-lead {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+}
+.learn-count {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--point);
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* 모국어 고르기 */
+.learn-multi {
+  font-size: var(--fs-h2) !important;
+  text-wrap: balance;
+}
+.learn-langs {
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.learn-lang {
+  min-height: 96px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.learn-lang:hover {
+  border-color: var(--ink);
+}
+.learn-lang b {
+  font-size: var(--fs-h2);
+}
+.learn-lang span {
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+
+/* 영상 목록 */
+.learn-tags {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learn-grid {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px 16px;
+}
+.learn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.learn-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--soft);
+}
+.learn-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.learn-time,
+.learn-kind {
+  position: absolute;
+  bottom: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.learn-time {
+  right: 6px;
+  background: rgb(0 0 0 / 0.75);
+  color: #fff;
+}
+.learn-kind {
+  left: 6px;
+  background: var(--point);
+  color: var(--ink);
+}
+.learn-meta {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.learn-link {
+  margin-top: 28px;
+  display: flex;
+  gap: 8px;
+  max-width: 640px;
+}
+.learn-link .field-input {
+  flex: 1;
+  min-width: 0;
+}
+.learn-words {
+  margin-top: 32px;
+}
+.learn-words h2 {
+  margin: 0 0 12px;
+  font-size: var(--fs-h2);
+}
+.learn-words ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learn-words li {
+  display: inline-flex;
+  align-items: center;
+}
+.learn-x {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* 가사 보기: PC 는 왼쪽 영상(따라옴) + 오른쪽 가사, 휴대폰은 위 영상(따라옴) + 아래 가사 */
+.learn-video {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 32px;
+  align-items: start;
+}
+.learn-stage {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.learn-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.learn-mode {
+  min-height: var(--btn-h-sub);
+  border: 0;
+  background: var(--bg);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.learn-mode + .learn-mode {
+  border-left: 1px solid var(--border);
+}
+.learn-mode[aria-selected='true'] {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+}
+.learn-help {
+  margin: 0;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.learn-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+}
+.learn-rates,
+.learn-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.learn-rates > span {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  margin-right: 2px;
+}
+.learn-rates .chip-btn,
+.learn-toggles .chip-btn {
+  padding: 0 12px;
+}
+
+.learn-lyrics {
+  min-width: 0;
+}
+.learn-lyrics-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.learn-lyrics-head .learn-tip {
+  margin: 0;
+}
+.learn-tip {
+  margin: 0 0 8px;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.learn-error {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--soft);
+}
+.learn-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.learn-line {
+  border-radius: var(--radius);
+  padding: 10px 8px;
+  scroll-margin: 120px;
+  transition: background 0.2s;
+}
+.learn-line[data-current] {
+  background: #fff7d6;
+}
+.learn-line-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+.learn-play,
+.learn-tool {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.learn-tool {
+  border: 0;
+  font-size: 18px;
+}
+.learn-tool[aria-pressed='true'] {
+  color: #d99a00;
+}
+.learn-line-tools {
+  display: flex;
+}
+.learn-ko {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.learn-word,
+.learn-blank {
+  padding: 0 1px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.learn-word:hover {
+  background: var(--point);
+}
+.learn-blank {
+  color: var(--ok);
+  letter-spacing: 1px;
+}
+.learn-sound {
+  margin: 2px 0 0;
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.learn-meaning {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+}
+.learn-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: var(--fs-sub);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+@media (max-width: 899px) {
+  .learn-video {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding-top: 12px;
+  }
+  .learn-stage {
+    top: 0;
+    z-index: 2;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 8px var(--gutter);
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .learn-help {
+    display: none;
+  }
+  /* 가사가 화면 절반 넘게 보이도록 위 영상·조작을 줄인다 */
+  .learn-stage {
+    gap: 8px;
+  }
+  .learn-stage .yt-player {
+    max-height: 26vh;
+    aspect-ratio: auto;
+    height: calc(min(100vw - var(--gutter) * 2, 640px) * 9 / 16);
+  }
+  .learn-mode {
+    min-height: 38px;
+  }
+  .learn-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .learn-rates,
+  .learn-toggles {
+    flex-wrap: nowrap;
+  }
+  .learn-controls {
+    gap: 8px;
+  }
+  .learn-rates > span {
+    display: none;
+  }
+  .learn-controls .chip-btn {
+    min-height: 34px;
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+  .learn-ko {
+    font-size: 20px;
+  }
+}
+
+/* 따라 쓰기 학습지 */
+.learn-sheet-tools {
+  max-width: 624px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.learn-sheet-tools h1 {
+  margin: 0;
+  font-size: var(--fs-h1);
+}
+.ws {
+  --cell: min(52px, calc((100vw - var(--gutter) * 2) / 12));
+  max-width: calc(var(--cell) * 12);
+  color: #222;
+}
+.ws-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #222;
+}
+.ws-title {
+  font-size: 20px;
+}
+.ws-fields {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+}
+.ws-fields i {
+  display: inline-block;
+  width: 28px;
+  border-bottom: 1px solid #999;
+}
+.ws-fields .ws-name {
+  width: 96px;
+}
+.ws-guide {
+  margin: 8px 0 12px;
+  font-size: 13px;
+}
+.ws-item {
+  padding: 8px 0 10px;
+  border-bottom: 1px dashed #bbb;
+  break-inside: avoid;
+}
+.ws-block + .ws-block {
+  margin-top: 6px;
+}
+.ws-row {
+  display: grid;
+  grid-template-columns: repeat(12, var(--cell));
+  border-left: 1px solid #9aa9b8;
+}
+.ws-row + .ws-row {
+  border-top: 0;
+}
+.ws-row span {
+  height: var(--cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9aa9b8;
+  border-left: 0;
+  margin-top: -1px;
+  font-size: calc(var(--cell) * 0.62);
+  line-height: 1;
+}
+.ws-row:first-child span {
+  margin-top: 0;
+}
+.ws-model span {
+  background: #dcecf8;
+  color: #111;
+}
+.ws-trace span {
+  color: #c4c4c4;
+}
+.ws-meaning {
+  margin: 0 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.ws-meaning b {
+  font-size: 16px;
+  color: #111;
+}
+.ws-meaning span {
+  font-size: 13px;
+  color: #666;
+}
+.ws-meaning .learn-x {
+  margin-left: auto;
+}
+.ws-note {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .learn-sheet-main {
+    padding: 0;
+    max-width: none;
+  }
+  .ws {
+    --cell: 15.5mm;
+    max-width: none;
+  }
+  .ws-model span {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

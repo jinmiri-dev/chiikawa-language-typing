@@ -14,6 +14,11 @@ export type Route =
   | { name: 'settings' }
   | { name: 'guide' }
   | { name: 'lab-input' }
+  // 외국인 한국어 배우기: native 는 학습자 모국어
+  | { name: 'learn' }
+  | { name: 'learn-list'; native: Lang }
+  | { name: 'learn-video'; native: Lang; videoId: string }
+  | { name: 'learn-sheet'; native: Lang }
   | { name: 'not-found' }
 
 const SIMPLE: Record<string, Route> = {
@@ -36,6 +41,16 @@ export function parseRoute(hash: string): Route {
     const tab = q.get('tab') ?? 'starter'
     if (!LANGS.includes(lang as Lang) || !MATERIAL_TABS.includes(tab as MaterialTab)) return { name: 'not-found' }
     return { name: 'materials', lang: lang as Lang, tab: tab as MaterialTab }
+  }
+
+  if (path === '/learn') return { name: 'learn' }
+  const learn = path.match(/^\/learn\/(\w+)(?:\/(sheet)|\/v\/([\w-]{11}))?$/)
+  if (learn) {
+    const native = learn[1] as Lang
+    if (!LANGS.includes(native)) return { name: 'not-found' }
+    if (learn[2]) return { name: 'learn-sheet', native }
+    if (learn[3]) return { name: 'learn-video', native, videoId: learn[3] }
+    return { name: 'learn-list', native }
   }
 
   const share = path.match(/^\/share\/([A-Za-z0-9+\-$]+)$/)
@@ -61,6 +76,14 @@ export function href(r: Route): string {
       return `#/share/${r.data}`
     case 'lab-input':
       return '#/lab/input'
+    case 'learn':
+      return '#/learn'
+    case 'learn-list':
+      return `#/learn/${r.native}`
+    case 'learn-video':
+      return `#/learn/${r.native}/v/${r.videoId}`
+    case 'learn-sheet':
+      return `#/learn/${r.native}/sheet`
     case 'not-found':
       return '#/not-found'
     default:

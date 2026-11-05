@@ -63,6 +63,15 @@ async function get<T>(path: string, params: Record<string, string | undefined>):
 export const searchVideos = (lang: Lang, p: { q?: string; tag?: string; pageToken?: string }) =>
   get<{ items: VideoItem[]; nextPageToken?: string }>('/search', { lang, ...p })
 export const getTranscript = (lang: Lang, v: string) => get<TranscriptResult>('/transcript', { lang, v })
+/** 외국인 한국어 배우기: 한국어 가사와 모국어(native) 뜻 */
+export interface LyricsResult {
+  videoId: string
+  to: Lang
+  source: 'manual' | 'asr'
+  meaningSource: 'youtube' | 'none'
+  lines: { start: number; end: number; ko: string; meaning?: string }[]
+}
+export const getLyrics = (native: Lang, v: string) => get<LyricsResult>('/lyrics', { lang: native, v })
 export const getNetflix = (lang: Lang) => get<NetflixResult>('/netflix', { lang })
 export const ttsUrl = (lang: Lang, voice: 'female' | 'male', text: string, rate: 1 | 0.75) =>
   url('/tts', { lang, voice, text, ...(rate === 0.75 ? { rate: '0.75' } : {}) })

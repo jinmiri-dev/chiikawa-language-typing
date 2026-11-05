@@ -12,6 +12,7 @@ const ROUTES: Record<string, () => Promise<Handler>> = {
   '/transcript': async () => (await import('./transcript')).transcript,
   '/tts': async () => (await import('./tts')).tts,
   '/netflix': async () => (await import('./netflix')).netflix,
+  '/lyrics': async () => (await import('./lyrics')).lyrics,
 }
 
 export async function handle(req: Request, env: Env, deps: Deps): Promise<Response> {

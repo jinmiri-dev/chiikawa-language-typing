@@ -35,6 +35,15 @@ test('href 와 parseRoute 는 서로 되돌린다', () => {
     { name: 'settings' },
     { name: 'guide' },
     { name: 'lab-input' },
+    { name: 'learn' },
+    { name: 'learn-list', native: 'zh' },
+    { name: 'learn-video', native: 'mn', videoId: '_WBvFWL9a0c' },
+    { name: 'learn-sheet', native: 'en' },
   ]
   for (const r of routes) expect(parseRoute(href(r))).toEqual(r)
+})
+
+test('한국어 배우기 주소: 모르는 모국어나 잘못된 영상 id 는 없는 페이지', () => {
+  expect(parseRoute('#/learn/ko')).toEqual({ name: 'not-found' })
+  expect(parseRoute('#/learn/zh/v/short')).toEqual({ name: 'not-found' })
 })

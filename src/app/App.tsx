@@ -9,6 +9,9 @@ import Review from '../screens/Review/Review'
 import Settings from '../screens/Settings/Settings'
 import Share from '../screens/Share/Share'
 import Study from '../screens/Study/Study'
+import LearnSheet from '../learn/LearnSheet'
+import { LearnList, LearnStart } from '../learn/LearnList'
+import LearnVideo from '../learn/LearnVideo'
 import { AppProvider } from './AppState'
 import ErrorBoundary from './ErrorBoundary'
 import { parseRoute, type Route } from './routes'
@@ -60,6 +63,14 @@ function Screen({ route }: { route: Route }) {
       return <Settings />
     case 'guide':
       return <Guide />
+    case 'learn':
+      return <LearnStart />
+    case 'learn-list':
+      return <LearnList key={route.native} native={route.native} />
+    case 'learn-video':
+      return <LearnVideo key={route.videoId + route.native} native={route.native} videoId={route.videoId} />
+    case 'learn-sheet':
+      return <LearnSheet native={route.native} />
     case 'lab-input':
       return (
         <main className="app app-top">

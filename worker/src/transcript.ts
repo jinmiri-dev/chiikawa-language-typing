@@ -16,8 +16,12 @@ export interface TranscriptLine {
   ko?: string
 }
 
+/** 원문 자막 언어: 배울 언어 다섯, 그리고 외국인이 배우는 한국어(/lyrics) */
+export type SrcLang = Lang | 'ko'
+
 /** 유튜브 자막 언어 코드(앞에서부터 찾는다) */
-const TRACK: Record<Lang, string[]> = {
+const TRACK: Record<SrcLang, string[]> = {
+  ko: ['ko'],
   ja: ['ja'], en: ['en', 'en-US', 'en-GB'], zh: ['zh-Hans', 'zh-CN', 'zh'], tw: ['zh-Hant', 'zh-TW'], mn: ['mn'],
 }
 /** 번역 API 원문 언어 코드 */
@@ -29,8 +33,8 @@ const MAX = 12
 const GAP = 1.2
 
 /** 자동 자막 조각을 연습하기 알맞은 줄(2~12초)로 합친다. 문장부호나 조용한 틈에서 끊는다. */
-export function mergeCues(cues: Cue[], lang: Lang = 'ja'): Cue[] {
-  const join = lang === 'en' || lang === 'mn' ? ' ' : ''
+export function mergeCues(cues: Cue[], lang: SrcLang = 'ja'): Cue[] {
+  const join = lang === 'en' || lang === 'mn' || lang === 'ko' ? ' ' : ''
   const out: Cue[] = []
   let cur: Cue | null = null
   for (const c of cues) {
@@ -49,14 +53,15 @@ export function mergeCues(cues: Cue[], lang: Lang = 'ja'): Cue[] {
 }
 
 /** 그 언어 글자. 이 글자가 하나도 없는 줄(통째로 영어·로마자)은 연습에서 건너뛴다 */
-const SCRIPT: Record<Lang, RegExp> = {
+const SCRIPT: Record<SrcLang, RegExp> = {
+  ko: /\p{Script=Hangul}/u,
   ja: /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u,
   zh: /\p{Script=Han}/u,
   tw: /\p{Script=Han}/u,
   mn: /\p{Script=Cyrillic}/u,
   en: /\p{Script=Latin}/u,
 }
-const LANG_KO: Record<Lang, string> = { ja: '일본어', zh: '중국어', tw: '대만어', mn: '몽골어', en: '영어' }
+const LANG_KO: Record<SrcLang, string> = { ko: '한국어', ja: '일본어', zh: '중국어', tw: '대만어', mn: '몽골어', en: '영어' }
 /** [Music]·[音楽]·(박수) 같은 표시 */
 const TAGS = /\[[^\]]*\]|［[^］]*］|\([^)]*\)|（[^）]*）/g
 
@@ -65,12 +70,12 @@ const clean = (s: string) =>
   s.replace(/\p{Extended_Pictographic}️?|[♪♫♬♡]/gu, ' ').replace(/\s+/g, ' ').replace(/^[\s。、，,.]+/, '').trim()
 
 /** 연습할 줄만 남긴다. 다른 언어가 섞인 줄은 그대로 친다. */
-export function practiceLines(cues: Cue[], lang: Lang): Cue[] {
+export function practiceLines(cues: Cue[], lang: SrcLang): Cue[] {
   return cues.map((c) => ({ ...c, text: clean(c.text) })).filter((c) => SCRIPT[lang].test(c.text.replace(TAGS, '')))
 }
 
 /** 자막 대부분이 그 언어 글자인가(일본어 자막이 로마자뿐인 영상 걸러내기) */
-const native = (cues: Cue[], lang: Lang) => practiceLines(cues, lang).length >= cues.length * 0.5
+const native = (cues: Cue[], lang: SrcLang) => practiceLines(cues, lang).length >= cues.length * 0.5
 
 const SENT_END = /^(.*[.?!…。？！])\s+(\S.*)$/su
 /** 끝까지 문장이면 옮기지 않는다 */
@@ -125,7 +130,7 @@ type Pick = { lang: string; type: 'manual' | 'auto' } | { name: string }
 const AUTO_NAME = /auto-generated/i
 
 /** 자막 서비스 어댑터 (SearchAPI youtube_transcripts) */
-async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): Promise<Track | null> {
+export async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): Promise<Track | null> {
   const u = new URL('https://www.searchapi.io/api/v1/search')
   u.searchParams.set('engine', 'youtube_transcripts')
   u.searchParams.set('video_id', v)
@@ -148,7 +153,7 @@ async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): Promise<
  * 원문 자막: 직접 올린 자막을 먼저 받는다. 받은 자막이 로마자처럼 그 언어 글자가 아니면
  * 같은 언어의 다른 자막(자동 자막 등)을 이름으로 두 개까지 더 찾아본다.
  */
-async function sourceTrack(env: Env, deps: Deps, v: string, lang: Lang): Promise<{ cues: Cue[]; auto: boolean } | null> {
+export async function sourceTrack(env: Env, deps: Deps, v: string, lang: SrcLang): Promise<{ cues: Cue[]; auto: boolean } | null> {
   let foreign = false
   for (const code of TRACK[lang]) {
     const got = await fetchTrack(env, deps, v, { lang: code, type: 'manual' })
@@ -194,7 +199,7 @@ async function translate(env: Env, deps: Deps, lang: Lang, texts: string[]): Pro
   return out
 }
 
-async function embeddable(env: Env, deps: Deps, v: string): Promise<boolean> {
+export async function embeddable(env: Env, deps: Deps, v: string): Promise<boolean> {
   if (!env.YOUTUBE_API_KEY) return true
   const u = new URL('https://www.googleapis.com/youtube/v3/videos')
   u.searchParams.set('part', 'status')

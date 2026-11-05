@@ -10,21 +10,58 @@ const NAME_HINT: Record<Voice, RegExp> = {
   male: /keita|otoya|ichiro|daichi|naoki|yunxi|yunyang|kangkang|yunjhe|zhiwei|david|guy|daniel|alex|fred|bataa|male|남자/i,
 }
 
-function voicesFor(lang: Lang): SpeechSynthesisVoice[] {
-  if (typeof speechSynthesis === 'undefined') return []
-  const prefix = LANG_NAME[lang].htmlLang.toLowerCase()
-  return speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(prefix))
+/**
+ * 기기 목소리 목록. 크롬은 처음에 빈 목록을 주고 voiceschanged 뒤에 채운다.
+ * 비어 있으면 잠깐(최대 1.5초) 기다린다. 그러지 않으면 첫 단어·첫 문장이 소리 없이 지나간다.
+ */
+function allVoices(): Promise<SpeechSynthesisVoice[]> {
+  if (typeof speechSynthesis === 'undefined') return Promise.resolve([])
+  const now = speechSynthesis.getVoices()
+  if (now.length) return Promise.resolve(now)
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer)
+      speechSynthesis.removeEventListener?.('voiceschanged', done)
+      resolve(speechSynthesis.getVoices())
+    }
+    const timer = setTimeout(done, 1500)
+    speechSynthesis.addEventListener?.('voiceschanged', done)
+  })
 }
 
-function pickVoice(lang: Lang, voice: Voice): SpeechSynthesisVoice | null {
-  const all = voicesFor(lang)
+async function voicesFor(lang: Lang | 'ko'): Promise<SpeechSynthesisVoice[]> {
+  const prefix = lang === 'ko' ? 'ko' : LANG_NAME[lang].htmlLang.toLowerCase()
+  return (await allVoices()).filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(prefix))
+}
+
+async function pickVoice(lang: Lang, voice: Voice): Promise<SpeechSynthesisVoice | null> {
+  const all = await voicesFor(lang)
   // 'female' 이 'male' 을 포함하므로 남자 목소리는 여자 표에 걸리지 않는 것만
   const match = all.find((v) => NAME_HINT[voice].test(v.name) && (voice === 'female' || !NAME_HINT.female.test(v.name)))
   return match ?? all[0] ?? null
 }
 
+/**
+ * 한국어 읽기(외국인 한국어 배우기): 기기 목소리. 단어를 눌렀을 때, 문장을 천천히 들을 때.
+ * 한국어 목소리가 없으면 'none'.
+ */
+export async function speakKo(text: string, rate = 0.9): Promise<{ source: 'device' | 'none' }> {
+  const v = (await voicesFor('ko'))[0]
+  if (!v) return Promise.resolve({ source: 'none' })
+  stopSpeaking()
+  return new Promise((resolve) => {
+    const u = new SpeechSynthesisUtterance(text)
+    u.voice = v
+    u.lang = v.lang
+    u.rate = rate
+    u.onend = () => resolve({ source: 'device' })
+    u.onerror = () => resolve({ source: 'device' })
+    speechSynthesis.speak(u)
+  })
+}
+
 export async function canSpeak(lang: Lang): Promise<boolean> {
-  return voicesFor(lang).length > 0
+  return (await voicesFor(lang)).length > 0
 }
 
 export function stopSpeaking(): void {
@@ -61,8 +98,8 @@ export async function speak(text: string, opts: { lang: Lang; voice: Voice; rate
   return speakDevice(text, opts)
 }
 
-function speakDevice(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'device' | 'none' }> {
-  const v = pickVoice(opts.lang, opts.voice)
+async function speakDevice(text: string, opts: { lang: Lang; voice: Voice; rate: 1 | 0.75 }): Promise<{ source: 'device' | 'none' }> {
+  const v = await pickVoice(opts.lang, opts.voice)
   if (!v) return Promise.resolve({ source: 'none' })
   stopSpeaking()
   return new Promise((resolve) => {

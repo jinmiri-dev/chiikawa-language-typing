@@ -7,6 +7,7 @@ import { buildReviewMaterial, reviewCount } from '../../services/review'
 import { lineSpeedTrend } from '../../engine/stats/trend'
 import { KIND_NAME, LANG_NAME, LANGS, type Lang } from '../../engine/lang'
 import type { Material, Progress } from '../../engine/types'
+import { LEARN_BUTTON } from '../../learn/i18n'
 import './Home.css'
 
 /** 아이폰·아이패드 사파리이고 홈 화면 앱으로 연 게 아니면 */
@@ -156,6 +157,17 @@ export default function Home() {
           )}
           <LangCards />
           <p className="home-note"><Sentences text="로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요." /></p>
+          {/* 외국인 학습자 입구: 누구든 자기 말로 알아보게 여러 말로 */}
+          <a className="home-learn" href={href({ name: 'learn' })}>
+            <span className="home-learn-flag" aria-hidden="true">
+              한
+            </span>
+            <span className="home-learn-text">
+              <b>{LEARN_BUTTON[0]}</b>
+              <span>{LEARN_BUTTON.slice(1).join(' · ')}</span>
+            </span>
+            <span aria-hidden="true">→</span>
+          </a>
           {safariTip && (
             <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
               아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.

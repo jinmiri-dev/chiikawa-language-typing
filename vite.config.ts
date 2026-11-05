@@ -19,5 +19,7 @@ export default defineConfig({
   plugins: [react(), cspPlugin()],
   test: {
     environment: 'jsdom',
+    // 로컬 .env 의 중계 서버 주소가 시험에 새어 들지 않게(시험은 필요할 때 stubEnv 로 넣는다)
+    env: { VITE_WORKER_ORIGIN: '' },
   },
 })
