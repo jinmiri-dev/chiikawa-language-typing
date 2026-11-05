@@ -437,3 +437,13 @@ select.btn {
   font-size: var(--fs-sub);
   color: var(--ink-2);
 }
+
+/* 키 안내 덩어리는 가운데서 줄이 바뀌지 않게 */
+.guide-part {
+  display: inline-block;
+}
+/* 이웃한 낱말의 읽기(병음 등)가 붙어 보이지 않게 낱말 사이를 조금 띄운다 */
+.sentence-src ruby + ruby,
+.sentence-src .word + .word {
+  margin-left: 0.12em;
+}

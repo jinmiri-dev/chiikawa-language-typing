@@ -48,6 +48,23 @@ function useVisualViewport() {
   }, [])
 }
 
+/** 키 안내 한 줄: '→' 로 나눈 덩어리(예: Z A O S H A N G)는 가운데서 줄이 바뀌지 않게 묶는다 */
+function GuideParts({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(' → ').map((p, i) => (
+        <span key={i}>
+          {i > 0 && ' '}
+          <span className="guide-part">
+            {i > 0 && '→ '}
+            {p}
+          </span>
+        </span>
+      ))}
+    </>
+  )
+}
+
 /** 키보드에 없어 칠 수 없는 글자 */
 const SKIP_CHARS: Partial<Record<LayoutId, RegExp>> = { 'mn-cyrillic': /[!]/ }
 
@@ -564,7 +581,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     // 키 자리를 아직 확인하지 못한 자판: 그림 대신 무엇을 칠지(읽기·입력 순서)를 글로 알려 준다
     <div className="guide">
       <p className="guide-line" lang={htmlLang}>
-        {guideText(layout, seg)}
+        <GuideParts text={guideText(layout, seg)} />
       </p>
       <p className="guide-note">자판 그림은 기기마다 달라 아직 준비 중이에요. 위 순서대로 쳐 보세요.</p>
     </div>
@@ -572,7 +589,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     <div className="guide">
       {level !== 'off' ? (
         <p className="guide-line" lang={htmlLang}>
-          {guideText(layout, seg)}
+          <GuideParts text={guideText(layout, seg)} />
         </p>
       ) : (
         <p className="guide-off"><Sentences text="안내 없이 쳐 봐요. 멈추면 다시 알려 줘요." /></p>
