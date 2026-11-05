@@ -12,7 +12,11 @@ import { getNative, listLearnWords, listSentences } from './learnStore'
 const player = vi.hoisted(() => ({ playSegment: vi.fn(async (_start: number, _end: number, _rate: number) => {}), playFrom: vi.fn(), setRate: vi.fn(), pause: vi.fn() }))
 vi.mock('../components/YouTubePlayer', async () => {
   const { useImperativeHandle } = await import('react')
-  return { default: ({ ref }: { ref?: React.Ref<unknown> }) => { useImperativeHandle(ref, () => player); return null } }
+  function FakePlayer({ ref }: { ref?: React.Ref<unknown> }) {
+    useImperativeHandle(ref, () => player)
+    return null
+  }
+  return { default: FakePlayer }
 })
 vi.mock('../services/api', async (orig) => ({ ...(await orig<typeof import('../services/api')>()), getLyrics: vi.fn() }))
 vi.mock('../services/speech', async (orig) => ({ ...(await orig<typeof import('../services/speech')>()), speakKo: vi.fn(async () => ({ source: 'device' as const })) }))

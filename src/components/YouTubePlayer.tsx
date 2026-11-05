@@ -13,7 +13,9 @@ export interface PlayerHandle {
 /** 영상 (기획안 10장): 지금 줄 구간만 재생. 휴대폰에서는 작게. */
 export default function YouTubePlayer({ videoId, title, ref, onTime }: { videoId: string; title: string; ref?: Ref<PlayerHandle>; onTime?: (t: number) => void }) {
   const onTimeRef = useRef(onTime)
-  onTimeRef.current = onTime
+  useEffect(() => {
+    onTimeRef.current = onTime
+  }, [onTime])
   const frame = useRef<HTMLIFrameElement>(null)
   const endAt = useRef<number | null>(null)
   const done = useRef<(() => void) | null>(null)
