@@ -1,4 +1,4 @@
-/** GET /transcript — 영상 자막과 한국어 (기획안 8장, 아키텍처-API-ERD 3.3). 캐시 30일, 새 영상 하루 60개. */
+/** GET /transcript — 영상 자막과 한국어 (기획안 8장, 아키텍처-API-ERD 3.3). 한 번 받은 자막은 기한 없이 저장, 새 영상 하루 60개. */
 import { cachedJson, putJson } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { ApiError, json } from './http'
@@ -142,7 +142,11 @@ export async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): P
   u.searchParams.set('api_key', env.TRANSCRIPT_API_KEY!)
   const res = await deps.fetch(u)
   if (res.status === 404 || res.status === 400) return null
-  if (!res.ok) throw new ApiError('UPSTREAM_FAILED', '자막 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.')
+  if (!res.ok) {
+    // 무료 횟수가 다 됐는지(402·429) 서비스 문제인지 wrangler tail 로 볼 수 있게
+    console.warn(`transcript upstream ${res.status}`)
+    throw new ApiError('UPSTREAM_FAILED', '자막 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.')
+  }
   const body = (await res.json()) as { transcripts?: { text: string; start: number; duration: number }[]; available_languages?: Track['available']; error?: string }
   if (body.error || !body.transcripts?.length) return null
   const cues = body.transcripts.filter((t) => t.text?.trim()).map((t) => ({ start: t.start, end: t.start + t.duration, text: t.text.replace(/\s*\n\s*/g, ' ') }))
@@ -256,6 +260,7 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
     }
   }
   const body = { videoId: v, lang, source: auto ? 'asr' : 'manual', koSource, lines: out }
-  await putJson(env.KV, key, body, 30 * 86_400)
+  // 한 번 받은 자막은 기한 없이 둔다(자막 서비스 횟수를 아끼려고. 같은 영상은 다시 부르지 않는다)
+  await putJson(env.KV, key, body)
   return json(body, { headers: quotaHeaders(quota) })
 }

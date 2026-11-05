@@ -5,7 +5,8 @@
  * - 다른 사이트에서 재생되고 15분 안쪽
  * 유튜브 탭을 열면 검색 전에 종류별로 먼저 보인다. 검색 한도를 쓰지 않는다.
  */
-import type { Lang } from '../engine/lang'
+import { LANGS, type Lang } from '../engine/lang'
+import { MORE_PICKS } from './youtubePicksMore'
 
 export const PICK_KINDS = ['kids', 'song', 'quote', 'news', 'movie', 'vlog'] as const
 export type PickKind = (typeof PICK_KINDS)[number]
@@ -26,7 +27,7 @@ export interface VideoPick {
   kind: PickKind
 }
 
-export const YOUTUBE_PICKS: Record<Lang, VideoPick[]> = {
+const BASE_PICKS: Record<Lang, VideoPick[]> = {
   ja: [
     { kind: 'kids', videoId: 'VVJV1TkwPqY', title: 'みかんの花咲く丘（歌詞付き）', channel: '藤色くおん♫思い出の名歌', durationSec: 168 },
     { kind: 'song', videoId: 'hN5MBlGv2Ac', title: 'Official髭男dism - Subtitle', channel: 'Official髭男dism', durationSec: 322 },
@@ -84,5 +85,14 @@ export const YOUTUBE_PICKS: Record<Lang, VideoPick[]> = {
     { kind: 'vlog', videoId: 'OrGVYV9gDxE', title: 'Амжилттай Сурах 13 арга', channel: 'MinuteVideos Mongolia', durationSec: 341 },
   ],
 }
+
+/** 언어마다 처음 고른 영상 + 보충 영상(언어마다 30개). 종류 순서대로 보이고, 같은 영상은 한 번만 */
+export const YOUTUBE_PICKS: Record<Lang, VideoPick[]> = Object.fromEntries(
+  LANGS.map((l) => {
+    const all = [...BASE_PICKS[l], ...MORE_PICKS[l]]
+    const unique = all.filter((v, i) => all.findIndex((x) => x.videoId === v.videoId) === i)
+    return [l, PICK_KINDS.flatMap((k) => unique.filter((v) => v.kind === k))]
+  }),
+) as Record<Lang, VideoPick[]>
 
 export const pickThumb = (videoId: string) => `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
