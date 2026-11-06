@@ -40,7 +40,8 @@ const HANGUL = /\p{Script=Hangul}/u
  * 연습 중 자동 인식: 입력기 조합 글자를 보고 실제 쓰는 자판을 고른다(확신이 없으면 null).
  * 대만어 주음 기호가 오면 주음, 로마자가 오면 병음, 일본어 로마자가 오면 로마자, 가나가 바로 오면(휴대폰) 플릭.
  */
-export function layoutFromComposition(lang: Lang, device: 'pc' | 'mobile', data: string): LayoutId | null {
+export function layoutFromComposition(lang: Lang, device: 'pc' | 'mobile', raw: string): LayoutId | null {
+  const data = raw.normalize('NFKC')
   const first = [...data].find((c) => c.trim())
   if (!first) return null
   const pc = device === 'pc'

@@ -82,7 +82,7 @@ export function readingProgress(expectedReading: string, composing: string): { m
  * 끝에 남은 로마자(가나로 바뀌기 전)는 빼고, 원문 글자와 그대로 같은 것만 센다(한자 읽기·병음·주음은 0).
  */
 export function composingAhead(expected: string, okUpTo: number, composing: string): number {
-  const typed = [...composing.replace(/[A-Za-z]+$/, '')]
+  const typed = [...composing.normalize('NFKC').replace(/[A-Za-z]+$/, '')]
   const rest = [...expected.slice(okUpTo)]
   let n = 0
   while (n < typed.length && n < rest.length && typed[n].normalize('NFKC') === rest[n].normalize('NFKC')) n++

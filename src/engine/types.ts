@@ -96,8 +96,8 @@ export interface Settings {
   listenAfter: boolean
   /** 단어를 다 칠 때마다 그 단어 읽기 */
   speakWords: boolean
-  /** 줄을 다 치고 듣기가 끝나면 다음 줄로 */
-  autoNext: boolean
+  /** 다 들으면 Enter 없이 다음 줄로(기본 끔: 다 치면 Enter 를 눌러 넘어간다. 그 사이 Esc 로 다시 듣기) */
+  autoAdvance: boolean
   reduceMotion: boolean
   voice: Partial<Record<Lang, 'female' | 'male'>>
   rate: 1 | 0.75
@@ -114,7 +114,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoListen: false,
   listenAfter: true,
   speakWords: true,
-  autoNext: true,
+  autoAdvance: false,
   reduceMotion: false,
   voice: {},
   rate: 1,

@@ -86,7 +86,8 @@ function stepAfterKana(steps: KeyStep[], k: number): number {
 
 export function guideFor(layout: Layout, seg: Segment, composing: string): { steps: KeyStep[]; nextIndex: number; matches: boolean } {
   try {
-    return guideForUnsafe(layout, seg, composing)
+    // 입력기가 조합 중에 보여 주는 전각 로마자(Ｎ)·전각 기호도 반각과 같게 본다
+    return guideForUnsafe(layout, seg, composing.normalize('NFKC'))
   } catch {
     return { steps: keySteps(layout, seg).steps, nextIndex: 0, matches: true }
   }
@@ -194,4 +195,31 @@ export function remainingSeg(seg: Segment, done: number): Segment {
     reading: syl.slice(done).join(' '),
     ...(zy && zy.length === chars.length ? { zhuyin: zy.slice(done).join(' ') } : {}),
   }
+}
+
+/** KeyboardEvent.code → 이 배열의 키 id (실제로 누른 자리) */
+export function keyIdOfCode(code: string): string | null {
+  const letter = code.match(/^Key([A-Z])$/)
+  if (letter) return letter[1].toLowerCase()
+  const digit = code.match(/^Digit(\d)$/)
+  if (digit) return digit[1]
+  const map: Record<string, string> = {
+    Space: 'space', Minus: 'minus', Equal: 'equal', Comma: 'comma', Period: 'period', Slash: 'slash',
+    Semicolon: 'semicolon', Quote: 'quote', BracketLeft: 'bracketleft', BracketRight: 'bracketright', Backquote: 'backquote',
+  }
+  return map[code] ?? null
+}
+
+/**
+ * 실제로 누른 키(자리)로 다음 키 찾기: 입력기가 조합 글자를 어떻게 보여 주든(전각·숨김) 사람이 친 순서대로 따라간다.
+ * Shift 단계는 건너뛰며 맞춘다. 틀린 키를 누르면 그 자리에 머문다.
+ */
+export function guideByKeys(steps: KeyStep[], pressed: string[]): { nextIndex: number; matches: boolean } {
+  let i = 0
+  for (const key of pressed) {
+    while (i < steps.length && steps[i].keyId === 'shift') i++
+    if (i < steps.length && steps[i].keyId === key) i++
+    else return { nextIndex: i, matches: false }
+  }
+  return { nextIndex: i, matches: true }
 }

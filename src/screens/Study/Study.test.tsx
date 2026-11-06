@@ -73,18 +73,23 @@ test('단어를 다 칠 때마다 그 단어를 읽어 준다', async () => {
   expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
 })
 
-test('줄을 다 치고 듣기가 끝나면 다음 줄로 넘어간다', async () => {
-  const input = await open()
-  await act(async () => compose(input, 'おはよう', 'おはよう！元気？')())
-  expect(await screen.findByText(/^2 \/ \d+줄$/, undefined, { timeout: 2000 })).toBeTruthy()
-})
-
-test('자동으로 넘어가기를 끄면 그 줄에 머문다', async () => {
-  await store.saveSettings({ ...(await store.getSettings()), autoNext: false })
+test('줄을 다 치면 한 번 들려주고 그 줄에 머문다(Enter 를 눌러야 다음 줄, 그 사이 Esc 로 다시 듣기)', async () => {
   const input = await open()
   await act(async () => compose(input, 'おはよう', 'おはよう！元気？')())
   await act(async () => new Promise((r) => setTimeout(r, 1200)))
   expect(screen.getByText(/^1 \/ \d+줄$/)).toBeTruthy()
+  vi.mocked(speak).mockClear()
+  await act(async () => fireEvent.keyDown(window, { key: 'Escape' }))
+  expect(vi.mocked(speak)).toHaveBeenCalled()
+  await act(async () => fireEvent.keyDown(window, { key: 'Enter' }))
+  expect(await screen.findByText(/^2 \/ \d+줄$/)).toBeTruthy()
+})
+
+test('설정에서 저절로 넘어가기를 켜면 다 들은 뒤 다음 줄로', async () => {
+  await store.saveSettings({ ...(await store.getSettings()), autoAdvance: true })
+  const input = await open()
+  await act(async () => compose(input, 'おはよう', 'おはよう！元気？')())
+  expect(await screen.findByText(/^2 \/ \d+줄$/, undefined, { timeout: 2000 })).toBeTruthy()
 })
 
 test('다 치고 듣기를 끄면 들려주지 않는다', async () => {

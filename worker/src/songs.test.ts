@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { findSource } from './transcript'
+import { alignedWith, findSource } from './transcript'
 import { findSong, parseLrc, scriptFits, songQuery, toScript } from './songs'
 import { fakeFetch, json, testEnv } from './testing'
 
@@ -60,4 +60,10 @@ describe('엉뚱한 가사를 막는다', () => {
     const d = deps([{ trackName: '孤勇者', artistName: '陈奕迅', duration: 256, syncedLyrics: lrc }])
     expect((await findSong(d, m, 'tw'))?.[1].text).toBe('你額頭的傷口')
   })
+})
+
+describe('한국어 자막 줄 나눔 확인', () => {
+  const c = (start: number, end: number, text = '') => ({ start, end, text })
+  test('원문과 같은 곳에서 시작하면 쓴다', () => expect(alignedWith([c(0, 2), c(2, 4), c(4, 6)], [c(0, 2), c(2.1, 4), c(4, 6)])).toBe(true))
+  test('줄 나눔이 다르면(자동 번역 자막) 쓰지 않는다', () => expect(alignedWith([c(0, 2), c(2, 4), c(4, 6)], [c(0.9, 2.6), c(2.6, 5.1), c(5.1, 6)])).toBe(false))
 })

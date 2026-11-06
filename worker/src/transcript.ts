@@ -104,6 +104,14 @@ export function tidyKo(ko: Cue[]): Cue[] {
   return out
 }
 
+/** 두 자막의 줄 나눔이 같은가: 한국어 자막 줄의 80% 이상이 원문 줄 시작과 0.4초 안에서 시작한다 */
+export function alignedWith(lines: Cue[], ko: Cue[]): boolean {
+  if (!ko.length) return false
+  const starts = lines.map((l) => l.start)
+  const near = ko.filter((k) => starts.some((s) => Math.abs(s - k.start) <= 0.4)).length
+  return near >= ko.length * 0.8
+}
+
 /** 한국어 자막을 시간이 가장 많이 겹치는 원문 줄에 붙인다 */
 export function pairKo(lines: Cue[], ko: Cue[]): TranscriptLine[] {
   const parts: string[][] = lines.map(() => [])
@@ -242,8 +250,23 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   const v = url.searchParams.get('v') ?? ''
   if (!/^[\w-]{11}$/.test(v)) throw new ApiError('BAD_REQUEST', '영상 id(v)가 잘못됐어요.')
   const key = `transcript:v6:${v}:${lang}`
-  const hit = await cachedJson<{ title?: string }>(env.KV, key)
+  const hit = await cachedJson<{ title?: string; koSource?: string; koChecked?: boolean; lines?: TranscriptLine[] }>(env.KV, key)
   if (hit) {
+    // 예전에 유튜브 한국어 자막으로 붙인 뜻은 줄이 밀렸을 수 있다: 뜻 빠진 줄이 많으면 우리 줄을 한 줄씩 다시 번역(한 번만)
+    if (hit.koSource === 'youtube' && !hit.koChecked && hit.lines?.length) {
+      const missing = hit.lines.filter((l) => !l.ko).length / hit.lines.length
+      if (missing > 0.05) {
+        const t = await aiTranslate(env, deps, lang, 'ko', hit.lines.map((l) => l.src))
+        if (t) {
+          hit.lines = hit.lines.map((l, i) => ({ ...l, ...(t[i] ? { ko: t[i] } : {}) }))
+          hit.koSource = 'auto'
+        }
+      }
+      if (hit.koSource !== 'youtube' || missing <= 0.05) {
+        hit.koChecked = true
+        await putJson(env.KV, key, hit)
+      }
+    }
     // 예전에 받아 둔 자막에는 영상 제목이 없다: 한 번 채워 다시 저장(링크로 연 영상도 제목이 보이게)
     if (!('title' in hit)) {
       const m = await videoMeta(env, deps, v).catch(() => null)
@@ -277,8 +300,10 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
       for (const type of auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
         const ko = await fetchTrack(env, deps, v, { lang: 'ko', type })
         if (!ko) continue
+        // 한국어 자막의 줄 나눔이 원문과 맞을 때만 쓴다(유튜브 자동 번역 자막은 줄이 달라 뜻이 밀린다)
+        if (!alignedWith(lines, ko.cues)) continue
         const p = pairKo(lines, tidyKo(ko.cues))
-        if (p.filter((l) => l.ko).length >= p.length * 0.3) {
+        if (p.filter((l) => l.ko).length >= p.length * 0.9) {
           paired = p
           break
         }

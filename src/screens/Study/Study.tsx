@@ -11,7 +11,7 @@ import { explainMistake } from '../../engine/judge/explain'
 import { composingAhead, judge, significantChars } from '../../engine/judge/judge'
 import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { LANG_NAME } from '../../engine/lang'
-import { guideFor, guideText, remainingSeg, stepSpeech } from '../../engine/layouts/guide'
+import { guideByKeys, guideFor, guideText, keyIdOfCode, remainingSeg, stepSpeech } from '../../engine/layouts/guide'
 import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
 import { avgLineMs } from '../../engine/stats/compare'
 import { dayKey } from '../../engine/stats/trend'
@@ -136,6 +136,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [value, setValue] = useState('')
   const [committed, setCommitted] = useState('')
   const [composing, setComposing] = useState('')
+  /** 입력기로 조합하는 동안 실제로 누른 키 자리(입력기가 글자를 어떻게 보여 주든 사람이 친 순서) */
+  const [pressed, setPressed] = useState<string[]>([])
   const [lineDone, setLineDone] = useState(false)
   const [videoSaved, setVideoSaved] = useState(false)
   // 영상과 줄 시간 맞추기(가사 저장소 가사는 뮤직비디오와 조금 어긋날 수 있다). 재료에 저장해 다음에도 쓴다
@@ -292,7 +294,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const shownUpTo = res.wrongAt === undefined ? res.okUpTo + composingAhead(line.src, res.okUpTo, composing) : res.okUpTo
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
   const guideSeg = seg && seg.text !== seg.reading ? remainingSeg(seg, [...seg.text.slice(0, inSeg)].length) : seg
-  const guide = guideSeg && guideSeg.confident && layout.verified ? guideFor(layout, guideSeg, segComposing) : null
+  const baseGuide = guideSeg && guideSeg.confident && layout.verified ? guideFor(layout, guideSeg, segComposing) : null
+  // PC 병음·주음은 키가 하나로 정해져 있어, 누른 키 자리로 따라가는 쪽이 입력기 표시보다 정확하다
+  const byKeys = baseGuide && device === 'pc' && (lang === 'zh' || lang === 'tw') && composing && pressed.length ? guideByKeys(baseGuide.steps, pressed) : null
+  const guide = baseGuide && byKeys ? { ...baseGuide, ...byKeys } : baseGuide
   const nextStep = guide?.steps[guide.nextIndex]
 
   // 단어를 다 칠 때마다 그 단어를 읽어 준다(타자 게임처럼). 줄을 다 치면 줄 전체를 들려주니 그때는 읽지 않는다.
@@ -369,7 +374,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     const doneAt = idx
     void (async () => {
       if (settings.listenAfter) await listen()
-      if (!settings.autoNext) return
+      if (!settings.autoAdvance) return
       await new Promise((r) => setTimeout(r, settings.listenAfter ? 600 : 900))
       if (idxRef.current === doneAt) goTo(doneAt + 1)
     })()
@@ -458,7 +463,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     } else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
   }
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.nativeEvent.isComposing || e.key === 'Process' || e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return
+    if (e.nativeEvent.isComposing || e.key === 'Process') {
+      if (e.code === 'Backspace') setPressed((p) => p.slice(0, -1))
+      else {
+        const id = keyIdOfCode(e.code)
+        if (id) setPressed((p) => [...p, id])
+      }
+      return
+    }
+    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return
     const t = keyboardTrouble(lang, { key: e.key, code: e.code }, [...line.src.slice(res.okUpTo)][0])
     if (t) setKbNote(TROUBLE_TEXT[t](lang, device))
     else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
@@ -466,6 +479,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const onCompositionEnd = (e: CompositionEvent<HTMLInputElement>) => {
     composingRef.current = false
     setComposing('')
+    setPressed([])
     commit(e.currentTarget.value)
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { getLayout } from './index'
-import { guideFor, guideText, remainingSeg } from './guide'
+import { guideByKeys, guideFor, guideText, keyIdOfCode, remainingSeg } from './guide'
 import type { Segment } from '../types'
 
 const seg = (text: string, reading = text): Segment => ({ text, reading, isWord: true, confident: true })
@@ -53,5 +53,23 @@ describe('조각 중간부터 안내(앞 글자를 확정한 뒤)', () => {
   test('일본어처럼 글자와 읽기가 따로면 그대로', () => {
     const seg = { text: '今日', reading: 'きょう', isWord: true, confident: true }
     expect(remainingSeg(seg, 1)).toBe(seg)
+  })
+})
+
+describe('사람이 치는 대로 따라가기', () => {
+  test('입력기가 전각 로마자(はＮ)를 보여 줘도 다음 키는 A', () => {
+    const g = guideFor(pc, seg('話', 'はなし'), 'はＮ')
+    expect(g.steps[g.nextIndex].keyId).toBe('a')
+  })
+  test('누른 키 자리로 따라간다(주음: 你 = s u 3)', () => {
+    const steps = guideFor(getLayout('tw-zhuyin-pc'), { text: '你', reading: 'nǐ', zhuyin: 'ㄋㄧˇ', isWord: true, confident: true }, '').steps
+    expect(guideByKeys(steps, ['s', 'u'])).toEqual({ nextIndex: 2, matches: true })
+    expect(guideByKeys(steps, ['s', 'x'])).toEqual({ nextIndex: 1, matches: false })
+  })
+  test('KeyboardEvent.code → 키 id', () => {
+    expect(keyIdOfCode('KeyN')).toBe('n')
+    expect(keyIdOfCode('Digit3')).toBe('3')
+    expect(keyIdOfCode('Semicolon')).toBe('semicolon')
+    expect(keyIdOfCode('ShiftLeft')).toBeNull()
   })
 })
