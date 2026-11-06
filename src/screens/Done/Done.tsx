@@ -147,6 +147,9 @@ export default function Done({ materialId }: { materialId: string }) {
               카드 이미지 저장
             </a>
           )}
+          <a className="btn" href={href({ name: 'words', lang: m.lang })}>
+            단어 복습
+          </a>
           <a className="btn" href={href({ name: 'study', materialId })}>
             처음부터 다시
           </a>

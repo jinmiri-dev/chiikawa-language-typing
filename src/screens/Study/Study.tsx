@@ -335,7 +335,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const level: HintLevel = !settings.hintFading ? settings.hintMode : idle || mistake ? 'full' : fading
 
   /** 단어(또는 줄 전체)를 담고, 그 줄을 복습에 넣는다. 다시 누르면 뺀다. */
-  async function toggleWord(text: string, reading: string | undefined, wholeLine: boolean) {
+  async function toggleWord(text: string, reading: string | undefined, wholeLine: boolean, meaning?: string) {
     const id = wholeLine ? `${material.id}|${line.id}` : `${material.lang}:${text}`
     const exists = words.find((w) => w.id === id)
     if (exists) {
@@ -344,6 +344,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     } else {
       const w: Word = {
         id, lang: material.lang, text, ...(reading && reading !== text ? { reading } : {}),
+        // 낱말 짝에서 뜻을 찾아 함께 담는다(단어 복습의 뜻 고르기에 쓴다)
+        ...(() => {
+          const m = meaning ?? (wholeLine ? undefined : placed.find((p) => p.src === text || p.src.includes(text) || text.includes(p.src))?.ko)
+          return m ? { meaning: m } : {}
+        })(),
         from: refOf(), wholeLine, savedAt: Date.now(),
         example: { src: line.src, ...(line.ko ? { ko: line.ko } : {}), segments: line.segments },
       }
@@ -612,7 +617,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           <b lang={htmlLang}>{pair.src}</b>
           <span aria-hidden="true">=</span>
           <span lang="ko">{pair.ko}</span>
-          <button type="button" className="pair-save" aria-pressed={savedText.has(pair.src)} onClick={() => void toggleWord(pair.src, undefined, false)}>
+          <button type="button" className="pair-save" aria-pressed={savedText.has(pair.src)} onClick={() => void toggleWord(pair.src, line.segments.find((g) => g.text === pair.src)?.reading, false, pair.ko)}>
             {savedText.has(pair.src) ? '★ 담음' : '☆ 담기'}
           </button>
         </p>

@@ -9,6 +9,7 @@ import type { Progress } from '../../engine/types'
 import type { Lang } from '../../engine/lang'
 import { getCourseProgress, nextLesson, streak, type CourseProgress } from '../../services/course'
 import { buildReviewMaterial, reviewCount } from '../../services/review'
+import { dueWords, type WordStates } from '../../engine/quiz'
 
 const LEVELS = ['입문', '기초', '초급']
 const LEVEL_HINT = ['아주 짧은 문장', '조금 긴 문장', '이어지는 문장']
@@ -18,12 +19,14 @@ export default function CourseTab({ lang }: { lang: Lang }) {
   const [course, setCourse] = useState<CourseData | null>(null)
   const [prog, setProg] = useState<CourseProgress>({ done: [], days: [] })
   const [due, setDue] = useState(0)
+  const [wordsDue, setWordsDue] = useState(0)
   const [setProgress, setSetProgress] = useState<Record<string, Progress>>({})
   useEffect(() => {
     void store.listProgress(lang).then((list) => setSetProgress(Object.fromEntries(list.map((p) => [p.materialId, p]))))
     void loadCourse(lang).then(setCourse)
     void getCourseProgress(store, lang).then(setProg)
     void reviewCount(store).then(setDue, () => setDue(0))
+    void Promise.all([store.listWords(lang), store.getMeta<WordStates>(`wordQuiz:${lang}`)]).then(([words, st]) => setWordsDue(dueWords(words, st ?? {}, Date.now()).length))
   }, [store, lang])
 
   if (!course) return <p className="busy">코스를 불러오고 있어요…</p>
@@ -146,6 +149,12 @@ export default function CourseTab({ lang }: { lang: Lang }) {
             <span>오늘의 복습 · 틀린 줄과 담은 단어 {due}개</span>
             <span aria-hidden="true">›</span>
           </button>
+        )}
+        {wordsDue > 0 && (
+          <a className="course-review" href={href({ name: 'words', lang })}>
+            <span>단어 복습 · 담은 단어 {wordsDue}개 (뜻 고르기 → 직접 치기)</span>
+            <span aria-hidden="true">›</span>
+          </a>
         )}
         <p className="course-note">
           <Sentences text="주차 문장은 공개 문장 모음 Tatoeba에서 사람이 옮긴 한국어 뜻과 함께 골랐어요." />

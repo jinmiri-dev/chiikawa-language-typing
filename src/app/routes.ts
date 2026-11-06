@@ -19,6 +19,8 @@ export type Route =
   | { name: 'learn-list'; native: Lang }
   | { name: 'learn-video'; native: Lang; videoId: string }
   | { name: 'learn-sheet'; native: Lang }
+  // 단어 복습(뜻 고르기 → 직접 쳐 보기)
+  | { name: 'words'; lang: Lang }
   | { name: 'not-found' }
 
 const SIMPLE: Record<string, Route> = {
@@ -53,6 +55,9 @@ export function parseRoute(hash: string): Route {
     return { name: 'learn-list', native }
   }
 
+  const words = path.match(/^\/words\/(\w+)$/)
+  if (words) return LANGS.includes(words[1] as Lang) ? { name: 'words', lang: words[1] as Lang } : { name: 'not-found' }
+
   const share = path.match(/^\/share\/([A-Za-z0-9+\-$]+)$/)
   if (share) return { name: 'share', data: share[1] }
 
@@ -84,6 +89,8 @@ export function href(r: Route): string {
       return `#/learn/${r.native}/v/${r.videoId}`
     case 'learn-sheet':
       return `#/learn/${r.native}/sheet`
+    case 'words':
+      return `#/words/${r.lang}`
     case 'not-found':
       return '#/not-found'
     default:

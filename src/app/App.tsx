@@ -9,6 +9,7 @@ import Review from '../screens/Review/Review'
 import Settings from '../screens/Settings/Settings'
 import Share from '../screens/Share/Share'
 import Study from '../screens/Study/Study'
+import WordQuiz from '../screens/Words/WordQuiz'
 import LearnSheet from '../learn/LearnSheet'
 import { LearnList, LearnStart } from '../learn/LearnList'
 import LearnVideo from '../learn/LearnVideo'
@@ -69,6 +70,8 @@ function Screen({ route }: { route: Route }) {
       return <LearnList key={route.native} native={route.native} />
     case 'learn-video':
       return <LearnVideo key={route.videoId + route.native} native={route.native} videoId={route.videoId} />
+    case 'words':
+      return <WordQuiz lang={route.lang} />
     case 'learn-sheet':
       return <LearnSheet native={route.native} />
     case 'lab-input':
