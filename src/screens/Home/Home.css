@@ -249,6 +249,55 @@
   color: var(--ink-3);
 }
 
+/* 다시 방문: 왼쪽 인사·언어, 오른쪽 이어서 하기(와이어프레임 01-B). 화면 가운데에 */
+.home-return {
+  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-areas: 'hero side' 'langs side';
+  align-content: center;
+  row-gap: 8px;
+}
+.home-hero {
+  grid-area: hero;
+  min-width: 0;
+}
+.home-side {
+  grid-area: side;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 40px;
+  border-left: 1px solid var(--border);
+}
+.home-langs {
+  grid-area: langs;
+}
+.home-side-title {
+  margin: 0;
+  font-size: 18px;
+}
+.home-side-note {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  word-break: keep-all;
+}
+.home-side-note a {
+  color: var(--ink);
+  font-weight: 700;
+}
+@media (max-width: 1023px) {
+  .home-return {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'hero' 'side' 'langs';
+    row-gap: 20px;
+  }
+  .home-side {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
 @media (max-width: 1023px) {
   .home {
     grid-template-columns: minmax(0, 1fr);
@@ -299,4 +348,8 @@
 .tip-off {
   margin-top: 8px;
   align-self: flex-start;
+}
+/* 다시 방문에서는 오른쪽 안내와 겹치는 저장 안내를 한 번만 */
+.home-return .home-note {
+  display: none;
 }

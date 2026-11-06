@@ -27,10 +27,61 @@
   text-align: center;
 }
 
-/* 모국어 고르기 */
+/* 모국어 고르기: 화면 가운데(가로·세로)에, 카드 다섯 개는 한 줄 */
+.learn-start {
+  flex: 1;
+  max-width: 1120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.learn-start .learn-langs {
+  width: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  text-align: left;
+}
+.learn-start .learn-langs li {
+  display: flex;
+}
+.learn-start .learn-lang {
+  flex: 1;
+  min-height: 150px;
+  justify-content: flex-start;
+  padding: 20px;
+}
+.learn-start .learn-multi {
+  font-size: var(--fs-h1) !important;
+}
+.learn-start .learn-choose {
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.learn-trio {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+@media (max-width: 1023px) {
+  .learn-start .learn-langs {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+@media (max-width: 599px) {
+  .learn-start {
+    justify-content: flex-start;
+  }
+  .learn-start .learn-langs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .learn-multi {
   font-size: var(--fs-h2) !important;
   text-wrap: balance;
+}
+.learn-multi .nowrap {
+  white-space: nowrap;
 }
 .learn-choose {
   margin: 8px 0 0;
@@ -405,6 +456,20 @@
   }
   .learn-ko {
     font-size: 20px;
+  }
+  /* 휴대폰: 가사가 화면 폭을 다 쓰게 듣기·저장 버튼은 글 아래 한 줄로 */
+  .learn-line-main {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+  }
+  .learn-line-tools {
+    grid-column: 2;
+    margin-top: -4px;
+    gap: 4px;
+  }
+  .learn-line-tools .learn-tool {
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 

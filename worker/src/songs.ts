@@ -128,7 +128,15 @@ interface LrcHit {
  * 가사가 그 언어 글자다. 여럿이면 길이가 가장 가까운 것.
  */
 export async function findSong(deps: Deps, meta: VideoMeta, lang: SrcLang): Promise<Cue[] | null> {
-  const hay = norm(`${meta.title} ${meta.channel}`)
+  // 간체·번체가 달라도 같은 글자로 보고 비교한다
+  const same = (s: string) => norm(toScript('zh', s))
+  const hay = same(`${meta.title} ${meta.channel}`)
+  /** 가수 이름(여럿이면 그중 하나)이 제목이나 채널에 있다: 예고편·동화가 같은 이름의 노래 가사와 잘못 짝지어지지 않게 */
+  const artistIn = (artist: string) =>
+    artist
+      .split(/\s*(?:[,&、/／×x]|feat\.?|ft\.?|and|with|\(|\)|（|）)\s*/i)
+      .map(same)
+      .some((t) => t.length >= (/^[a-z0-9]+$/.test(t) ? 3 : 2) && hay.includes(t))
   for (const q of songQuery(meta.title, meta.channel)) {
     const u = new URL('https://lrclib.net/api/search')
     u.searchParams.set('q', q)
@@ -143,8 +151,8 @@ export async function findSong(deps: Deps, meta: VideoMeta, lang: SrcLang): Prom
     const fit = list
       .filter((h) => h.syncedLyrics && !h.instrumental)
       .filter((h) => {
-        const name = norm(h.trackName.replace(/\(.*?\)|（.*?）|-.*$/g, ''))
-        return name.length >= 1 && hay.includes(name)
+        const name = same(h.trackName.replace(/\(.*?\)|（.*?）|-.*$/g, ''))
+        return name.length >= 1 && hay.includes(name) && artistIn(h.artistName)
       })
       .filter((h) => !meta.durationSec || (h.duration - meta.durationSec <= 8 && meta.durationSec - h.duration <= 45))
       .filter((h) => scriptFits(h.syncedLyrics!.replace(/\[[^\]]*\]/g, ''), lang))

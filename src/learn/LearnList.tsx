@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../app/AppState'
 import { href } from '../app/routes'
-import { AppHeader } from '../components/components'
+import { AppHeader, FriendImage } from '../components/components'
 import { LEARN_VIDEOS, SITUATIONS, thumbOf, type Situation } from '../content/learnVideos'
 import { LANGS, type Lang } from '../engine/lang'
 import { youtubeIdFrom } from '../services/files'
@@ -18,12 +18,17 @@ export function LearnStart() {
   return (
     <div className="page">
       <AppHeader back="#/" title={<span className="logo-sub">{LEARN_BUTTON[0]}</span>} right={<span />} />
-      <main className="learn">
+      <main className="learn learn-start">
+        <div className="learn-trio" aria-hidden="true">
+          <FriendImage friend="chiikawa" size={72} />
+          <FriendImage friend="hachiware" size={72} />
+          <FriendImage friend="usagi" size={72} />
+        </div>
         <h1 className="learn-multi">
           {LANGS.map((l, i) => (
             <span key={l} lang={LEARN_TEXT[l].htmlLang}>
-              {i > 0 && ' · '}
-              {LEARN_TEXT[l].title}
+              {i > 0 && <span aria-hidden="true"> · </span>}
+              <span className="nowrap">{LEARN_BUTTON[i]}</span>
             </span>
           ))}
         </h1>

@@ -47,3 +47,17 @@ describe('노래 가사(무료)', () => {
     await expect(findSource(env, d, 'ZRQzKBlHgtc', 'ja', { ...meta, music: false, title: 'ニュース' })).rejects.toThrow(/스크립트 표시/)
   })
 })
+
+describe('엉뚱한 가사를 막는다', () => {
+  test('가수 이름이 제목·채널에 없으면 쓰지 않는다(예고편·동화)', async () => {
+    const trailer = { title: 'Dune: Part Three | Final Trailer', channel: 'Warner Bros.', durationSec: 161, embeddable: true, music: false }
+    const d = deps([{ trackName: 'Dune', artistName: 'Some Band', duration: 160, syncedLyrics: '[00:01.00] a b c\n[00:02.00] d e f\n[00:03.00] g h\n[00:04.00] i j\n[00:05.00] k l' }])
+    expect(await findSong(d, trailer, 'en')).toBeNull()
+  })
+  test('간체 가수 이름과 번체 제목도 같은 사람으로 본다', async () => {
+    const m = { title: '陳奕迅 - 孤勇者【動態歌詞】', channel: 'X', durationSec: 256, embeddable: true, music: true }
+    const lrc = '[00:01.00] 都是勇敢的\n[00:03.00] 你额头的伤口\n[00:05.00] 你的不同\n[00:07.00] 你犯的错\n[00:09.00] 都不必隐藏'
+    const d = deps([{ trackName: '孤勇者', artistName: '陈奕迅', duration: 256, syncedLyrics: lrc }])
+    expect((await findSong(d, m, 'tw'))?.[1].text).toBe('你額頭的傷口')
+  })
+})

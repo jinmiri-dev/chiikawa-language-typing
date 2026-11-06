@@ -121,79 +121,123 @@ export default function Home() {
   return (
     <div className="page">
       <AppHeader />
-      <main className="home">
-        <section className="home-main">
-          {last ? (
-            <>
-              <div className="home-friend">
-                <FriendImage friend={settings.friend} size={120} />
-              </div>
-              <h1><Sentences text="다시 왔네요! 오늘도 한 줄씩 쳐 봐요." /></h1>
-              {due > 0 && (
-                <button type="button" className="continue review-start" onClick={() => void startReview()}>
-                  <span className="continue-label">오늘의 복습</span>
-                  <span className="continue-title">틀렸던 줄과 담은 단어 {due}개 · 약 {Math.max(1, Math.round(due * 0.6))}분</span>
-                </button>
-              )}
-              <Continue p={last.p} m={last.m} sub={due > 0} />
-              {trend && <p className="home-trend">{trend}</p>}
-              <h2>다른 언어로 시작하기</h2>
-            </>
-          ) : (
-            <>
-              <div className="home-trio" aria-hidden="true">
-                <FriendImage friend="chiikawa" size={96} />
-                <FriendImage friend="hachiware" size={96} />
-                <FriendImage friend="usagi" size={96} />
-              </div>
-              <h1>
-                좋아하는 영상 대사를 따라 치며
-                <br />
-                외국어 타자를 익혀요
-              </h1>
-              <p className="home-sub"><Sentences text="어떤 키를 누르는지 하나하나 알려 줘요. 휴대폰에서도 돼요." /></p>
-              <h2>배울 언어를 누르면 바로 시작해요</h2>
-            </>
-          )}
-          <LangCards />
-          <p className="home-note"><Sentences text="로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요." /></p>
-          {/* 외국인 학습자 입구: 누구든 자기 말로 알아보게 여러 말로 */}
-          <a className="home-learn" href={href({ name: 'learn' })}>
-            <span className="home-learn-flag" aria-hidden="true">
-              한
-            </span>
-            <span className="home-learn-text">
-              <b>{LEARN_BUTTON[0]}</b>
-              <span>
-                {LEARN_BUTTON.slice(1).map((t, i) => (
-                  <span key={t} lang={['ja', 'zh-CN', 'zh-TW', 'mn'][i]}>
-                    {i > 0 && ' · '}
-                    {t}
-                  </span>
-                ))}
-              </span>
-            </span>
-            <span aria-hidden="true">→</span>
-          </a>
-          {safariTip && (
-            <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
-              아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.
-              <button
-                type="button"
-                className="btn btn-sub tip-off"
-                onClick={() => {
-                  setSafariTip(false)
-                  void store.setMeta('safariTipOff', true)
-                }}
-              >
-                다시 보지 않기
+      {last ? (
+        <main className="home home-return">
+          <section className="home-hero">
+            <div className="home-friend">
+              <FriendImage friend={settings.friend} size={120} />
+            </div>
+            <h1><Sentences text="다시 왔네요! 오늘도 한 줄씩 쳐 봐요." /></h1>
+          </section>
+          <aside className="home-side" aria-label="이어서 하기">
+            <h2 className="home-side-title">이어서 하기</h2>
+            {due > 0 && (
+              <button type="button" className="continue review-start" onClick={() => void startReview()}>
+                <span className="continue-label">오늘의 복습</span>
+                <span className="continue-title">틀렸던 줄과 담은 단어 {due}개 · 약 {Math.max(1, Math.round(due * 0.6))}분</span>
               </button>
-            </StatusNotice>
-          )}
-          {!store.persistent && <StatusNotice title="이 브라우저에서는 기록이 저장되지 않아요" tone="warn">사생활 보호 모드에서는 창을 닫으면 진도가 사라져요.</StatusNotice>}
-        </section>
-        {!last && <HowTo />}
-      </main>
+            )}
+            <Continue p={last.p} m={last.m} sub={due > 0} />
+            {trend && <p className="home-trend">{trend}</p>}
+            <p className="home-side-note">
+              기록은 이 브라우저에만 저장돼요. 다른 기기로 옮기려면 <a href={href({ name: 'settings' })}>설정</a>에서 백업 파일을 받아 두세요.
+            </p>
+          </aside>
+          <section className="home-main home-langs">
+            <h2>다른 언어로 시작하기</h2>
+            <LangCards />
+            <p className="home-note"><Sentences text="로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요." /></p>
+            {/* 외국인 학습자 입구: 누구든 자기 말로 알아보게 여러 말로 */}
+            <a className="home-learn" href={href({ name: 'learn' })}>
+              <span className="home-learn-flag" aria-hidden="true">
+                한
+              </span>
+              <span className="home-learn-text">
+                <b>{LEARN_BUTTON[0]}</b>
+                <span>
+                  {LEARN_BUTTON.slice(1).map((t, i) => (
+                    <span key={t} lang={['ja', 'zh-CN', 'zh-TW', 'mn'][i]}>
+                      {i > 0 && ' · '}
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span aria-hidden="true">→</span>
+            </a>
+            {safariTip && (
+              <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
+                아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.
+                <button
+                  type="button"
+                  className="btn btn-sub tip-off"
+                  onClick={() => {
+                    setSafariTip(false)
+                    void store.setMeta('safariTipOff', true)
+                  }}
+                >
+                  다시 보지 않기
+                </button>
+              </StatusNotice>
+            )}
+            {!store.persistent && <StatusNotice title="이 브라우저에서는 기록이 저장되지 않아요" tone="warn">사생활 보호 모드에서는 창을 닫으면 진도가 사라져요.</StatusNotice>}
+          </section>
+        </main>
+      ) : (
+        <main className="home">
+          <section className="home-main">
+            <div className="home-trio" aria-hidden="true">
+              <FriendImage friend="chiikawa" size={96} />
+              <FriendImage friend="hachiware" size={96} />
+              <FriendImage friend="usagi" size={96} />
+            </div>
+            <h1>
+              좋아하는 영상 대사를 따라 치며
+              <br />
+              외국어 타자를 익혀요
+            </h1>
+            <p className="home-sub"><Sentences text="어떤 키를 누르는지 하나하나 알려 줘요. 휴대폰에서도 돼요." /></p>
+            <h2>배울 언어를 누르면 바로 시작해요</h2>
+            <LangCards />
+            <p className="home-note"><Sentences text="로그인 없이 바로 써요. 기록은 이 브라우저에만 저장돼요." /></p>
+            {/* 외국인 학습자 입구: 누구든 자기 말로 알아보게 여러 말로 */}
+            <a className="home-learn" href={href({ name: 'learn' })}>
+              <span className="home-learn-flag" aria-hidden="true">
+                한
+              </span>
+              <span className="home-learn-text">
+                <b>{LEARN_BUTTON[0]}</b>
+                <span>
+                  {LEARN_BUTTON.slice(1).map((t, i) => (
+                    <span key={t} lang={['ja', 'zh-CN', 'zh-TW', 'mn'][i]}>
+                      {i > 0 && ' · '}
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span aria-hidden="true">→</span>
+            </a>
+            {safariTip && (
+              <StatusNotice title="홈 화면에 추가하면 기록이 더 오래 안전해요">
+                아이폰 사파리는 7일 동안 안 쓰면 사이트 기록을 지울 수 있어요. 공유 버튼 › 홈 화면에 추가를 눌러 두세요.
+                <button
+                  type="button"
+                  className="btn btn-sub tip-off"
+                  onClick={() => {
+                    setSafariTip(false)
+                    void store.setMeta('safariTipOff', true)
+                  }}
+                >
+                  다시 보지 않기
+                </button>
+              </StatusNotice>
+            )}
+            {!store.persistent && <StatusNotice title="이 브라우저에서는 기록이 저장되지 않아요" tone="warn">사생활 보호 모드에서는 창을 닫으면 진도가 사라져요.</StatusNotice>}
+          </section>
+          <HowTo />
+        </main>
+      )}
       <footer className="home-footer">개발자: 진미리</footer>
     </div>
   )
