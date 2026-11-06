@@ -7,6 +7,11 @@ import Study from './Study'
 
 vi.mock('../../services/speech', async (orig) => ({ ...(await orig<typeof import('../../services/speech')>()), speak: vi.fn(async () => ({ source: 'device' as const })) }))
 
+vi.mock('../../services/api', async (orig) => ({
+  ...(await orig<typeof import('../../services/api')>()),
+  getGloss: vi.fn(async (_l: string, lines: { src: string }[]) => lines.map((l) => (l.src.startsWith('おはよう') ? [['おはよう', '좋은 아침'], ['元気', '잘 지내']] : []))),
+}))
+
 let store: Store
 beforeEach(() => {
   store = memoryStore()
@@ -179,4 +184,16 @@ test('Esc 로 다시 듣기', async () => {
   vi.mocked(speak).mockClear()
   await act(async () => fireEvent.keyDown(window, { key: 'Escape' }))
   expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
+})
+
+test('낱말 짝: 지금 칠 낱말과 한국어 뜻 속 그 낱말이 함께 밝아지고, 담을 수 있다', async () => {
+  const input = await open()
+  const chip = await screen.findByText('좋은 아침', { selector: '.pair-chip span' })
+  expect(chip).toBeTruthy()
+  expect(document.querySelector('.ko-pair')?.textContent).toBe('좋은 아침')
+  expect(document.querySelectorAll('.ch[data-pair]').length).toBe(4)
+  await act(async () => compose(input, 'おはよう', 'おはよう！')())
+  expect(document.querySelector('.ko-pair')?.textContent).toBe('잘 지내')
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '☆ 담기' })))
+  expect((await store.listWords('ja')).map((w) => w.text)).toContain('元気')
 })

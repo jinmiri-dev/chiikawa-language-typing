@@ -38,6 +38,15 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
     return respond(res)
   }
   try {
+    // 낱말 짝은 줄 목록을 몸으로 받는다(text/plain 이라 미리 묻는 요청이 없다)
+    if (req.method === 'POST' && url.pathname === '/gloss') {
+      if (!origin || !allowed.includes(origin)) throw new ApiError('FORBIDDEN', '이 사이트에서만 쓸 수 있어요.')
+      const lang = url.searchParams.get('lang')
+      if (!isLang(lang)) throw new ApiError('BAD_REQUEST', '언어(lang)가 잘못됐어요.')
+      const body = await req.text()
+      if (body.length > 8000) throw new ApiError('BAD_REQUEST', '줄이 너무 길어요.')
+      return respond(await (await import('./gloss')).gloss(body, lang, env, deps))
+    }
     if (req.method !== 'GET') return respond(json({ error: { code: 'BAD_REQUEST', message: 'GET 만 받아요.' } }, { status: 405 }))
     if (url.pathname === '/health') return respond(json({ ok: true, version: VERSION }))
     const route = ROUTES[url.pathname]

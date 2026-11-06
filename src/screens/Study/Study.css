@@ -504,3 +504,38 @@ select.btn {
     display: none;
   }
 }
+
+/* 낱말 짝: 지금 칠 낱말과 한국어 뜻 속 그 낱말을 같은 색으로 */
+.ch[data-pair] {
+  box-shadow: inset 0 -4px 0 #7cc4ff;
+}
+.ko-pair {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 -4px 0 #7cc4ff;
+  font-weight: 700;
+}
+.pair-chip {
+  margin: 6px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 14px;
+  border-radius: 20px;
+  background: #eef7ff;
+  font-size: 15px;
+  color: var(--ink);
+}
+.pair-chip b {
+  font-size: 17px;
+}
+.pair-save {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}

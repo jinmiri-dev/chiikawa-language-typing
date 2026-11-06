@@ -62,6 +62,7 @@ export default function Settings() {
         <section aria-label="보기">
           <h2>보기</h2>
           <Toggle label="한국어 뜻 보기" on={s.show.ko} onChange={show('ko')} />
+          <Toggle label="치는 낱말의 뜻 함께 보기" sub="지금 치는 낱말과 한국어 뜻 속 그 낱말이 같은 색으로 밝아져요." on={s.show.pairs !== false} onChange={show('pairs')} />
           <Toggle label="발음(읽기) 보기" on={s.show.reading} onChange={show('reading')} />
           <Toggle label="원문 보기" sub="끄면 받아쓰기처럼 연습해요." on={s.show.src} onChange={show('src')} />
           <Toggle label="쉽게 채점" sub="띄어쓰기와 문장부호는 건너뛰고, 대소문자도 보지 않아요." on={s.easyGrading} onChange={(easyGrading) => set({ easyGrading })} />

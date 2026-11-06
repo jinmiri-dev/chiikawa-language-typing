@@ -88,7 +88,8 @@ export interface Settings {
   layout: Partial<Record<Lang, LayoutId>>
   hintMode: 'full' | 'line' | 'off'
   hintFading: boolean
-  show: { ko: boolean; reading: boolean; src: boolean }
+  /** pairs: 치는 낱말과 그 한국어 뜻을 함께 표시(없던 예전 설정은 켜짐으로 본다) */
+  show: { ko: boolean; reading: boolean; src: boolean; pairs?: boolean }
   /** 쉽게 채점: 띄어쓰기·문장부호를 건너뛰고 대소문자도 보지 않는다(기본은 끔: 다 친다) */
   easyGrading: boolean
   autoListen: boolean
@@ -109,7 +110,7 @@ export const DEFAULT_SETTINGS: Settings = {
   layout: {},
   hintMode: 'full',
   hintFading: true,
-  show: { ko: true, reading: true, src: true },
+  show: { ko: true, reading: true, src: true, pairs: true },
   easyGrading: false,
   autoListen: false,
   listenAfter: true,

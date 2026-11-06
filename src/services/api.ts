@@ -105,3 +105,17 @@ export function noticeFor(e: unknown, lang: Lang): { title: string; body: string
       return { title: '잠시 문제가 생겼어요', body: '조금 뒤 다시 해 보세요. 자막이 안 열리면 유튜브의 "스크립트 표시"를 복사해 대본 탭에 붙여 넣어도 돼요.' }
   }
 }
+
+/** 낱말 짝 [원문 낱말, 한국어 뜻] (줄마다). 중계 서버가 없거나 실패하면 빈 목록 */
+export type WordPair = [src: string, ko: string]
+export async function getGloss(lang: Lang, lines: { src: string; ko: string }[]): Promise<WordPair[][]> {
+  if (!workerOrigin() || !lines.length) return lines.map(() => [])
+  try {
+    const res = await fetch(url('/gloss', { lang }), { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ lines }) })
+    if (!res.ok) return lines.map(() => [])
+    const body = (await res.json()) as { items?: WordPair[][] }
+    return lines.map((_, i) => body.items?.[i] ?? [])
+  } catch {
+    return lines.map(() => [])
+  }
+}

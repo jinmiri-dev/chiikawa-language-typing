@@ -19,7 +19,8 @@ import type { LayoutId, LineResult, Material, Progress, Segment, Word } from '..
 import { sentenceGroups } from '../../engine/text'
 import { getMaterial } from '../../services/materials'
 import YouTubePlayer, { type PlayerHandle } from '../../components/YouTubePlayer'
-import { workerOrigin } from '../../services/api'
+import { getGloss, workerOrigin, type WordPair } from '../../services/api'
+import { currentPair, koRange, placePairs } from '../../engine/pairs'
 import { speak, stopSpeaking } from '../../services/speech'
 import { syncStep } from '../../services/youtubeSync'
 import KeyboardSheet from './KeyboardSheet'
@@ -136,6 +137,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [value, setValue] = useState('')
   const [committed, setCommitted] = useState('')
   const [composing, setComposing] = useState('')
+  /** 줄마다 낱말 짝(원문 낱말 ↔ 한국어 뜻). 중계 서버가 만들어 두고, 이 화면은 앞 몇 줄을 미리 받아 둔다 */
+  const [pairs, setPairs] = useState<Record<string, WordPair[]>>({})
+  const asked = useRef(new Set<string>())
   /** 입력기로 조합하는 동안 실제로 누른 키 자리(입력기가 글자를 어떻게 보여 주든 사람이 친 순서) */
   const [pressed, setPressed] = useState<string[]>([])
   const [lineDone, setLineDone] = useState(false)
@@ -180,6 +184,16 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const player = useRef<PlayerHandle>(null)
 
   const line = material.lines[idx]
+  useEffect(() => {
+    if (settings.show.pairs === false) return
+    const want = material.lines.slice(idx, idx + 5).filter((l) => l.ko && !asked.current.has(l.id))
+    if (!want.length) return
+    want.forEach((l) => asked.current.add(l.id))
+    void getGloss(
+      material.lang,
+      want.map((l) => ({ src: l.src, ko: l.ko! })),
+    ).then((got) => setPairs((p) => ({ ...p, ...Object.fromEntries(want.map((l, i) => [l.id, got[i]])) })))
+  }, [idx, material, settings.show.pairs])
 
   const lang = material.lang
   const htmlLang = LANG_NAME[lang].htmlLang
@@ -292,6 +306,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const inSeg = seg ? res.okUpTo - starts[segIndex] : 0
   // 문장 강조는 조합 중인 가나도 따라간다(확정 전에도 어디까지 쳤는지 보이게)
   const shownUpTo = res.wrongAt === undefined ? res.okUpTo + composingAhead(line.src, res.okUpTo, composing) : res.okUpTo
+  const placed = settings.show.pairs === false ? [] : placePairs(line.src, pairs[line.id] ?? [])
+  const pair = res.done ? null : currentPair(placed, res.okUpTo)
+  const pairKo = pair && line.ko ? koRange(line.ko, pair.ko) : null
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
   const guideSeg = seg && seg.text !== seg.reading ? remainingSeg(seg, [...seg.text.slice(0, inSeg)].length) : seg
   const baseGuide = guideSeg && guideSeg.confident && layout.verified ? guideFor(layout, guideSeg, segComposing) : null
@@ -531,7 +548,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       const at = starts[si] + ci
       const state = res.done || at < res.okUpTo ? 'done' : at === res.wrongAt ? 'wrong' : at < shownUpTo ? 'typing' : at === shownUpTo ? 'now' : 'rest'
       return (
-        <span key={ci} className={`ch ch-${state}`} data-wrong={state === 'wrong' || undefined}>
+        <span key={ci} className={`ch ch-${state}`} data-wrong={state === 'wrong' || undefined} data-pair={(pair && at >= pair.start && at < pair.end) || undefined}>
           {ch}
         </span>
       )
@@ -579,7 +596,25 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       )}
       {settings.show.ko && line.ko && (
         <p className="sentence-ko" lang="ko">
-          <Sentences text={line.ko} />
+          {pairKo ? (
+            <>
+              {line.ko.slice(0, pairKo[0])}
+              <mark className="ko-pair">{line.ko.slice(pairKo[0], pairKo[1])}</mark>
+              {line.ko.slice(pairKo[1])}
+            </>
+          ) : (
+            <Sentences text={line.ko} />
+          )}
+        </p>
+      )}
+      {pair && settings.show.src && (
+        <p className="pair-chip">
+          <b lang={htmlLang}>{pair.src}</b>
+          <span aria-hidden="true">=</span>
+          <span lang="ko">{pair.ko}</span>
+          <button type="button" className="pair-save" aria-pressed={savedText.has(pair.src)} onClick={() => void toggleWord(pair.src, undefined, false)}>
+            {savedText.has(pair.src) ? '★ 담음' : '☆ 담기'}
+          </button>
         </p>
       )}
     </div>
