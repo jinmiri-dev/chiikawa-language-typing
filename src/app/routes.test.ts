@@ -9,8 +9,8 @@ test('모르는 경로', () => expect(parseRoute('#/nope')).toEqual({ name: 'not
 
 test('재료 화면', () =>
   expect(parseRoute('#/materials?lang=ja&tab=starter')).toEqual({ name: 'materials', lang: 'ja', tab: 'starter' }))
-test('재료 화면 탭 기본값은 기본 연습', () =>
-  expect(parseRoute('#/materials?lang=tw')).toEqual({ name: 'materials', lang: 'tw', tab: 'starter' }))
+test('재료 화면 탭 기본값은 초보 코스', () =>
+  expect(parseRoute('#/materials?lang=tw')).toEqual({ name: 'materials', lang: 'tw', tab: 'course' }))
 test('모르는 언어는 찾을 수 없음', () => expect(parseRoute('#/materials?lang=xx')).toEqual({ name: 'not-found' }))
 test('모르는 탭은 찾을 수 없음', () =>
   expect(parseRoute('#/materials?lang=ja&tab=zzz')).toEqual({ name: 'not-found' }))

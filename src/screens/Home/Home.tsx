@@ -23,7 +23,7 @@ function LangCards() {
   return (
     <nav aria-label="배울 언어" className="lang-cards">
       {LANGS.map((l) => (
-        <a key={l} className="lang-card" href={href({ name: 'materials', lang: l, tab: 'starter' })}>
+        <a key={l} className="lang-card" href={href({ name: 'materials', lang: l, tab: 'course' })}>
           <span className="lang-glyph" lang={LANG_NAME[l].htmlLang} aria-hidden="true">
             {GLYPH[l]}
           </span>

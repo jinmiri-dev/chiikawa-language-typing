@@ -5,11 +5,13 @@ import { AppHeader, StatusNotice, Sentences } from '../../components/components'
 import { starterSets } from '../../content/starter'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import type { Progress } from '../../engine/types'
+import CourseTab from './CourseTab'
 import ScriptTab from './ScriptTab'
 import YouTubeTab from './YouTubeTab'
 import './Materials.css'
 
 const TABS: { id: MaterialTab; label: string }[] = [
+  { id: 'course', label: '초보 코스' },
   { id: 'starter', label: '기본 연습' },
   { id: 'youtube', label: '유튜브' },
   { id: 'script', label: '대본' },
@@ -46,7 +48,9 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
           ))}
         </div>
         <section role="tabpanel" className="tabpanel">
-          {tab === 'starter' && sets.length > 0 ? (
+          {tab === 'course' ? (
+            <CourseTab lang={lang} />
+          ) : tab === 'starter' && sets.length > 0 ? (
             <>
               <p className="materials-lead"><Sentences text="친구와 채팅할 때 바로 쓰는 짧은 말이에요. 세트를 고르면 바로 시작해요." /></p>
               <ul className="set-grid">

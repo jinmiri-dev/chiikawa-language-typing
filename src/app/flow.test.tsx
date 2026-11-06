@@ -26,6 +26,9 @@ test('처음 방문 → 일본어 → 인사와 대답 10줄 → 완료 → 시�
   render(<App />)
   const ja = await screen.findByRole('link', { name: /일본어/ })
   await go(ja.getAttribute('href')!)
+  // 언어를 누르면 초보 코스가 먼저 열린다
+  expect(await screen.findByText('오늘의 레슨 시작')).toBeTruthy()
+  await go('#/materials?lang=ja&tab=starter')
   const set = await screen.findByRole('link', { name: /인사와 대답/ })
   await go(set.getAttribute('href')!)
 
@@ -51,3 +54,4 @@ test('처음 방문 → 일본어 → 인사와 대답 10줄 → 완료 → 시�
   const cont = await screen.findByRole('link', { name: /이어서 공부하기/ })
   expect(cont.textContent).toContain('10 / 10줄')
 }, 30_000)
+

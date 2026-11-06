@@ -13,7 +13,7 @@ test('처음 방문: 언어 카드 5개가 시작 버튼', async () => {
   expect(cards.map((c) => c.textContent?.match(/영어|일본어|중국어 \(간체\)|대만어 \(번체\)|몽골어/)?.[0])).toEqual([
     '영어', '일본어', '중국어 (간체)', '대만어 (번체)', '몽골어',
   ])
-  expect(cards[1].getAttribute('href')).toBe('#/materials?lang=ja&tab=starter')
+  expect(cards[1].getAttribute('href')).toBe('#/materials?lang=ja&tab=course')
   expect(screen.getByText('개발자: 진미리')).toBeTruthy()
   expect(screen.queryByText('이어서 공부하기')).toBeNull()
 })

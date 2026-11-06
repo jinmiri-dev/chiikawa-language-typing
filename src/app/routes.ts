@@ -1,6 +1,6 @@
 import { LANGS, type Lang } from '../engine/lang'
 
-export const MATERIAL_TABS = ['starter', 'youtube', 'script'] as const
+export const MATERIAL_TABS = ['course', 'starter', 'youtube', 'script'] as const
 export type MaterialTab = (typeof MATERIAL_TABS)[number]
 
 export type Route =
@@ -38,7 +38,7 @@ export function parseRoute(hash: string): Route {
   if (path === '/materials') {
     const q = new URLSearchParams(query)
     const lang = q.get('lang')
-    const tab = q.get('tab') ?? 'starter'
+    const tab = q.get('tab') ?? 'course'
     if (!LANGS.includes(lang as Lang) || !MATERIAL_TABS.includes(tab as MaterialTab)) return { name: 'not-found' }
     return { name: 'materials', lang: lang as Lang, tab: tab as MaterialTab }
   }

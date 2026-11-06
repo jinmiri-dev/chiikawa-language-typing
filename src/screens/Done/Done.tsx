@@ -5,6 +5,8 @@ import { AppHeader, StatusNotice, Sentences } from '../../components/components'
 import { FRIEND_INFO, pickLine } from '../../content/friendLines'
 import { downloadBackup } from '../../services/backup'
 import { getMaterial } from '../../services/materials'
+import { lessonId, loadCourse, parseLessonId } from '../../content/course'
+import { getCourseProgress, markLessonDone, nextLesson } from '../../services/course'
 import { eul } from '../../engine/josa'
 import { KIND_NAME, LANG_NAME } from '../../engine/lang'
 import { avgLineMs, compareText } from '../../engine/stats/compare'
@@ -21,8 +23,18 @@ export default function Done({ materialId }: { materialId: string }) {
   const [cardOk, setCardOk] = useState(true)
   const [cheer] = useState(() => pickLine(settings.friend, 'finish'))
   const [nudge, setNudge] = useState(false)
+  /** 초보 코스 레슨이면 다음 레슨 id */
+  const [nextId, setNextId] = useState<string | null>(null)
   useEffect(() => {
     void (async () => {
+      const lesson = parseLessonId(materialId)
+      if (lesson) {
+        const prog = await store.getProgress(materialId)
+        if (prog && prog.results.length) await markLessonDone(store, materialId)
+        const course = await loadCourse(lesson.lang)
+        const n = nextLesson(course, lesson.lang, (await getCourseProgress(store, lesson.lang)).done)
+        setNextId(n ? lessonId(lesson.lang, n.week, n.lesson) : null)
+      }
       const mat = await getMaterial(store, materialId)
       setM(mat)
       setP(await store.getProgress(materialId))
@@ -61,7 +73,7 @@ export default function Done({ materialId }: { materialId: string }) {
 
   return (
     <div className="page">
-      <AppHeader back={href({ name: 'materials', lang: m.lang, tab: 'starter' })} />
+      <AppHeader back={href({ name: 'materials', lang: m.lang, tab: 'course' })} />
       <main className="done">
         <h1>언어 1급 따냈어요!</h1>
         <p className="done-sub">
@@ -125,16 +137,21 @@ export default function Done({ materialId }: { materialId: string }) {
           </StatusNotice>
         )}
         <div className="done-actions">
+          {nextId && (
+            <a className="btn btn-primary" href={href({ name: 'study', materialId: nextId })}>
+              다음 레슨
+            </a>
+          )}
           {cardOk && (
-            <a className="btn btn-primary" href={card} download={`언어1급-${LANG_NAME[m.lang].ko}-${p.friend}.webp`}>
+            <a className={nextId ? 'btn' : 'btn btn-primary'} href={card} download={`언어1급-${LANG_NAME[m.lang].ko}-${p.friend}.webp`}>
               카드 이미지 저장
             </a>
           )}
           <a className="btn" href={href({ name: 'study', materialId })}>
             처음부터 다시
           </a>
-          <a className="btn" href={href({ name: 'materials', lang: m.lang, tab: 'starter' })}>
-            다른 재료
+          <a className="btn" href={href({ name: 'materials', lang: m.lang, tab: 'course' })}>
+            {nextId ? '코스 보기' : '다른 재료'}
           </a>
         </div>
       </main>
