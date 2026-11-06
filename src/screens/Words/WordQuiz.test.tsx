@@ -26,8 +26,9 @@ test('뜻 고르기 → 직접 쳐 보기 → 결과, 틀린 단어는 내일 �
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /확인/ })))
   expect(screen.getByText('맞았어요!')).toBeTruthy()
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /다음 단어/ })))
-  // 둘째 단어(雨): 틀린 뜻
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: '이야기' })))
+  // 둘째 단어(雨): 틀린 뜻(보기는 섞이므로 '비'가 아닌 것 아무거나)
+  const wrongOne = [...document.querySelectorAll<HTMLButtonElement>('.quiz-option')].find((b) => b.textContent !== '비')!
+  await act(async () => fireEvent.click(wrongOne))
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '다음: 직접 쳐 보기' })))
   fireEvent.change(screen.getByLabelText('낱말 쳐 보기'), { target: { value: '雨' } })
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /확인/ })))
