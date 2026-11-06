@@ -16,6 +16,7 @@ export const TAG_QUERY: Record<Lang, Record<Tag, string>> = {
   mn: { song: 'дуу', kids: 'хүүхдийн дуу', drama: 'монгол кино', movie: 'кино', variety: 'шоу', news: 'мэдээ', vlog: 'влог' },
 }
 const RELEVANCE: Record<Lang, string> = { ja: 'ja', tw: 'zh-Hant', zh: 'zh-Hans', en: 'en', mn: 'mn' }
+const SONG_Q = /노래|가사|歌|lyric|song|\bmv\b|music|дуу|клип/i
 const REGION: Partial<Record<Lang, string>> = { tw: 'TW', ja: 'JP', mn: 'MN' }
 
 export interface VideoItem {
@@ -63,9 +64,11 @@ export async function search(url: URL, lang: Lang, env: Env, deps: Deps): Promis
 
   const s = new URL('https://www.googleapis.com/youtube/v3/search')
   const params: Record<string, string> = {
-    part: 'snippet', type: 'video', maxResults: '12', q, videoCaption: 'closedCaption', videoEmbeddable: 'true',
+    part: 'snippet', type: 'video', maxResults: '12', q, videoEmbeddable: 'true',
     safeSearch: 'strict', relevanceLanguage: RELEVANCE[lang], key: env.YOUTUBE_API_KEY,
   }
+  // 노래는 자막이 없어도 공개 가사로 연습할 수 있어 자막 조건을 뺀다
+  if (!(tag === 'song' || SONG_Q.test(q))) params.videoCaption = 'closedCaption'
   if (REGION[lang]) params.regionCode = REGION[lang]!
   if (page) params.pageToken = page
   for (const [k, v] of Object.entries(params)) s.searchParams.set(k, v)

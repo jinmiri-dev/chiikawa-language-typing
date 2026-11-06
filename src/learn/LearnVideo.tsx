@@ -278,7 +278,10 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
                         </div>
                         <div className="learn-line-tools">
                           <button type="button" className="learn-tool" aria-label={t.readLine} onClick={() => void speakKo(l.ko, 0.8)}>
-                            🔊
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path d="M4 9h4l5-4v14l-5-4H4z" />
+                              <path d="M16 9a4 4 0 0 1 0 6" />
+                            </svg>
                           </button>
                           <button type="button" className="learn-tool" aria-pressed={saved.has(id)} aria-label={saved.has(id) ? t.saved : t.save} onClick={() => void save(l)}>
                             {saved.has(id) ? '★' : '☆'}

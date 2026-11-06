@@ -3,6 +3,8 @@ import { cachedJson, putJson } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { ApiError, json } from './http'
 import { LIMITS, quotaHeaders, takeQuota } from './quota'
+import { aiTranslate } from './ai'
+import { findSong, videoMeta, type VideoMeta } from './songs'
 
 export interface Cue {
   start: number
@@ -203,16 +205,37 @@ async function translate(env: Env, deps: Deps, lang: Lang, texts: string[]): Pro
   return out
 }
 
-export async function embeddable(env: Env, deps: Deps, v: string): Promise<boolean> {
-  if (!env.YOUTUBE_API_KEY) return true
-  const u = new URL('https://www.googleapis.com/youtube/v3/videos')
-  u.searchParams.set('part', 'status')
-  u.searchParams.set('id', v)
-  u.searchParams.set('key', env.YOUTUBE_API_KEY)
-  const res = await deps.fetch(u)
-  if (!res.ok) return true // 확인 못 하면 막지 않는다(재생 화면이 다시 알려 줌)
-  const body = (await res.json()) as { items?: { status?: { embeddable?: boolean } }[] }
-  return body.items?.[0]?.status?.embeddable !== false
+/** 노래처럼 보이는 제목(가사·MV·노래 표시) */
+const SONGISH = /lyric|歌詞|歌词|\bmv\b|m\/v|music video|official video|ミュージックビデオ|主題歌|主题曲|ost|дуу|клип|cover|song/i
+
+/**
+ * 원문 줄 찾기: 노래면 공개 가사 저장소를 먼저(무료, 한도 없음), 아니면 자막 서비스를 먼저 본다.
+ * 자막 서비스가 멈춰도(무료 횟수 끝) 가사 저장소로 한 번 더 찾는다. 둘 다 없으면 이유를 알린다.
+ */
+export async function findSource(env: Env, deps: Deps, v: string, lang: SrcLang, meta: VideoMeta | null): Promise<{ src: { cues: Cue[]; auto: boolean }; via: 'captions' | 'lyrics' }> {
+  const songFirst = !!meta && (meta.music || SONGISH.test(meta.title))
+  const trySong = async () => (meta ? await findSong(deps, meta, lang) : null)
+  if (songFirst) {
+    const c = await trySong()
+    if (c) return { src: { cues: c, auto: false }, via: 'lyrics' }
+  }
+  let failure: ApiError | null = null
+  if (env.TRANSCRIPT_API_KEY) {
+    try {
+      const s = await sourceTrack(env, deps, v, lang)
+      if (s) return { src: s, via: 'captions' }
+    } catch (e) {
+      if (!(e instanceof ApiError)) throw e
+      failure = e
+    }
+  }
+  if (!songFirst) {
+    const c = await trySong()
+    if (c) return { src: { cues: c, auto: false }, via: 'lyrics' }
+  }
+  if (failure?.code === 'UPSTREAM_FAILED' || (!env.TRANSCRIPT_API_KEY && !songFirst))
+    throw new ApiError('UPSTREAM_FAILED', '이 영상 자막을 지금 가져오지 못했어요. 유튜브 "스크립트 표시"를 복사해 대본 탭에 붙여 넣으면 바로 연습할 수 있어요.')
+  throw failure ?? new ApiError('NO_TRACK', `이 영상에는 ${LANG_KO[lang]} 자막도, 찾을 수 있는 가사도 없어요.`)
 }
 
 export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Promise<Response> {
@@ -221,14 +244,13 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   const key = `transcript:v6:${v}:${lang}`
   const hit = await cachedJson<unknown>(env.KV, key)
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
-  if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
-
-  if (!(await embeddable(env, deps, v))) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
+  const meta = await videoMeta(env, deps, v)
+  if (meta && !meta.embeddable) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
   const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now(), 1, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 새 영상 자막은 다 받았어요. 저장한 영상과 대본은 계속 쓸 수 있어요.', quota.resetSec)
 
-  const src = await sourceTrack(env, deps, v, lang)
-  if (!src) throw new ApiError('NO_TRACK', '이 영상에는 그 언어 자막이 없어요.')
+  const got = await findSource(env, deps, v, lang, meta)
+  const src = got.src
   const { auto } = src
   // [Music]·통째로 다른 언어인 조각은 빼고, 자동 자막이면 문장 단위로 합친다
   const kept = practiceLines(src.cues, lang)
@@ -240,27 +262,34 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   // 한국어도 원문과 같은 종류 자막을 기준으로 받아야 시간이 맞는다. 직접 올린 한국어가 없으면 자동 번역이라도 받는다.
   // 소리를 한국어로 잘못 알아들은 자동 자막처럼 줄과 거의 안 맞는 한국어(30% 미만)는 버린다.
   let paired: TranscriptLine[] | null = null
-  for (const type of auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
-    const ko = await fetchTrack(env, deps, v, { lang: 'ko', type })
-    if (!ko) continue
-    const p = pairKo(lines, tidyKo(ko.cues))
-    if (p.filter((l) => l.ko).length >= p.length * 0.3) {
-      paired = p
-      break
+  if (got.via === 'captions') {
+    try {
+      for (const type of auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
+        const ko = await fetchTrack(env, deps, v, { lang: 'ko', type })
+        if (!ko) continue
+        const p = pairKo(lines, tidyKo(ko.cues))
+        if (p.filter((l) => l.ko).length >= p.length * 0.3) {
+          paired = p
+          break
+        }
+      }
+    } catch {
+      /* 한국어 자막을 못 받아도 번역으로 채운다 */
     }
   }
   if (paired) {
     out = paired
     koSource = 'youtube'
   } else {
-    const t = await translate(env, deps, lang, out.map((l) => l.src))
+    const texts = out.map((l) => l.src)
+    const t = (await translate(env, deps, lang, texts).catch(() => null)) ?? (await aiTranslate(env, deps, lang, 'ko', texts))
     if (t) {
       out = out.map((l, i) => (t[i] ? { ...l, ko: t[i] } : l))
       koSource = 'auto'
     }
   }
-  const body = { videoId: v, lang, source: auto ? 'asr' : 'manual', koSource, lines: out }
-  // 한 번 받은 자막은 기한 없이 둔다(자막 서비스 횟수를 아끼려고. 같은 영상은 다시 부르지 않는다)
-  await putJson(env.KV, key, body)
+  const body = { videoId: v, lang, source: got.via === 'lyrics' ? 'lyrics' : auto ? 'asr' : 'manual', koSource, lines: out }
+  // 한 번 받은 자막은 기한 없이 둔다. 다만 뜻을 못 채운 가사는 하루 뒤 다시 번역해 본다
+  await putJson(env.KV, key, body, got.via === 'lyrics' && koSource === 'none' ? 86400 : undefined)
   return json(body, { headers: quotaHeaders(quota) })
 }

@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { getLayout } from './index'
-import { guideFor, guideText } from './guide'
+import { guideFor, guideText, remainingSeg } from './guide'
 import type { Segment } from '../types'
 
 const seg = (text: string, reading = text): Segment => ({ text, reading, isWord: true, confident: true })
@@ -35,4 +35,23 @@ test('괄호가 있는 대본 줄도 안내가 멈추지 않는다', () => {
   expect(guideText(pc, seg('「はい」'))).toBe('「はい」 → [ H A I ]')
   expect(() => guideText(flick, seg('「はい」'))).not.toThrow()
   expect(guideFor(pc, seg('「はい」'), 'は').matches).toBe(false)
+})
+
+describe('조각 중간부터 안내(앞 글자를 확정한 뒤)', () => {
+  test('早上에서 早를 확정하면 shang 부터', () => {
+    const seg = { text: '早上', reading: 'zǎo shang', isWord: true, confident: true }
+    const rest = remainingSeg(seg, 1)
+    expect(rest.text).toBe('上')
+    expect(rest.reading).toBe('shang')
+    const g = guideFor(getLayout('zh-pinyin'), rest, 'sh')
+    expect(g.steps[g.nextIndex].keyId).toBe('a')
+  })
+  test('주음도 같이 줄인다', () => {
+    const rest = remainingSeg({ text: '你好', reading: 'nǐ hǎo', zhuyin: 'ㄋㄧˇ ㄏㄠˇ', isWord: true, confident: true }, 1)
+    expect(rest.zhuyin).toBe('ㄏㄠˇ')
+  })
+  test('일본어처럼 글자와 읽기가 따로면 그대로', () => {
+    const seg = { text: '今日', reading: 'きょう', isWord: true, confident: true }
+    expect(remainingSeg(seg, 1)).toBe(seg)
+  })
 })

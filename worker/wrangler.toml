@@ -12,3 +12,6 @@ binding = "KV"
 id = "9a73aa270cd04e03a566def64a7da983"
 
 # 비밀값(키)은 여기 쓰지 않는다: npx wrangler secret put YOUTUBE_API_KEY 등
+
+[ai]
+binding = "AI"

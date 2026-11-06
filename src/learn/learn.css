@@ -32,6 +32,17 @@
   font-size: var(--fs-h2) !important;
   text-wrap: balance;
 }
+.learn-choose {
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+}
+.learn-choose span {
+  white-space: nowrap;
+}
 .learn-langs {
   margin: 24px 0 0;
   padding: 0;
@@ -317,13 +328,16 @@
   letter-spacing: 1px;
 }
 .learn-sound {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: var(--fs-sub);
-  color: var(--ink-2);
+  color: var(--ink-3, #767676);
 }
+/* 학습자 모국어 뜻: 한국어 다음으로 잘 보이게(회색 보조 글이 아니라 본문 크기·검정) */
 .learn-meaning {
-  margin: 2px 0 0;
-  color: var(--ink-2);
+  margin: 4px 0 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ink);
 }
 .learn-toast {
   position: fixed;

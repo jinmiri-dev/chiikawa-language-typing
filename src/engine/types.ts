@@ -55,6 +55,10 @@ export interface Material {
   title: string
   youtubeId?: string
   koSource: 'given' | 'youtube' | 'auto' | 'none'
+  /** 유튜브 원문이 어디서 왔나(가사 저장소면 영상과 시간이 조금 어긋날 수 있다) */
+  source?: 'manual' | 'asr' | 'lyrics'
+  /** 영상과 줄 시간 맞추기(초). 줄 시간에 더한다 */
+  timeOffset?: number
   lines: Line[]
   createdAt: number
 }

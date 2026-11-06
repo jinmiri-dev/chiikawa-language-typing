@@ -33,3 +33,55 @@ export function recommendLayout(
   }
   return null
 }
+
+const HANGUL = /\p{Script=Hangul}/u
+
+/**
+ * 연습 중 자동 인식: 입력기 조합 글자를 보고 실제 쓰는 자판을 고른다(확신이 없으면 null).
+ * 대만어 주음 기호가 오면 주음, 로마자가 오면 병음, 일본어 로마자가 오면 로마자, 가나가 바로 오면(휴대폰) 플릭.
+ */
+export function layoutFromComposition(lang: Lang, device: 'pc' | 'mobile', data: string): LayoutId | null {
+  const first = [...data].find((c) => c.trim())
+  if (!first) return null
+  const pc = device === 'pc'
+  if (lang === 'tw') {
+    if (BOPOMOFO.test(first)) return pc ? 'tw-zhuyin-pc' : 'tw-zhuyin-mobile'
+    if (LATIN.test(first)) return pc ? 'tw-pinyin' : 'tw-pinyin-mobile'
+  }
+  if (lang === 'zh') {
+    if (!pc && DIGIT.test(first)) return 'zh-pinyin-9key'
+    if (LATIN.test(first)) return pc ? 'zh-pinyin' : 'zh-pinyin-mobile'
+  }
+  if (lang === 'ja') {
+    if (LATIN.test(first)) return pc ? 'ja-pc-romaji' : 'ja-mobile-romaji'
+    if (!pc && KANA.test(first) && data.length === 1) return 'ja-flick'
+  }
+  return null
+}
+
+export type KeyboardTrouble = 'korean-ime' | 'ime-off' | 'mn-latin' | 'mn-russian'
+
+/** 지금 키보드가 그 언어가 아닌 것 같을 때 알려 줄 문구 */
+export const TROUBLE_TEXT: Record<KeyboardTrouble, (lang: Lang) => string> = {
+  'korean-ime': () => '지금 한글이 쳐지고 있어요. 한/영 키를 눌러 바꿔 주세요.',
+  'ime-off': (lang) =>
+    `${lang === 'ja' ? '일본어' : lang === 'tw' ? '대만어(번체)' : '중국어'} 입력기가 꺼져 있는 것 같아요. PC는 Win+Space(맥은 Ctrl+Space)로 입력기를 바꾸고, 휴대폰은 키보드의 🌐 를 눌러요.`,
+  'mn-latin': () => '지금 영문이 쳐지고 있어요. Win+Space(맥은 Ctrl+Space)로 몽골어 키보드로 바꿔 주세요. 없으면 설정 > 이용 안내에 추가하는 법이 있어요.',
+  'mn-russian': () => '러시아어 키보드 같아요. 몽골어(Монгол) 키보드는 Ө·Ү 자리가 달라요. Win+Space로 몽골어 키보드를 골라 주세요.',
+}
+
+/**
+ * 조합 없이 들어온 키 하나로 키보드 문제를 찾는다. expected 는 지금 쳐야 할 글자(그 글자를 바르게 쳤으면 문제 아님).
+ * key/code 는 KeyboardEvent 의 key·code.
+ */
+export function keyboardTrouble(lang: Lang, ev: { key: string; code?: string; composing?: string }, expected?: string): KeyboardTrouble | null {
+  if (ev.composing && HANGUL.test(ev.composing)) return 'korean-ime'
+  if (ev.key.length !== 1 || ev.key === expected || (expected && /[a-z]/i.test(expected))) return null
+  if (HANGUL.test(ev.key)) return 'korean-ime'
+  if (lang === 'mn') {
+    if (/^[a-z]$/i.test(ev.key)) return 'mn-latin'
+    if ((ev.code === 'KeyR' && ev.key.toLowerCase() === 'к') || (ev.code === 'KeyT' && ev.key.toLowerCase() === 'е')) return 'mn-russian'
+  }
+  if ((lang === 'ja' || lang === 'zh' || lang === 'tw') && /^[a-z]$/i.test(ev.key) && !ev.composing) return 'ime-off'
+  return null
+}

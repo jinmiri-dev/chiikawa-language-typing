@@ -19,7 +19,21 @@ export function LearnStart() {
     <div className="page">
       <AppHeader back="#/" title={<span className="logo-sub">{LEARN_BUTTON[0]}</span>} right={<span />} />
       <main className="learn">
-        <h1 className="learn-multi">{LEARN_BUTTON.join(' · ')}</h1>
+        <h1 className="learn-multi">
+          {LANGS.map((l, i) => (
+            <span key={l} lang={LEARN_TEXT[l].htmlLang}>
+              {i > 0 && ' · '}
+              {LEARN_TEXT[l].title}
+            </span>
+          ))}
+        </h1>
+        <p className="learn-choose">
+          {LANGS.map((l) => (
+            <span key={l} lang={LEARN_TEXT[l].htmlLang}>
+              {LEARN_TEXT[l].choose}
+            </span>
+          ))}
+        </p>
         <ul className="learn-langs">
           {LANGS.map((l) => (
             <li key={l}>
@@ -30,7 +44,7 @@ export function LearnStart() {
                 onClick={() => void setNative(store, l)}
               >
                 <b>{LEARN_TEXT[l].langName}</b>
-                <span>{LEARN_TEXT[l].choose}</span>
+                <span>{LEARN_TEXT[l].lead}</span>
               </a>
             </li>
           ))}

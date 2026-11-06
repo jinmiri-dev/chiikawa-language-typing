@@ -176,3 +176,22 @@ export function stepSpeech(layout: Layout, step: KeyStep | undefined): string {
   if (step.taps && step.taps > 1) return `다음: ${key} 키를 ${step.taps}번`
   return `다음: ${key} 키${step.gesture && step.gesture !== 'tap' ? `를 ${how[step.gesture]}` : ''}`
 }
+
+/**
+ * 조각 안에서 앞 글자 몇 개를 이미 확정했을 때 남은 부분. 중국어·대만어는 한 글자에 한 음절이라
+ * 남은 글자의 병음·주음만 남긴다(早上에서 早를 확정하면 shang 부터 안내). 일본어처럼 읽기가 글자와
+ * 따로 노는 조각은 그대로 둔다.
+ */
+export function remainingSeg(seg: Segment, done: number): Segment {
+  if (done <= 0 || !seg.reading || seg.text === seg.reading) return seg
+  const chars = [...seg.text]
+  const syl = seg.reading.split(' ')
+  if (syl.length !== chars.length || done >= chars.length) return seg
+  const zy = seg.zhuyin?.split(' ')
+  return {
+    ...seg,
+    text: chars.slice(done).join(''),
+    reading: syl.slice(done).join(' '),
+    ...(zy && zy.length === chars.length ? { zhuyin: zy.slice(done).join(' ') } : {}),
+  }
+}

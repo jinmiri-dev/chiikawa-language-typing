@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type CompositionEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type CompositionEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader, FriendBubble, FriendImage, StatusNotice, Sentences } from '../../components/components'
@@ -6,11 +6,12 @@ import KeyboardMap from '../../components/KeyboardMap'
 import { pickLine, STAGE_LINES, type FriendLine, type Situation } from '../../content/friendLines'
 import { clockEvent, stageOf, type ClockState } from '../../engine/friend/clock'
 import { nextHintLevel, type HintLevel, type HintMemory } from '../../engine/hint/hint'
+import { keyboardTrouble, layoutFromComposition, TROUBLE_TEXT } from '../../engine/detect'
 import { explainMistake } from '../../engine/judge/explain'
 import { composingAhead, judge, significantChars } from '../../engine/judge/judge'
 import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
 import { LANG_NAME } from '../../engine/lang'
-import { guideFor, guideText, stepSpeech } from '../../engine/layouts/guide'
+import { guideFor, guideText, remainingSeg, stepSpeech } from '../../engine/layouts/guide'
 import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
 import { avgLineMs } from '../../engine/stats/compare'
 import { dayKey } from '../../engine/stats/trend'
@@ -128,6 +129,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [composing, setComposing] = useState('')
   const [lineDone, setLineDone] = useState(false)
   const [videoSaved, setVideoSaved] = useState(false)
+  // 영상과 줄 시간 맞추기(가사 저장소 가사는 뮤직비디오와 조금 어긋날 수 있다). 재료에 저장해 다음에도 쓴다
+  const [offset, setOffset] = useState(material.timeOffset ?? 0)
+  function nudge(by: number) {
+    const next = Math.round((offset + by) * 10) / 10
+    setOffset(next)
+    void store.saveMaterial({ ...material, timeOffset: next })
+  }
   useEffect(() => {
     if (material.youtubeId) void store.listSaved(material.lang).then((list) => setVideoSaved(list.some((v) => v.videoId === material.youtubeId)))
   }, [store, material])
@@ -142,6 +150,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [bubble, setBubble] = useState<{ line: FriendLine | null; at: number }>({ line: null, at: 0 })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [voiceNote, setVoiceNote] = useState('')
+  /** 키보드 자동 인식 알림(바꿨어요 / 이 키보드가 아닌 것 같아요) */
+  const [kbNote, setKbNote] = useState('')
   // 휴대폰도 처음부터 자판 그림을 펼쳐 둔다(무엇을 누를지 바로 보이게). 접을 수 있다
   const [mobileMap, setMobileMap] = useState(true)
   const [words, setWords] = useState<Word[]>([])
@@ -211,7 +221,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     // 유튜브 재료는 영상의 그 줄 구간을 들려준다
     if (material.youtubeId && line.start !== undefined && player.current) {
       setVoiceNote('')
-      await player.current.playSegment(line.start, line.end ?? line.start + 5, settings.rate)
+      await player.current.playSegment(line.start + offset, (line.end ?? line.start + 5) + offset, settings.rate)
       return
     }
     const r = await speak(line.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
@@ -223,14 +233,14 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           ? '기기 목소리로 읽고 있어요.'
           : '',
     )
-  }, [line, material, settings.voice, settings.rate])
+  }, [line, material, settings.voice, settings.rate, offset])
 
   // 유튜브 재료: 영상이 지금 줄 끝을 지나면 멈추고, 진행 막대를 끌어 다른 줄로 가면 그 줄로(함께 가기)
   const lastVideoT = useRef(0)
   const onVideoTime = (t: number) => {
     const prevT = lastVideoT.current
     lastVideoT.current = t
-    const step = syncStep(material.lines, idxRef.current, prevT, t)
+    const step = syncStep(material.lines, idxRef.current, prevT - offset, t - offset)
     if (step.pause) player.current?.pause()
     if (step.goTo !== undefined) setIdx(step.goTo)
   }
@@ -273,7 +283,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   // 문장 강조는 조합 중인 가나도 따라간다(확정 전에도 어디까지 쳤는지 보이게)
   const shownUpTo = res.wrongAt === undefined ? res.okUpTo + composingAhead(line.src, res.okUpTo, composing) : res.okUpTo
   const segComposing = seg && seg.text === seg.reading ? seg.text.slice(0, inSeg) + composing : composing
-  const guide = seg && seg.confident && layout.verified ? guideFor(layout, seg, segComposing) : null
+  const guideSeg = seg && seg.text !== seg.reading ? remainingSeg(seg, [...seg.text.slice(0, inSeg)].length) : seg
+  const guide = guideSeg && guideSeg.confident && layout.verified ? guideFor(layout, guideSeg, segComposing) : null
   const nextStep = guide?.steps[guide.nextIndex]
 
   // 단어를 다 칠 때마다 그 단어를 읽어 준다(타자 게임처럼). 줄을 다 치면 줄 전체를 들려주니 그때는 읽지 않는다.
@@ -424,6 +435,25 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const onCompositionUpdate = (e: CompositionEvent<HTMLInputElement>) => {
     setComposing(e.data)
     setLastInputAt(Date.now())
+    autoKeyboard(e.data)
+  }
+  /** 입력기가 보내는 글자로 실제 자판을 알아보고 맞춘다(주음↔병음, 로마자↔플릭 등) */
+  function autoKeyboard(data: string) {
+    if (keyboardTrouble(lang, { key: '', composing: data }) === 'korean-ime') {
+      setKbNote(TROUBLE_TEXT['korean-ime'](lang))
+      return
+    }
+    const id = layoutFromComposition(lang, device, data)
+    if (id && id !== layoutId && layoutsFor(lang, device).some((l) => l.id === id)) {
+      setSettings({ layout: { ...settings.layout, [lang]: id } })
+      setKbNote(`치는 모양을 보고 키보드를 '${LAYOUT_LABEL[id].name}'(으)로 맞췄어요.`)
+    } else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
+  }
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing || e.key === 'Process' || e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return
+    const t = keyboardTrouble(lang, { key: e.key, code: e.code }, [...line.src.slice(res.okUpTo)][0])
+    if (t) setKbNote(TROUBLE_TEXT[t](lang))
+    else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
   }
   const onCompositionEnd = (e: CompositionEvent<HTMLInputElement>) => {
     composingRef.current = false
@@ -545,6 +575,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         onCompositionStart={onCompositionStart}
         onCompositionUpdate={onCompositionUpdate}
         onCompositionEnd={onCompositionEnd}
+        onKeyDown={onKeyDown}
         onFocus={(e) => e.currentTarget.scrollIntoView?.({ block: 'nearest' })}
         autoComplete="off"
         autoCorrect="off"
@@ -560,6 +591,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       )}
     </div>
   )
+
+  const kbNotice = kbNote ? (
+    <p className="kb-note" role="status">
+      <Sentences text={kbNote} />
+      <button type="button" className="kb-note-x" aria-label="알림 닫기" onClick={() => setKbNote('')}>
+        ×
+      </button>
+    </p>
+  ) : null
 
   const status = (
     <div className="judge" aria-live="polite">
@@ -584,7 +624,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     // 키 자리를 아직 확인하지 못한 자판: 그림 대신 무엇을 칠지(읽기·입력 순서)를 글로 알려 준다
     <div className="guide">
       <p className="guide-line" lang={htmlLang}>
-        <GuideParts text={guideText(layout, seg)} />
+        <GuideParts text={guideText(layout, guideSeg ?? seg)} />
       </p>
       <p className="guide-note">자판 그림은 기기마다 달라 아직 준비 중이에요. 위 순서대로 쳐 보세요.</p>
     </div>
@@ -592,7 +632,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     <div className="guide">
       {level !== 'off' ? (
         <p className="guide-line" lang={htmlLang}>
-          <GuideParts text={guideText(layout, seg)} />
+          <GuideParts text={guideText(layout, guideSeg ?? seg)} />
         </p>
       ) : (
         <p className="guide-off"><Sentences text="안내 없이 쳐 봐요. 멈추면 다시 알려 줘요." /></p>
@@ -633,6 +673,18 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           {lineSaved ? '✓ 담은 줄' : '이 줄 담기'}
         </button>
       </div>
+      {material.youtubeId && material.source === 'lyrics' && (
+        <div className="tb-group tb-sync" role="group" aria-label="가사 시간 맞추기">
+          <span className="tb-note">가사 시간</span>
+          <button type="button" className="btn btn-sub" onClick={() => nudge(-0.5)} title="가사가 소리보다 늦게 나오면">
+            0.5초 앞으로
+          </button>
+          <button type="button" className="btn btn-sub" onClick={() => nudge(0.5)} title="가사가 소리보다 먼저 나오면">
+            0.5초 뒤로
+          </button>
+          {offset !== 0 && <span className="tb-note">{offset > 0 ? `+${offset}` : offset}초</span>}
+        </div>
+      )}
       <div className="tb-group tb-keyboard">
         {canChangeKeyboard ? (
           <button type="button" className="btn btn-sub" onClick={() => setSheetOpen(true)}>
@@ -655,6 +707,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         right={
           <>
             <span className="study-meta">{progressText}</span>
+            <span className="study-bar" aria-hidden="true">
+              <span style={{ width: `${(Math.min(idx, material.lines.length) / material.lines.length) * 100}%` }} />
+            </span>
             {material.youtubeId && (
               <button type="button" className="study-words" aria-pressed={videoSaved} aria-label={videoSaved ? '영상 저장 취소' : '영상 저장'} onClick={() => void toggleVideo()}>
                 {videoSaved ? '★' : '☆'}
@@ -692,6 +747,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             )}
             {sentence}
             {input}
+            {kbNotice}
             {status}
             {toolbar}
             {guidePanel}
@@ -702,6 +758,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
           {sentence}
           {input}
+          {kbNotice}
           {status}
           {guidePanel}
           <div className="ctl-row ctl-mobile">

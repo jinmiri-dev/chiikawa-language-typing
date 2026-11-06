@@ -86,7 +86,7 @@ const zh: LearnText = {
   remove: '删除',
   tapWord: '点单词听发音',
   tapBlank: '点空格看答案',
-  loading: '正在准备歌词…',
+  loading: '正在准备歌词和意思…第一次打开大约需要30秒。',
   noMeaning: '这个视频暂时没有中文翻译。',
   wordAdded: (w) => `「${w}」已加入单词本`,
   words: '单词本',
@@ -141,7 +141,7 @@ const tw: LearnText = {
   remove: '刪除',
   tapWord: '點單字聽發音',
   tapBlank: '點空格看答案',
-  loading: '正在準備歌詞…',
+  loading: '正在準備歌詞和意思…第一次打開大約需要30秒。',
   noMeaning: '這個影片暫時沒有中文翻譯。',
   wordAdded: (w) => `「${w}」已加入單字本`,
   words: '單字本',
@@ -195,7 +195,7 @@ const mn: LearnText = {
   remove: 'Устгах',
   tapWord: 'Үг дээр дарвал дуудлагыг сонсоно',
   tapBlank: 'Хоосон зай дээр дарж хариуг харна',
-  loading: 'Дууны үгийг бэлдэж байна…',
+  loading: 'Дууны үг, утгыг бэлдэж байна… Анх нээхэд 30 секунд орчим болно.',
   noMeaning: 'Энэ бичлэгт монгол орчуулга одоохондоо алга.',
   wordAdded: (w) => `"${w}" үгийн санд нэмэгдлээ`,
   words: 'Үгийн сан',
@@ -249,7 +249,7 @@ const ja: LearnText = {
   remove: '削除',
   tapWord: '単語を押すと発音が聞けます',
   tapBlank: '空欄を押すと答えが出ます',
-  loading: '歌詞を準備しています…',
+  loading: '歌詞と意味を準備しています…はじめて開くときは30秒ほどかかります。',
   noMeaning: 'この動画にはまだ日本語訳がありません。',
   wordAdded: (w) => `「${w}」を単語帳に入れました`,
   words: '単語帳',
@@ -303,7 +303,7 @@ const en: LearnText = {
   remove: 'Remove',
   tapWord: 'Tap a word to hear it',
   tapBlank: 'Tap a blank to see the answer',
-  loading: 'Getting the lyrics ready…',
+  loading: 'Getting the lyrics and meanings ready… The first time takes about 30 seconds.',
   noMeaning: 'This video has no English translation yet.',
   wordAdded: (w) => `Added “${w}” to your word list`,
   words: 'Word list',
@@ -321,4 +321,5 @@ const en: LearnText = {
 export const LEARN_TEXT: Record<Lang, LearnText> = { zh, tw, mn, ja, en }
 
 /** 홈 버튼: 누구든 자기 말로 알아보게 여러 말로 */
-export const LEARN_BUTTON = ['Learn Korean', '学韩语', '學韓語', 'Солонгос хэл', '韓国語']
+/** 홈·모국어 고르기에 보이는 '한국어 배우기'. 모국어 카드와 같은 순서(영어·일본어·간체·번체·몽골어) */
+export const LEARN_BUTTON = ['Learn Korean', '韓国語', '学韩语', '學韓語', 'Солонгос хэл']

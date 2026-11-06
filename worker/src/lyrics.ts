@@ -6,7 +6,9 @@ import { cachedJson, putJson } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { ApiError, json } from './http'
 import { LIMITS, quotaHeaders, takeQuota } from './quota'
-import { embeddable, fetchTrack, mergeCues, pairKo, practiceLines, sourceTrack, tidyKo, type Cue } from './transcript'
+import { aiTranslate } from './ai'
+import { videoMeta } from './songs'
+import { fetchTrack, findSource, mergeCues, pairKo, practiceLines, tidyKo, type Cue } from './transcript'
 
 /** 모국어 → 유튜브 자막(번역) 언어 코드 */
 const MEANING_TRACK: Record<Lang, string> = { zh: 'zh-Hans', tw: 'zh-Hant', mn: 'mn', ja: 'ja', en: 'en' }
@@ -24,18 +26,17 @@ export async function lyrics(url: URL, lang: Lang, env: Env, deps: Deps): Promis
   const key = `lyrics:v1:${v}:${lang}`
   const hit = await cachedJson<unknown>(env.KV, key)
   if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
-  if (!env.TRANSCRIPT_API_KEY) throw new ApiError('NOT_CONFIGURED', '자막 서비스 키가 아직 없어요.')
-
-  if (!(await embeddable(env, deps, v))) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
+  const meta = await videoMeta(env, deps, v)
+  if (meta && !meta.embeddable) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
   const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now(), 1, deps.ip)
   if (!quota.ok) throw new ApiError('QUOTA_EXCEEDED', '오늘 새 영상 자막은 다 받았어요.', quota.resetSec)
 
-  // 한국어 자막은 영상마다 한 번만 받아 둔다(모국어가 달라도 같다)
+  // 한국어 자막(또는 가사)은 영상마다 한 번만 받아 둔다(모국어가 달라도 같다)
   const koKey = `lyrics-ko:v1:${v}`
-  let src = await cachedJson<{ cues: Cue[]; auto: boolean }>(env.KV, koKey)
+  let src = await cachedJson<{ cues: Cue[]; auto: boolean; via?: 'captions' | 'lyrics' }>(env.KV, koKey)
   if (!src) {
-    src = await sourceTrack(env, deps, v, 'ko')
-    if (!src) throw new ApiError('NO_TRACK', '이 영상에는 한국어 자막이 없어요.')
+    const got = await findSource(env, deps, v, 'ko', meta)
+    src = { ...got.src, via: got.via }
     await putJson(env.KV, koKey, src)
   }
   const kept = practiceLines(src.cues, 'ko')
@@ -44,18 +45,31 @@ export async function lyrics(url: URL, lang: Lang, env: Env, deps: Deps): Promis
 
   // 뜻: 원문과 같은 종류 자막의 번역을 받아야 시간이 맞는다. 줄과 거의 안 맞으면(30% 미만) 버린다.
   let out: LyricLine[] = lines.map((l) => ({ start: l.start, end: l.end, ko: l.text }))
-  let meaningSource: 'youtube' | 'none' = 'none'
-  for (const type of src.auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
-    const tr = await fetchTrack(env, deps, v, { lang: MEANING_TRACK[lang], type })
-    if (!tr) continue
-    const paired = pairKo(lines, tidyKo(tr.cues))
-    if (paired.filter((l) => l.ko).length >= paired.length * 0.3) {
-      out = paired.map((p) => ({ start: p.start, end: p.end, ko: p.src, ...(p.ko ? { meaning: p.ko } : {}) }))
-      meaningSource = 'youtube'
-      break
+  let meaningSource: 'youtube' | 'auto' | 'none' = 'none'
+  if (src.via !== 'lyrics') {
+    try {
+      for (const type of src.auto ? (['auto'] as const) : (['manual', 'auto'] as const)) {
+        const tr = await fetchTrack(env, deps, v, { lang: MEANING_TRACK[lang], type })
+        if (!tr) continue
+        const paired = pairKo(lines, tidyKo(tr.cues))
+        if (paired.filter((l) => l.ko).length >= paired.length * 0.3) {
+          out = paired.map((p) => ({ start: p.start, end: p.end, ko: p.src, ...(p.ko ? { meaning: p.ko } : {}) }))
+          meaningSource = 'youtube'
+          break
+        }
+      }
+    } catch {
+      /* 뜻 자막을 못 받으면 번역으로 */
     }
   }
-  const body = { videoId: v, to: lang, source: src.auto ? 'asr' : 'manual', meaningSource, lines: out }
-  await putJson(env.KV, key, body)
+  if (meaningSource === 'none') {
+    const t = await aiTranslate(env, deps, 'ko', lang, out.map((l) => l.ko))
+    if (t) {
+      out = out.map((l, i) => (t[i] ? { ...l, meaning: t[i] } : l))
+      meaningSource = 'auto'
+    }
+  }
+  const body = { videoId: v, to: lang, source: src.via === 'lyrics' ? 'lyrics' : src.auto ? 'asr' : 'manual', meaningSource, lines: out }
+  await putJson(env.KV, key, body, meaningSource === 'none' ? 86400 : undefined)
   return json(body, { headers: quotaHeaders(quota) })
 }

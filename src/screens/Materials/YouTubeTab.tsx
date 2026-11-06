@@ -59,12 +59,15 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
   async function open(videoId: string, meta?: VideoItem) {
     setNotice(null)
     setBusy('자막을 가져오고 있어요…')
+    // 처음 여는 노래는 가사를 찾고 한국어 뜻을 번역하느라 오래 걸린다(한 번 준비하면 다음부터 바로)
+    const slow = setTimeout(() => setBusy('처음 여는 영상이라 자막과 한국어 뜻을 준비하고 있어요. 30초쯤 걸려요. 한 번 준비하면 다음부터는 바로 열려요.'), 4000)
     try {
       const m = await openVideo(store, lang, videoId, meta && { title: meta.title, channel: meta.channel, durationSec: meta.durationSec, thumbnail: meta.thumbnail })
       location.hash = href({ name: 'study', materialId: m.id })
     } catch (e) {
       setNotice(noticeFor(e, lang))
     } finally {
+      clearTimeout(slow)
       setBusy('')
     }
   }

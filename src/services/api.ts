@@ -25,7 +25,7 @@ export interface VideoItem {
 export interface TranscriptResult {
   videoId: string
   lang: Lang
-  source: 'manual' | 'asr'
+  source: 'manual' | 'asr' | 'lyrics'
   koSource: 'youtube' | 'auto' | 'none'
   lines: { start: number; end: number; src: string; ko?: string }[]
 }

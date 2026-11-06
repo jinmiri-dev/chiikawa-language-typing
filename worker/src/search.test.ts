@@ -25,7 +25,7 @@ const yt = () => fakeFetch([['/youtube/v3/search', () => json(searchBody)], ['/y
 describe('/search', () => {
   test('응답 모양: 제목 글자 풀기, 길이, 썸네일, 임베드', async () => {
     const f = yt()
-    const r = await handle(req('/search?lang=ja&q=歌'), testEnv(), { fetch: f, now })
+    const r = await handle(req('/search?lang=ja&q=ニュース'), testEnv(), { fetch: f, now })
     expect(r.status).toBe(200)
     expect(r.headers.get('x-quota-remaining')).toBe('89')
     expect(await r.json()).toEqual({

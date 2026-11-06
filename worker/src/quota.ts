@@ -4,9 +4,9 @@ import type { KV } from './env'
 
 const DAY = 86_400_000
 
-export const LIMITS = { search: 90, transcript: 60, tts: 20_000, netflix: 50 } as const
+export const LIMITS = { search: 90, transcript: 300, tts: 20_000, netflix: 50 } as const
 /** 한 사람(IP) 하루 상한: 누가 출처를 꾸며 불러도 전체 한도(자막 서비스 무료 횟수)를 혼자 다 쓰지 못하게 */
-export const IP_LIMITS: Record<string, number> = { search: 30, transcript: 25, tts: 5_000, netflix: 20 }
+export const IP_LIMITS: Record<string, number> = { search: 30, transcript: 40, tts: 5_000, netflix: 20 }
 export type QuotaRoute = keyof typeof LIMITS
 
 const dayOf = (now: number) => new Date(now).toISOString().slice(0, 10)

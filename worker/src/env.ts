@@ -17,6 +17,8 @@ export interface Env {
   AZURE_TRANSLATOR_KEY?: string
   AZURE_TRANSLATOR_REGION?: string
   TMDB_TOKEN?: string
+  /** Workers AI(무료 번역). wrangler.toml 의 [ai] binding */
+  AI?: { run(model: string, input: unknown): Promise<unknown> }
   /** 쉼표로 나눈 허용 출처 */
   ALLOWED_ORIGINS: string
 }

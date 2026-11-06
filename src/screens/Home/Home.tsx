@@ -164,7 +164,14 @@ export default function Home() {
             </span>
             <span className="home-learn-text">
               <b>{LEARN_BUTTON[0]}</b>
-              <span>{LEARN_BUTTON.slice(1).join(' · ')}</span>
+              <span>
+                {LEARN_BUTTON.slice(1).map((t, i) => (
+                  <span key={t} lang={['ja', 'zh-CN', 'zh-TW', 'mn'][i]}>
+                    {i > 0 && ' · '}
+                    {t}
+                  </span>
+                ))}
+              </span>
             </span>
             <span aria-hidden="true">→</span>
           </a>
