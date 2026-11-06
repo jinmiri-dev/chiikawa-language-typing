@@ -97,7 +97,16 @@ export default function Study({ materialId }: { materialId: string }) {
   useEffect(() => {
     void Promise.all([getMaterial(store, materialId), store.getProgress(materialId)]).then(([material, initial]) => setLoaded({ material, initial }))
   }, [store, materialId])
-  if (loaded === undefined) return null
+  if (loaded === undefined)
+    return (
+      <main className="app">
+        <section className="center">
+          <p className="busy" aria-live="polite">
+            연습을 준비하고 있어요. 처음 여는 레슨은 읽기(후리가나·병음)를 만드느라 몇 초 걸려요.
+          </p>
+        </section>
+      </main>
+    )
   const { material, initial } = loaded
   if (!material)
     return (
