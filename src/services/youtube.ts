@@ -22,7 +22,7 @@ export async function openVideo(
 
   const t = await getTranscript(lang, videoId)
   const segment = await loadSegmenter(lang).catch(() => null)
-  const draft = buildDraftMaterial({ id, lang, title: meta?.title ?? `유튜브 영상 ${videoId}`, lines: cleanCues(t.lines), segment, youtubeId: videoId })
+  const draft = buildDraftMaterial({ id, lang, title: meta?.title ?? t.title ?? `유튜브 영상 ${videoId}`, lines: cleanCues(t.lines), segment, youtubeId: videoId })
   const material: Material = { ...draft, kind: 'youtube', koSource: t.koSource === 'none' ? 'none' : t.koSource, source: t.source }
   await store.saveMaterial(material)
   return material

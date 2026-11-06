@@ -25,6 +25,9 @@ export interface VideoItem {
 export interface TranscriptResult {
   videoId: string
   lang: Lang
+  /** 영상 제목·채널(중계 서버가 알려 줌. 링크로 연 영상의 제목) */
+  title?: string
+  channel?: string
   source: 'manual' | 'asr' | 'lyrics'
   koSource: 'youtube' | 'auto' | 'none'
   lines: { start: number; end: number; src: string; ko?: string }[]

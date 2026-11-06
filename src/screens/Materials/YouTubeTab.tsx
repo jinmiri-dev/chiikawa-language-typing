@@ -95,7 +95,7 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
 
   const picks = YOUTUBE_PICKS[lang].map((p) => ({ ...p, thumbnail: pickThumb(p.videoId), embeddable: true }))
   const shown: VideoItem[] = view === 'saved' ? saved.map((s) => ({ ...s, embeddable: true })) : view === 'picks' ? picks : items
-  function card(v: VideoItem) {
+  function card(v: VideoItem & { src?: 'captions' | 'lyrics' }) {
     const isSaved = saved.some((s) => s.videoId === v.videoId)
     return (
       <li key={v.videoId} className="yt-card">
@@ -106,6 +106,7 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
           </span>
           <b className="yt-title">{v.title}</b>
           <span className="yt-channel">{v.channel}</span>
+          {v.src && <span className="yt-badge">{v.src === 'lyrics' ? '가사 · 한국어 뜻' : '자막 · 한국어 뜻'}</span>}
         </button>
         <button type="button" className="yt-save" aria-pressed={isSaved} aria-label={`${v.title} ${isSaved ? '저장 취소' : '저장'}`} onClick={() => void toggleSave(v)}>
           {isSaved ? '★ 저장됨' : '☆ 저장'}
@@ -176,7 +177,7 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
       )}
       {notice && <StatusNotice title={notice.title} tone="warn">{notice.body}</StatusNotice>}
       {busy && <p className="busy" aria-live="polite">{busy}</p>}
-      {view === 'picks' && !busy && <p className="page-lead"><Sentences text={`${LANG_NAME[lang].ko} 자막과 한국어 뜻이 붙는 걸 확인한 영상이에요. 태그나 검색으로 더 찾을 수 있어요.`} /></p>}
+      {view === 'picks' && !busy && <p className="page-lead"><Sentences text={`바로 열리는 걸 확인한 ${LANG_NAME[lang].ko} 영상이에요. 노래는 시간이 붙은 가사로, 뜻은 한국어로 보여 줘요. 태그나 검색으로 더 찾을 수 있어요.`} /></p>}
       {view === 'saved' && !saved.length && <p className="page-lead"><Sentences text="마음에 드는 영상의 저장 버튼을 누르면 여기에 모여요. 저장한 영상은 검색 한도를 쓰지 않아요." /></p>}
       {view === 'picks' ? (
         // 추천: 종류별로(동요·노래·명언·뉴스·영화·일상)

@@ -347,6 +347,11 @@
   font-size: var(--fs-sub);
   color: var(--ink-2);
 }
+.yt-badge {
+  align-self: flex-start;
+  font-size: 13px;
+  color: var(--ink-2);
+}
 .yt-save {
   position: absolute;
   top: 6px;

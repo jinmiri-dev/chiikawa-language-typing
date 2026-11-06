@@ -467,8 +467,9 @@ select.btn {
   align-items: flex-start;
   gap: 8px;
 }
-.kb-note > :first-child {
+.kb-note-text {
   flex: 1;
+  min-width: 0;
 }
 .kb-note-x {
   flex: none;

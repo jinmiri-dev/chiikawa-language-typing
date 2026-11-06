@@ -205,7 +205,10 @@
   color: var(--ink-2);
 }
 .set-row select {
+  flex: none;
+  width: 200px;
   max-width: 55%;
+  text-align: left;
 }
 .switch {
   appearance: none;

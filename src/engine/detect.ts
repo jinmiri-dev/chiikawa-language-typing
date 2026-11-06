@@ -62,12 +62,12 @@ export function layoutFromComposition(lang: Lang, device: 'pc' | 'mobile', data:
 export type KeyboardTrouble = 'korean-ime' | 'ime-off' | 'mn-latin' | 'mn-russian'
 
 /** 지금 키보드가 그 언어가 아닌 것 같을 때 알려 줄 문구 */
-export const TROUBLE_TEXT: Record<KeyboardTrouble, (lang: Lang) => string> = {
-  'korean-ime': () => '지금 한글이 쳐지고 있어요. 한/영 키를 눌러 바꿔 주세요.',
-  'ime-off': (lang) =>
-    `${lang === 'ja' ? '일본어' : lang === 'tw' ? '대만어(번체)' : '중국어'} 입력기가 꺼져 있는 것 같아요. PC는 Win+Space(맥은 Ctrl+Space)로 입력기를 바꾸고, 휴대폰은 키보드의 🌐 를 눌러요.`,
-  'mn-latin': () => '지금 영문이 쳐지고 있어요. Win+Space(맥은 Ctrl+Space)로 몽골어 키보드로 바꿔 주세요. 없으면 설정 > 이용 안내에 추가하는 법이 있어요.',
-  'mn-russian': () => '러시아어 키보드 같아요. 몽골어(Монгол) 키보드는 Ө·Ү 자리가 달라요. Win+Space로 몽골어 키보드를 골라 주세요.',
+const SWITCH = (device: 'pc' | 'mobile') => (device === 'pc' ? 'Win+Space(맥은 Ctrl+Space)로' : '키보드의 🌐(지구본)을 눌러')
+export const TROUBLE_TEXT: Record<KeyboardTrouble, (lang: Lang, device?: 'pc' | 'mobile') => string> = {
+  'korean-ime': (_l, d = 'pc') => (d === 'pc' ? '지금 한글이 쳐지고 있어요. 한/영 키를 눌러 바꿔 주세요.' : `지금 한글이 쳐지고 있어요. ${SWITCH(d)} 그 언어 키보드로 바꿔 주세요.`),
+  'ime-off': (lang, d = 'pc') => `${lang === 'ja' ? '일본어' : lang === 'tw' ? '대만어(번체)' : '중국어'} 입력기가 꺼져 있는 것 같아요. ${SWITCH(d)} 입력기를 바꿔 주세요.`,
+  'mn-latin': (_l, d = 'pc') => `지금 영문이 쳐지고 있어요. ${SWITCH(d)} 몽골어 키보드로 바꿔 주세요. 키보드가 없으면 이용 안내에 추가하는 법이 있어요.`,
+  'mn-russian': (_l, d = 'pc') => `러시아어 키보드 같아요. 몽골어(Монгол) 키보드는 Ө·Ү 자리가 달라요. ${SWITCH(d)} 몽골어 키보드를 골라 주세요.`,
 }
 
 /**

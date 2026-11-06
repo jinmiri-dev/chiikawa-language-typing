@@ -69,7 +69,7 @@ describe('/transcript', () => {
     const f = fakeFetch([[tr('ja'), () => json(jaBody)], [tr('ko'), () => json(koBody)], ['/youtube/v3/videos', () => embed(true)]])
     const r = await handle(req('/transcript?lang=ja&v=vvvvvvvvvvv'), testEnv(), { fetch: f, now })
     expect(r.status).toBe(200)
-    expect(await r.json()).toEqual({
+    expect(await r.json()).toMatchObject({
       videoId: 'vvvvvvvvvvv', lang: 'ja', source: 'manual', koSource: 'youtube',
       lines: [{ start: 0, end: 2.5, src: 'こんにちは。', ko: '안녕하세요.' }, { start: 3, end: 5, src: 'またね。', ko: '또 봐.' }],
     })

@@ -242,8 +242,18 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
   const v = url.searchParams.get('v') ?? ''
   if (!/^[\w-]{11}$/.test(v)) throw new ApiError('BAD_REQUEST', '영상 id(v)가 잘못됐어요.')
   const key = `transcript:v6:${v}:${lang}`
-  const hit = await cachedJson<unknown>(env.KV, key)
-  if (hit) return json(hit, { headers: { 'x-cache': 'hit' } })
+  const hit = await cachedJson<{ title?: string }>(env.KV, key)
+  if (hit) {
+    // 예전에 받아 둔 자막에는 영상 제목이 없다: 한 번 채워 다시 저장(링크로 연 영상도 제목이 보이게)
+    if (!('title' in hit)) {
+      const m = await videoMeta(env, deps, v).catch(() => null)
+      if (m) {
+        Object.assign(hit, { title: m.title, channel: m.channel })
+        await putJson(env.KV, key, hit)
+      }
+    }
+    return json(hit, { headers: { 'x-cache': 'hit' } })
+  }
   const meta = await videoMeta(env, deps, v)
   if (meta && !meta.embeddable) throw new ApiError('EMBED_BLOCKED', '영상 주인이 다른 사이트에서 재생하지 못하게 막아 두었어요.')
   const quota = await takeQuota(env.KV, 'transcript', LIMITS.transcript, deps.now(), 1, deps.ip)
@@ -288,7 +298,7 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
       koSource = 'auto'
     }
   }
-  const body = { videoId: v, lang, source: got.via === 'lyrics' ? 'lyrics' : auto ? 'asr' : 'manual', koSource, lines: out }
+  const body = { videoId: v, lang, ...(meta ? { title: meta.title, channel: meta.channel } : {}), source: got.via === 'lyrics' ? 'lyrics' : auto ? 'asr' : 'manual', koSource, lines: out }
   // 한 번 받은 자막은 기한 없이 둔다. 다만 뜻을 못 채운 가사는 하루 뒤 다시 번역해 본다
   await putJson(env.KV, key, body, got.via === 'lyrics' && koSource === 'none' ? 86400 : undefined)
   return json(body, { headers: quotaHeaders(quota) })

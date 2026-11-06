@@ -79,11 +79,12 @@ test('탭을 열면 검색 없이 자막 확인된 추천 영상이 먼저 보�
   expect(yt.openVideo).toHaveBeenCalledWith(store, 'mn', '80Mp2clgjWg', expect.objectContaining({ title: 'Маамуу - Найзууд' }))
 })
 
-test('추천 영상은 종류별로 묶어 보여 준다(언어마다 그 언어 영상)', async () => {
+test('추천 영상은 종류별로 묶고, 무엇으로 연습하는지(가사·자막) 보여 준다', async () => {
   render(<AppProvider store={store}><YouTubeTab lang="ja" /></AppProvider>)
-  expect(await screen.findByRole('heading', { name: '동요·동화' })).toBeTruthy()
-  for (const name of ['노래', '명언·이야기', '뉴스', '영화·방송', '일상']) expect(screen.getByRole('heading', { name })).toBeTruthy()
-  expect(screen.getByText(/やさしいことばニュース.歌舞伎/)).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '노래' })).toBeTruthy()
+  expect(screen.getByText(/晩餐歌/)).toBeTruthy()
+  expect(screen.getAllByText('가사 · 한국어 뜻').length).toBeGreaterThan(10)
+  expect(screen.getAllByText('자막 · 한국어 뜻').length).toBeGreaterThan(0)
 })
 
 test('자격증 태그: 시험·급수를 고르면 그 급수 영상을 찾는다(시험이 없는 언어는 태그 없음)', async () => {

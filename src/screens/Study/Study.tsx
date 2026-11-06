@@ -196,10 +196,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const savedText = useMemo(() => new Set(words.map((w) => w.text)), [words])
   const isReview = material.id === REVIEW_ID
 
-  // 처음 들어왔을 때 인사(복습이면 복습 인사), 휴대폰에서 일본어 키보드를 처음 고를 때 시트
+  // 처음 들어왔을 때 인사(복습이면 복습 인사). 키보드는 치기 시작하면 알아서 맞추므로 고르기 창을 먼저 띄우지 않는다
   useEffect(() => {
     say(isReview ? 'review' : 'hello')
-    if (device === 'mobile' && !settings.layout[material.lang]) setSheetOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -440,7 +439,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   /** 입력기가 보내는 글자로 실제 자판을 알아보고 맞춘다(주음↔병음, 로마자↔플릭 등) */
   function autoKeyboard(data: string) {
     if (keyboardTrouble(lang, { key: '', composing: data }) === 'korean-ime') {
-      setKbNote(TROUBLE_TEXT['korean-ime'](lang))
+      setKbNote(TROUBLE_TEXT['korean-ime'](lang, device))
       return
     }
     const id = layoutFromComposition(lang, device, data)
@@ -452,7 +451,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing || e.key === 'Process' || e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return
     const t = keyboardTrouble(lang, { key: e.key, code: e.code }, [...line.src.slice(res.okUpTo)][0])
-    if (t) setKbNote(TROUBLE_TEXT[t](lang))
+    if (t) setKbNote(TROUBLE_TEXT[t](lang, device))
     else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
   }
   const onCompositionEnd = (e: CompositionEvent<HTMLInputElement>) => {
@@ -594,7 +593,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
 
   const kbNotice = kbNote ? (
     <p className="kb-note" role="status">
-      <Sentences text={kbNote} />
+      <span className="kb-note-text">
+        <Sentences text={kbNote} />
+      </span>
       <button type="button" className="kb-note-x" aria-label="알림 닫기" onClick={() => setKbNote('')}>
         ×
       </button>
