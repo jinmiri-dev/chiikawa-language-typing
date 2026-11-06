@@ -2,6 +2,7 @@ import { href, type MaterialTab } from '../../app/routes'
 import { AppHeader } from '../../components/components'
 import { LANG_NAME, type Lang } from '../../engine/lang'
 import CourseTab from './CourseTab'
+import NewsTab from './NewsTab'
 import ScriptTab from './ScriptTab'
 import YouTubeTab from './YouTubeTab'
 import './Materials.css'
@@ -9,6 +10,7 @@ import './Materials.css'
 const TABS: { id: MaterialTab; label: string }[] = [
   { id: 'course', label: '초보 코스' },
   { id: 'youtube', label: '유튜브' },
+  { id: 'news', label: '뉴스' },
   { id: 'script', label: '대본' },
 ]
 
@@ -36,6 +38,8 @@ export default function Materials({ lang, tab }: { lang: Lang; tab: MaterialTab 
         <section role="tabpanel" className="tabpanel">
           {tab === 'course' || tab === 'starter' ? (
             <CourseTab lang={lang} />
+          ) : tab === 'news' ? (
+            <NewsTab lang={lang} />
           ) : tab === 'youtube' ? (
             <YouTubeTab lang={lang} />
           ) : (

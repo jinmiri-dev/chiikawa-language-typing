@@ -33,16 +33,22 @@ export function Phrases({ text, lang }: { text: string; lang: string }) {
   // 문장부호는 앞 낱말에 붙여 줄 첫머리에 오지 않게
   const chunks: string[] = []
   for (const w of words) {
-    if (chunks.length && /^[\p{P}\s]+$/u.test(w)) chunks[chunks.length - 1] += w
+    // 띄어쓰기는 덩어리 밖에 그대로 둔다(덩어리 끝 공백은 보이지 않으므로). 문장부호는 앞 낱말에 붙인다
+    if (/^\s+$/u.test(w)) chunks.push(' ')
+    else if (chunks.length && chunks[chunks.length - 1] !== ' ' && /^\p{P}+$/u.test(w)) chunks[chunks.length - 1] += w
     else chunks.push(w)
   }
   return (
     <>
-      {chunks.map((c, i) => (
-        <span key={i} className="phrase">
-          {c}
-        </span>
-      ))}
+      {chunks.map((c, i) =>
+        c === ' ' ? (
+          ' '
+        ) : (
+          <span key={i} className="phrase">
+            {c}
+          </span>
+        ),
+      )}
     </>
   )
 }

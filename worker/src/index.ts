@@ -1,5 +1,5 @@
 /** 언어 1급 중계 함수 (Cloudflare Worker). 경로와 오류는 docs/아키텍처-API-ERD.md 3장. */
-import { isLang, type Deps, type Env, type Lang } from './env'
+import { isLang, LANGS, type Deps, type Env, type Lang } from './env'
 import { ApiError, errorResponse, json, withCors } from './http'
 
 export const VERSION = '1.0.0'
@@ -13,6 +13,7 @@ const ROUTES: Record<string, () => Promise<Handler>> = {
   '/tts': async () => (await import('./tts')).tts,
   '/netflix': async () => (await import('./netflix')).netflix,
   '/lyrics': async () => (await import('./lyrics')).lyrics,
+  '/news': async () => (await import('./news')).news,
 }
 
 /** 모든 응답에 붙이는 보안 헤더(내용 추측 금지, 출처 안 보냄, 다른 사이트에 끼워 넣기 금지) */
@@ -65,4 +66,14 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
 export default {
   fetch: (req: Request, env: Env) =>
     handle(req, env, { fetch: (...a) => fetch(...a), now: () => Date.now(), ip: req.headers.get('cf-connecting-ip') ?? undefined }),
+  /** 매일 아침·저녁 예약 실행: 언어별 오늘의 뉴스를 미리 만들어 둔다(사람이 할 일 없음) */
+  scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+    const deps: Deps = { fetch: (...a) => fetch(...a), now: () => Date.now() }
+    ctx.waitUntil(
+      (async () => {
+        const { refreshNews } = await import('./news')
+        for (const lang of LANGS) await refreshNews(env, deps, lang).catch((e) => console.warn('news', lang, String(e)))
+      })(),
+    )
+  },
 }

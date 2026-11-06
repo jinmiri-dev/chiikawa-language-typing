@@ -596,3 +596,67 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* 오늘의 뉴스 */
+.news-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.news-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card, 16px);
+}
+.news-card:hover {
+  border-color: var(--ink);
+}
+.news-open {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px 72px 16px 18px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+.news-title {
+  font-size: 18px;
+  line-height: 1.45;
+}
+.news-ko {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.news-meta {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.news-link {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink);
+  text-decoration: none;
+}
+@media (max-width: 767px) {
+  .news-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

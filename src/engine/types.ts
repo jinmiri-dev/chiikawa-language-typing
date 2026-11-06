@@ -59,6 +59,9 @@ export interface Material {
   source?: 'manual' | 'asr' | 'lyrics'
   /** 영상과 줄 시간 맞추기(초). 줄 시간에 더한다 */
   timeOffset?: number
+  /** 뉴스: 원문 기사 주소와 언론사 */
+  link?: string
+  sourceName?: string
   lines: Line[]
   createdAt: number
 }

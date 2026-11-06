@@ -1,6 +1,6 @@
 import { LANGS, type Lang } from '../engine/lang'
 
-export const MATERIAL_TABS = ['course', 'starter', 'youtube', 'script'] as const
+export const MATERIAL_TABS = ['course', 'starter', 'youtube', 'news', 'script'] as const
 export type MaterialTab = (typeof MATERIAL_TABS)[number]
 
 export type Route =

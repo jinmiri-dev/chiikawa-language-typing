@@ -744,6 +744,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           {offset !== 0 && <span className="tb-note">{offset > 0 ? `+${offset}` : offset}초</span>}
         </div>
       )}
+      {material.link && (
+        <div className="tb-group">
+          <a className="btn btn-sub" href={material.link} target="_blank" rel="noopener noreferrer">
+            원문 기사{material.sourceName ? ` · ${material.sourceName}` : ''} ↗
+          </a>
+        </div>
+      )}
       <div className="tb-group tb-keyboard">
         {canChangeKeyboard ? (
           <button type="button" className="btn btn-sub" onClick={() => setSheetOpen(true)}>
