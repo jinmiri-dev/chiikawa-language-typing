@@ -2,6 +2,9 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import App from './App'
 
+// 일본어 사전(17MB)을 테스트마다 읽으면 느려 흔들린다: 읽기 없이 만든다(코스 흐름만 본다)
+vi.mock('../services/segmenter', async (orig) => ({ ...(await orig<typeof import('../services/segmenter')>()), loadSegmenter: vi.fn(async () => { throw new Error('test') }) }))
+
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
   // 저장소가 없는 환경 = 메모리 저장소
