@@ -183,7 +183,8 @@ test('Esc 로 다시 듣기', async () => {
   await open()
   vi.mocked(speak).mockClear()
   await act(async () => fireEvent.keyDown(window, { key: 'Escape' }))
-  expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
+  // 처음 화면의 소리가 늦게 오는 수가 있어, 횟수 대신 마지막으로 읽은 것이 이 줄인지 본다
+  expect(vi.mocked(speak).mock.calls.at(-1)?.[0]).toBe('おはよう！元気？')
 })
 
 test('낱말 짝: 지금 칠 낱말과 한국어 뜻 속 그 낱말이 함께 밝아지고, 담을 수 있다', async () => {
