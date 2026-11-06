@@ -61,9 +61,8 @@ export async function courseMaterial(store: Store, id: string): Promise<Material
   if (!lines) return null
   // 저장해 둔 레슨이 지금 코스와 같으면 그대로(코스가 바뀌었으면 다시 만든다)
   const saved = await store.getMaterial(id)
-  if (saved && saved.title === lessonTitle(course, l.week, l.lesson) && saved.lines.map((x) => x.src).join('
-') === lines.map(([src]) => src).join('
-')) return saved
+  const same = saved && saved.title === lessonTitle(course, l.week, l.lesson) && saved.lines.every((x, i) => x.src === lines[i]?.[0]) && saved.lines.length === lines.length
+  if (saved && same) return saved
   const segment = await loadSegmenter(l.lang).catch(() => null)
   const m = buildDraftMaterial({
     id,
