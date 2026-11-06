@@ -1,7 +1,8 @@
 /**
  * 영어·중국어·대만어·몽골어 배열 데이터 (기획안 6·11.4장).
  * 휴대폰 쿼티(영어·병음)와 몽골어 키릴은 실제 기기(삼성 키보드, 2026-11-05 입력 시험)로 확인했다.
- * 병음 9키와 대만 주음 휴대폰 자판은 아직이라 verified: false(글로 읽기만 안내).
+ * 병음 9키(숫자 2~9에 abc…wxyz)와 대만 주음 휴대폰 자판(大千 순서 4줄, 성조 키 ˊˇˋ˙ 는 맨 윗줄)은
+ * 아이폰·Gboard·삼성 키보드가 같은 배열을 쓴다(2026-11-06 확인). 1성은 공백으로 친다.
  */
 import type { KeyDef, Layout } from '../types'
 import { jaMobileRomaji } from './ja-mobile-romaji'
@@ -28,9 +29,9 @@ export const zhPinyin9key: Layout = {
   id: 'zh-pinyin-9key',
   lang: 'zh',
   device: 'mobile',
-  verified: false,
+  verified: true,
   rows: [
-    [k('k1', '1 ，。？', 0, 0), k('k2', '2 ABC', 0, 1), k('k3', '3 DEF', 0, 2)],
+    [k('k1', '1 分词', 0, 0), k('k2', '2 ABC', 0, 1), k('k3', '3 DEF', 0, 2)],
     [k('k4', '4 GHI', 1, 0), k('k5', '5 JKL', 1, 1), k('k6', '6 MNO', 1, 2)],
     [k('k7', '7 PQRS', 2, 0), k('k8', '8 TUV', 2, 1), k('k9', '9 WXYZ', 2, 2)],
     [k('sym', '符', 3, 0), k('space', '공백', 3, 1), k('del', '⌫', 3, 2)],
@@ -57,7 +58,7 @@ export const twZhuyinMobile: Layout = {
   id: 'tw-zhuyin-mobile',
   lang: 'tw',
   device: 'mobile',
-  verified: false,
+  verified: true,
   rows: [
     ...ZHUYIN_ROWS.map((r, ri) => r.map((key, ci) => k(DAQIAN[key], DAQIAN[key], ri, ci))),
     [k('sym', '符', 4, 0, 1.5), k('space', '공백', 4, 1, 5), k('enter', '확정', 4, 2, 2)],

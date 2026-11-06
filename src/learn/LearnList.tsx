@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useApp } from '../app/AppState'
 import { href } from '../app/routes'
-import { AppHeader, FriendImage } from '../components/components'
+import { AppHeader, FriendImage, Phrases } from '../components/components'
 import { LEARN_VIDEOS, SITUATIONS, thumbOf, type Situation } from '../content/learnVideos'
 import { LANGS, type Lang } from '../engine/lang'
 import { youtubeIdFrom } from '../services/files'
@@ -49,7 +49,9 @@ export function LearnStart() {
                 onClick={() => void setNative(store, l)}
               >
                 <b>{LEARN_TEXT[l].langName}</b>
-                <span>{LEARN_TEXT[l].lead}</span>
+                <span>
+                  <Phrases text={LEARN_TEXT[l].lead} lang={LEARN_TEXT[l].htmlLang} />
+                </span>
               </a>
             </li>
           ))}
@@ -97,7 +99,9 @@ export function LearnList({ native }: { native: Lang }) {
       />
       <main className="learn">
         <h1>{t.title}</h1>
-        <p className="page-lead">{t.lead}</p>
+        <p className="page-lead">
+          <Phrases text={t.lead} lang={t.htmlLang} />
+        </p>
         <div className="learn-tags" role="group" aria-label={t.all}>
           <button type="button" className="chip-btn" aria-pressed={tag === null} onClick={() => setTag(null)}>
             {t.all}

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../app/AppState'
 import { href } from '../app/routes'
-import { AppHeader } from '../components/components'
+import { AppHeader, Phrases } from '../components/components'
 import YouTubePlayer, { type PlayerHandle } from '../components/YouTubePlayer'
 import { LEARN_VIDEOS } from '../content/learnVideos'
 import type { Lang } from '../engine/lang'
@@ -184,7 +184,9 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
               </button>
             ))}
           </div>
-          <p className="learn-help">{mode !== 'line' && each > 1 ? t.shadowHelp(each) : t.modeHelp[mode]}</p>
+          <p className="learn-help">
+            <Phrases text={mode !== 'line' && each > 1 ? t.shadowHelp(each) : t.modeHelp[mode]} lang={t.htmlLang} />
+          </p>
           {mode !== 'line' && (
             <div className="learn-each" role="group" aria-label={t.each}>
               <span>{t.each}</span>
@@ -274,7 +276,9 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
                             })}
                           </p>
                           {show.sound && <p className="learn-sound" lang="ko-Latn">{romanize(l.ko)}</p>}
-                          {show.meaning && l.meaning && <p className="learn-meaning">{l.meaning}</p>}
+                          {show.meaning && l.meaning && <p className="learn-meaning">
+                              <Phrases text={l.meaning} lang={t.htmlLang} />
+                            </p>}
                         </div>
                         <div className="learn-line-tools">
                           <button type="button" className="learn-tool" aria-label={t.readLine} onClick={() => void speakKo(l.ko, 0.8)}>

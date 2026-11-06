@@ -31,6 +31,23 @@ body {
   word-break: normal;
   overflow-wrap: anywhere;
 }
+/* 일본어는 구절 단위로 끊는다(지원하는 브라우저). 낱말 덩어리(Phrases)는 덩어리째로 */
+:lang(ja) {
+  word-break: auto-phrase;
+}
+.phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+/* 문단 마지막 줄에 글자·낱말 하나만 남지 않게 */
+p,
+li,
+dd,
+figcaption,
+label,
+span {
+  text-wrap: pretty;
+}
 /* 제목·말풍선·안내는 줄 길이를 고르게, 문단은 마지막 줄에 한 낱말만 남지 않게 */
 h1,
 h2,

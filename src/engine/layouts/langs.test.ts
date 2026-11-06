@@ -33,9 +33,9 @@ describe('중국어 병음', () => {
     expect(guideText(getLayout('zh-pinyin-9key'), nihao)).toBe('你好 → nǐ hǎo → 6 4 4 2 6 → 후보에서 你好 선택')
   })
   test('문장부호', () => expect(ids(pc, seg('？'))).toBe('shift slash'))
-  test('PC·휴대폰 쿼티는 확인됨, 9키는 아직(글로만 안내)', () => {
+  test('PC·휴대폰 쿼티와 9키 모두 키 안내', () => {
     expect(pc.verified).toBe(true)
-    expect(layoutsFor('zh', 'mobile').map((l) => [l.id, l.verified])).toEqual([['zh-pinyin-mobile', true], ['zh-pinyin-9key', false]])
+    expect(layoutsFor('zh', 'mobile').map((l) => [l.id, l.verified])).toEqual([['zh-pinyin-mobile', true], ['zh-pinyin-9key', true]])
   })
 })
 

@@ -23,6 +23,30 @@ export function Sentences({ text }: { text: string }) {
   )
 }
 
+/**
+ * 띄어쓰기가 없는 일본어·중국어 글을 낱말(구절) 사이에서만 줄바꿈한다. "一文ず/つ"처럼 낱말 가운데서 끊기지 않게.
+ * 띄어쓰기가 있는 말(영어·몽골어·한국어)은 그대로 둔다.
+ */
+export function Phrases({ text, lang }: { text: string; lang: string }) {
+  if (!/^(ja|zh)/.test(lang) || typeof Intl === 'undefined' || !('Segmenter' in Intl)) return <>{text}</>
+  const words = [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(text)].map((s) => s.segment)
+  // 문장부호는 앞 낱말에 붙여 줄 첫머리에 오지 않게
+  const chunks: string[] = []
+  for (const w of words) {
+    if (chunks.length && /^[\p{P}\s]+$/u.test(w)) chunks[chunks.length - 1] += w
+    else chunks.push(w)
+  }
+  return (
+    <>
+      {chunks.map((c, i) => (
+        <span key={i} className="phrase">
+          {c}
+        </span>
+      ))}
+    </>
+  )
+}
+
 /** 머리글. 왼쪽은 로고(또는 뒤로), 오른쪽은 이용 안내·설정. */
 export function AppHeader({ back, title, right }: { back?: string; title?: ReactNode; right?: ReactNode }) {
   return (

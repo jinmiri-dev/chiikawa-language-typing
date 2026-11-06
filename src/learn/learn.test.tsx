@@ -36,6 +36,9 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 
+/** 낱말 덩어리로 나뉜 글(Phrases)도 문단 전체 글로 찾는다 */
+const whole = (text: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === text
+
 const wrap = (ui: React.ReactNode) => render(<AppProvider store={store}>{ui}</AppProvider>)
 
 test('모국어 고르기: 다섯 언어가 자기 말로 보이고, 고르면 기억한다', async () => {
@@ -57,7 +60,7 @@ test('영상 목록은 모국어 화면, 상황 태그로 거른다', async () =
 
 test('가사 보기: 한국어·발음·모국어 뜻, 단어를 누르면 읽고 단어장에(조사 떼고)', async () => {
   wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
-  expect(await screen.findByText('三只熊住在一个家里')).toBeTruthy()
+  expect(await screen.findByText(whole('三只熊住在一个家里'))).toBeTruthy()
   expect(screen.getByText('gom se mariga han jibe isseo')).toBeTruthy()
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '마리가' })))
   expect(speakKo).toHaveBeenCalledWith('마리가', 0.85)
@@ -67,7 +70,7 @@ test('가사 보기: 한국어·발음·모국어 뜻, 단어를 누르면 읽�
 
 test('따라 부르기: 낱말 일부가 빈칸, 누르면 보인다', async () => {
   wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
-  await screen.findByText('三只熊住在一个家里')
+  await screen.findByText(whole('三只熊住在一个家里'))
   await act(async () => fireEvent.click(screen.getByRole('tab', { name: '跟着唱' })))
   const blanks = screen.getAllByRole('button', { name: '点空格看答案' })
   expect(blanks.length).toBeGreaterThan(0)
@@ -77,7 +80,7 @@ test('따라 부르기: 낱말 일부가 빈칸, 누르면 보인다', async () 
 
 test('문장을 저장하면 학습지에 원고지 칸으로 나온다(진한 줄·연한 줄·빈 줄)', async () => {
   wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
-  await screen.findByText('三只熊住在一个家里')
+  await screen.findByText(whole('三只熊住在一个家里'))
   await act(async () => fireEvent.click(screen.getAllByRole('button', { name: '收藏这句' })[0]))
   expect((await listSentences(store)).map((s) => s.ko)).toEqual(['곰 세 마리가 한 집에 있어'])
   cleanup()
@@ -97,7 +100,7 @@ test('한국어 자막이 없는 영상은 모국어로 이유를 알린다', as
 
 test('학습지는 연 사람 모국어로 뜻을 보여 준다(다른 말로 저장한 문장은 뜻을 받아 채운다)', async () => {
   wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
-  await screen.findByText('三只熊住在一个家里')
+  await screen.findByText(whole('三只熊住在一个家里'))
   await act(async () => fireEvent.click(screen.getAllByRole('button', { name: '收藏这句' })[0]))
   cleanup()
   vi.mocked(api.getLyrics).mockResolvedValue({ ...lyrics, to: 'mn', lines: [{ start: 2, end: 5, ko: '곰 세 마리가 한 집에 있어', meaning: 'Нэг байшинд гурван баавгай' }] })
@@ -111,9 +114,9 @@ test('따라 읽기: 문장마다 2번씩 듣고 다음 문장으로', async () 
   vi.mocked(api.getLyrics).mockResolvedValue({ ...lyrics, lines: [{ start: 0, end: 0.3, ko: '곰 세 마리', meaning: '三只熊' }, { start: 0.3, end: 0.6, ko: '아빠 곰', meaning: '熊爸爸' }] })
   player.playSegment.mockClear()
   wrap(<LearnVideo native="zh" videoId="Wdsyfs3JCkQ" />)
-  await screen.findByText('三只熊')
+  await screen.findByText(whole('三只熊'))
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '2遍' })))
-  expect(screen.getByText('每句播放2遍，每遍之后留出跟读的时间。')).toBeTruthy()
+  expect(screen.getByText(whole('每句播放2遍，每遍之后留出跟读的时间。'))).toBeTruthy()
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '▶ 播放' })))
   await waitFor(() => expect(player.playSegment).toHaveBeenCalledTimes(4), { timeout: 6000 })
   expect(player.playSegment.mock.calls.map((c) => c[0])).toEqual([0, 0, 0.3, 0.3])
