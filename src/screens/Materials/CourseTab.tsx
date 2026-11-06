@@ -1,19 +1,26 @@
-/** 초보 코스 탭(와이어프레임 02-0): 왼쪽 0단계·24주, 오른쪽 오늘 할 일(다음 레슨·연속 학습일·진도·복습) */
+/** 초보 코스 탭(와이어프레임 02-0): 왼쪽 0단계·단계별 주제 주차·채팅 표현, 오른쪽 오늘 할 일(다음 레슨·연속 학습일·진도·복습) */
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { Sentences } from '../../components/components'
-import { allLessons, lessonId, loadCourse, stageName, type CourseData } from '../../content/course'
+import { allLessons, lessonId, loadCourse, type CourseData } from '../../content/course'
+import { starterSets } from '../../content/starter'
+import type { Progress } from '../../engine/types'
 import type { Lang } from '../../engine/lang'
 import { getCourseProgress, nextLesson, streak, type CourseProgress } from '../../services/course'
 import { buildReviewMaterial, reviewCount } from '../../services/review'
+
+const LEVELS = ['입문', '기초', '초급']
+const LEVEL_HINT = ['아주 짧은 문장', '조금 긴 문장', '이어지는 문장']
 
 export default function CourseTab({ lang }: { lang: Lang }) {
   const { store } = useApp()
   const [course, setCourse] = useState<CourseData | null>(null)
   const [prog, setProg] = useState<CourseProgress>({ done: [], days: [] })
   const [due, setDue] = useState(0)
+  const [setProgress, setSetProgress] = useState<Record<string, Progress>>({})
   useEffect(() => {
+    void store.listProgress(lang).then((list) => setSetProgress(Object.fromEntries(list.map((p) => [p.materialId, p]))))
     void loadCourse(lang).then(setCourse)
     void getCourseProgress(store, lang).then(setProg)
     void reviewCount(store).then(setDue, () => setDue(0))
@@ -26,13 +33,14 @@ export default function CourseTab({ lang }: { lang: Lang }) {
   const days = streak(prog.days)
   const today = prog.days.includes(localDay())
   const curWeek = next?.week ?? 24
+  const sets = starterSets(lang)
   const go = (w: number, l: number) => href({ name: 'study', materialId: lessonId(lang, w, l) })
 
   return (
     <div className="course">
       <section className="course-main" aria-label="코스">
         <p className="materials-lead">
-          <Sentences text="하루 한 레슨(10줄, 약 5분)씩 24주. 쉬운 문장부터 차근차근 올라가요." />
+          <Sentences text="하루 한 레슨(10줄, 약 5분)씩 24주. 주제 8개를 입문·기초·초급으로 세 번 돌며 차근차근 올라가요." />
         </p>
         <h2 className="course-h">0단계 · 글자 익히기</h2>
         <ul className="course-chips">
@@ -49,31 +57,62 @@ export default function CourseTab({ lang }: { lang: Lang }) {
             )
           })}
         </ul>
-        <h2 className="course-h">
-          주차별 문장 {next && next.week > 0 && <span className="course-h-sub">· {next.week}주차 공부 중</span>}
-        </h2>
-        <ul className="course-weeks">
-          {course.weeks.map((w, wi) => {
-            const week = wi + 1
-            const n = w.filter((_, li) => done.has(lessonId(lang, week, li + 1))).length
-            const state = n === w.length ? 'done' : week === curWeek ? 'now' : undefined
-            const first = w.findIndex((_, li) => !done.has(lessonId(lang, week, li + 1)))
-            return (
-              <li key={week}>
-                <a className="course-week" data-state={state} href={go(week, first < 0 ? 1 : first + 1)} aria-label={`${week}주차 ${stageName(week)}, ${w.length}개 중 ${n}개 끝냄`}>
-                  <b>{week}주차</b>
-                  <span>{state === 'done' ? `✓ ${n} / ${w.length}` : `${n} / ${w.length}`}</span>
-                </a>
-              </li>
-            )
-          })}
-        </ul>
+        {LEVELS.map((level, li) => {
+          const weeks = course.weeks.map((w, wi) => ({ w, week: wi + 1 })).filter((x) => x.w.level === level)
+          if (!weeks.length) return null
+          return (
+            <section key={level} aria-label={level}>
+              <h2 className="course-h">
+                {level} <span className="course-h-sub">· {weeks[0].week}~{weeks[weeks.length - 1].week}주 · {LEVEL_HINT[li]}</span>
+              </h2>
+              <ul className="course-weeks">
+                {weeks.map(({ w, week }) => {
+                  const n = w.lessons.filter((_, i) => done.has(lessonId(lang, week, i + 1))).length
+                  const state = n === w.lessons.length ? 'done' : week === curWeek ? 'now' : undefined
+                  const first = w.lessons.findIndex((_, i) => !done.has(lessonId(lang, week, i + 1)))
+                  return (
+                    <li key={week}>
+                      <a className="course-week" data-state={state} href={go(week, first < 0 ? 1 : first + 1)} aria-label={`${week}주차 ${w.theme}, ${w.lessons.length}개 중 ${n}개 끝냄`}>
+                        <span className="course-week-no">{week}주차</span>
+                        <b>{w.theme}</b>
+                        <span>{state === 'done' ? `✓ ${n} / ${w.lessons.length}` : `${n} / ${w.lessons.length}`}</span>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )
+        })}
+        {sets.length > 0 && (
+          <section aria-label="자주 쓰는 채팅 표현">
+            <h2 className="course-h">
+              자주 쓰는 채팅 표현 <span className="course-h-sub">· 친구와 채팅할 때 바로 쓰는 짧은 말</span>
+            </h2>
+            <ul className="course-chips">
+              {sets.map((set) => {
+                const p = setProgress[set.id]
+                const finished = !!p && p.lineIndex >= set.lines
+                return (
+                  <li key={set.id}>
+                    <a className="course-chip" data-state={finished ? 'done' : undefined} href={href({ name: 'study', materialId: set.id })}>
+                      {finished && <span aria-label="끝냄">✓</span>}
+                      {set.title}
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
       </section>
       <aside className="course-side" aria-label="오늘 할 일">
         <h2 className="course-h">오늘 할 일</h2>
         {next ? (
           <a className="course-today" href={go(next.week, next.lesson)}>
-            <span className="course-today-where">{next.week === 0 ? `글자 익히기 · ${course.letters[next.lesson - 1]?.title}` : `${next.week}주차 · ${next.lesson}번째 레슨`}</span>
+            <span className="course-today-where">
+              {next.week === 0 ? `글자 익히기 · ${course.letters[next.lesson - 1]?.title}` : `${next.week}주차 ${course.weeks[next.week - 1].theme} · ${next.lesson}번째 레슨`}
+            </span>
             <b className="course-today-title">{today ? '오늘 목표 달성! 한 레슨 더 할까요?' : '오늘의 레슨 시작'}</b>
             <span className="course-today-meta">10줄 · 약 5분</span>
           </a>

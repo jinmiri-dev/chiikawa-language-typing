@@ -54,13 +54,16 @@ export function nextLesson(course: CourseData, lang: Lang, done: string[]): { we
 
 /** 레슨 재료. 처음 열 때 읽기(후리가나·병음 등)를 만들어 저장해 둔다 */
 export async function courseMaterial(store: Store, id: string): Promise<Material | null> {
-  const saved = await store.getMaterial(id)
-  if (saved) return saved
   const l = parseLessonId(id)
   if (!l) return null
   const course = await loadCourse(l.lang)
   const lines = lessonLines(course, l.week, l.lesson)
   if (!lines) return null
+  // 저장해 둔 레슨이 지금 코스와 같으면 그대로(코스가 바뀌었으면 다시 만든다)
+  const saved = await store.getMaterial(id)
+  if (saved && saved.title === lessonTitle(course, l.week, l.lesson) && saved.lines.map((x) => x.src).join('
+') === lines.map(([src]) => src).join('
+')) return saved
   const segment = await loadSegmenter(l.lang).catch(() => null)
   const m = buildDraftMaterial({
     id,

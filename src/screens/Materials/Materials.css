@@ -457,8 +457,12 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+.course-week-no {
+  font-size: 13px;
+  color: var(--ink-2);
 }
 .course-week {
   min-height: 64px;
@@ -474,7 +478,8 @@
   text-decoration: none;
 }
 .course-week b {
-  font-size: 15px;
+  font-size: 16px;
+  word-break: keep-all;
 }
 .course-week span {
   font-size: 13px;
@@ -585,12 +590,9 @@
     padding-left: 0;
     border-left: 0;
   }
-  .course-weeks {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 @media (max-width: 599px) {
   .course-weeks {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
