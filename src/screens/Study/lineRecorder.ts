@@ -27,6 +27,10 @@ export function lineRecorder(expected: string, strict: boolean, skip?: RegExp) {
       const right = exp.filter((_, i) => firstTry[i] === true).length
       return { lineId, firstTryAccuracy: exp.length ? right / exp.length : 1, ms: startAt === null ? 0 : now - startAt, mistakes, at: now }
     },
+    /** 이 줄을 처음 친 때(아직 안 쳤으면 null) */
+    get startedAt() {
+      return startAt
+    },
     get mistakes() {
       return mistakes
     },

@@ -40,9 +40,9 @@ function compose(input: HTMLInputElement, composing: string, committed: string) 
 
 test('조합 중에는 오답 표시가 없다', async () => {
   const input = await open()
-  compose(input, 'おはよ', '')
+  await act(async () => void compose(input, 'おはよ', ''))
   expect(document.querySelector('[data-wrong]')).toBeNull()
-  compose(input, 'おはや', '')
+  await act(async () => void compose(input, 'おはや', ''))
   expect(document.querySelector('[data-wrong]')).toBeNull()
 })
 
@@ -174,7 +174,7 @@ test('0.75배는 누르면 켜지고 다시 누르면 보통 빠르기로 돌아
 
 test('입력기로 조합 중인 가나도 문장 강조가 따라간다(확정 전)', async () => {
   const input = await open()
-  compose(input, 'おはよう', '')
+  await act(async () => void compose(input, 'おはよう', ''))
   expect(document.querySelectorAll('.ch-typing').length).toBe(4)
   expect(document.querySelector('.ch-now')?.textContent).toBe('！')
 })

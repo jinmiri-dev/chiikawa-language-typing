@@ -62,3 +62,13 @@
   color: var(--bg);
   font-size: 12px;
 }
+
+/* 키릴·주음 자판: 실제 영문 자리를 오른쪽 아래에 작게(토벌 타자처럼 두 글자 함께) */
+.kbd-latin {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--ink-3, #767676);
+}

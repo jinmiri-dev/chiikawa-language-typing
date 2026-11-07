@@ -23,6 +23,9 @@ import { getGloss, workerOrigin, type WordPair } from '../../services/api'
 import { currentPair, koRange, placePairs } from '../../engine/pairs'
 import { speak, stopSpeaking } from '../../services/speech'
 import { syncStep } from '../../services/youtubeSync'
+import { playSfx } from '../../services/sfx'
+import { getMaterialBest, ghostProgress, saveRun, type MaterialBest } from '../../services/records'
+import { perMinute, sessionStats } from '../../engine/stats/speed'
 import KeyboardSheet from './KeyboardSheet'
 import { lineRecorder } from './lineRecorder'
 import WordDrawer from './WordDrawer'
@@ -86,6 +89,11 @@ function rubyOf(lang: Material['lang'], g: Segment): string | undefined {
   if (lang === 'mn') return g.romaji
   if (lang === 'en') return undefined
   return g.reading && g.reading !== g.text ? g.reading : undefined
+}
+
+function minutesSeconds(ms: number) {
+  const s = Math.floor(ms / 1000)
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
 function minutes(ms: number) {
@@ -162,6 +170,15 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [hintMem, setHintMem] = useState<HintMemory>({})
   const [lastInputAt, setLastInputAt] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
+  /** 틀리지 않고 이어서 맞힌 줄 수(콤보) */
+  const [combo, setCombo] = useState(0)
+  /** 경주 상대: 같은 재료를 가장 빨리 쳤던 지난 기록 */
+  const [ghost, setGhost] = useState<MaterialBest | null>(null)
+  useEffect(() => {
+    void getMaterialBest(store, material.id).then((b) => setGhost(b && b.lineMs.length === material.lines.length ? b : null))
+  }, [store, material])
+  /** 문장 목록(누르면 그 문장을 읽어 준다) */
+  const [listOpen, setListOpen] = useState(false)
   const [bubble, setBubble] = useState<{ line: FriendLine | null; at: number }>({ line: null, at: 0 })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [voiceNote, setVoiceNote] = useState('')
@@ -386,6 +403,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     })
   }
 
+  const charsOf = useMemo(() => Object.fromEntries(material.lines.map((l) => [l.id, significantChars(l.src, strict, skip).length])), [material, strict, skip])
   function finishLine(t: number) {
     const r = recorder.result(line.id, t)
     const nextResults = [...results.filter((x) => x.lineId !== line.id), r]
@@ -418,6 +436,19 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         accuracy: nextResults.reduce((a, x) => a + x.firstTryAccuracy, 0) / nextResults.length,
       })
 
+    streak.current = r.mistakes === 0 ? streak.current + 1 : 0
+    setCombo(streak.current)
+    if (settings.sfx !== false) playSfx('line')
+    // 마지막 줄: 이번 기록을 남기고(완료 화면·다음 경주에 쓴다) 최고 기록이면 알린다
+    if (idx + 1 >= material.lines.length && material.lines.every((l) => nextResults.some((x) => x.lineId === l.id))) {
+      const st = sessionStats(nextResults, charsOf)
+      const lineMs = material.lines.map((l) => nextResults.find((x) => x.lineId === l.id)!.ms)
+      void saveRun(store, material.lang, material.id, { cpm: st.cpm, accuracy: st.accuracy, lineMs, at: t }).then(async (rec) => {
+        await store.setMeta('lastRun', { materialId: material.id, cpm: st.cpm, accuracy: st.accuracy, at: t, ...rec })
+        if (rec.materialRecord && rec.prevMaterial && settings.sfx !== false) playSfx('record')
+      })
+    }
+
     // 친구 반응: 5분 단계가 바뀌었으면 그것만, 아니면 연속·다시 맞힘·가끔 한마디
     const stage = stageOf(clock.current.activeMs)
     if (stage > shownStage.current) {
@@ -426,7 +457,6 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       say(stage === 6 ? 'rest' : stage === 12 ? 'sixty' : 'step', { text: s.line, action: s.pose })
       return
     }
-    streak.current = r.mistakes === 0 ? streak.current + 1 : 0
     linesSinceChat.current++
     if (streak.current > 0 && streak.current % 3 === 0) say('streak')
     else if (before && before.mistakes > 0 && r.mistakes === 0) say('comeback')
@@ -445,6 +475,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setCommitted(v)
     recorder.onCommit(v, t)
     const r = judge(line.src, v, { strict, skip })
+    if (settings.sfx !== false && !r.done) {
+      const before = judge(line.src, committed, { strict, skip })
+      if (r.wrongAt !== undefined && before.wrongAt === undefined) playSfx('wrong')
+      else if (r.wrongAt === undefined && r.okUpTo > before.okUpTo) playSfx('key')
+    }
 
     // 안내 줄이기: 새로 지나간 조각은 맞음, 틀린 자리가 있는 조각은 틀림
     if (seg) {
@@ -665,6 +700,94 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     </p>
   ) : null
 
+  // 계기판: 시간·속도(자/분)·정확도·콤보, 친구가 달리는 진행 막대
+  const stats = sessionStats(results, charsOf)
+  const startedAt = recorder.startedAt
+  const liveCpm = !lineDone && startedAt && res.okUpTo > 0 ? perMinute(significantChars(line.src.slice(0, res.okUpTo), strict, skip).length, Math.max(1000, now - startedAt)) : null
+  // 지난 나: 이번에 친 줄들의 시간 + 지금 줄에서 흐른 시간만큼 지난 기록이 어디까지 갔는지
+  const elapsed = results.reduce((a, r) => a + r.ms, 0) + (!lineDone && startedAt ? now - startedAt : 0)
+  const ghostLeft = ghost && elapsed > 0 ? (Math.min(ghostProgress(ghost.lineMs, elapsed), material.lines.length) / material.lines.length) * 100 : null
+  const myLeft = (Math.min(idx + (lineDone ? 1 : Math.min(1, res.okUpTo / Math.max(1, line.src.length))), material.lines.length) / material.lines.length) * 100
+  const hud = (
+    <div className="study-hud" role="group" aria-label="기록">
+      <div className="hud-stats">
+        <span className="hud-stat">
+          <small>시간</small>
+          <b>{minutesSeconds(activeMs)}</b>
+        </span>
+        <span className="hud-stat" title="1분에 치는 글자 수(띄어쓰기·문장부호 포함)">
+          <small>속도</small>
+          <b>
+            {liveCpm ?? stats.cpm}
+            <em>자/분</em>
+          </b>
+        </span>
+        <span className="hud-stat">
+          <small>정확도</small>
+          <b>
+            {stats.accuracy}
+            <em>%</em>
+          </b>
+        </span>
+        <span className="hud-stat" data-hot={combo >= 3 || undefined}>
+          <small>콤보</small>
+          <b>{combo > 0 ? `🔥 ${combo}` : '-'}</b>
+        </span>
+        <button
+          type="button"
+          className="hud-sound"
+          aria-pressed={settings.sfx !== false}
+          aria-label={settings.sfx !== false ? '효과음 끄기' : '효과음 켜기'}
+          onClick={() => setSettings({ sfx: settings.sfx === false })}
+        >
+          {settings.sfx !== false ? '🔊' : '🔇'}
+        </button>
+      </div>
+      <div className="hud-track" aria-hidden="true">
+        <span className="hud-fill" style={{ width: `${myLeft}%` }} />
+        {ghostLeft !== null && (
+          <span className="hud-ghost" style={{ left: `${ghostLeft}%` }} title="지난 내 최고 기록">
+            <FriendImage friend={settings.friend} stage={stage} size={22} />
+          </span>
+        )}
+        <span className="hud-runner" style={{ left: `${myLeft}%` }}>
+          <FriendImage friend={settings.friend} stage={stage} size={28} />
+        </span>
+      </div>
+      {ghost && (
+        <p className="hud-race" data-ahead={myLeft >= (ghostLeft ?? 0) || undefined}>
+          {ghostLeft === null ? `지난 최고 기록(${ghost.cpm}자/분)과 경주해요. 작은 친구가 지난 나예요.` : myLeft >= ghostLeft ? '지난 나보다 앞서는 중!' : '지난 나를 따라잡아 봐요'}
+        </p>
+      )}
+    </div>
+  )
+
+  /** 문장 하나 듣기: 영상이면 그 구간, 아니면 목소리 */
+  function sayLine(l: (typeof material.lines)[number]) {
+    if (material.youtubeId && l.start !== undefined && player.current) void player.current.playSegment(l.start + offset, (l.end ?? l.start + 5) + offset, settings.rate)
+    else void speak(l.src, { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
+  }
+  const lineList = listOpen ? (
+    <section className="line-list" aria-label="문장 목록">
+      <ol>
+        {material.lines.map((l, i) => (
+          <li key={l.id} data-current={i === idx || undefined}>
+            <button type="button" className="line-say" onClick={() => sayLine(l)} aria-label={`${i + 1}번 문장 듣기`}>
+              ▶
+            </button>
+            <button type="button" className="line-text" onClick={() => sayLine(l)}>
+              <span lang={htmlLang}>{l.src}</span>
+              {l.ko && <small lang="ko">{l.ko}</small>}
+            </button>
+            <button type="button" className="btn btn-sub line-go" onClick={() => goTo(i)} disabled={i === idx}>
+              {i === idx ? '지금' : '이 줄 치기'}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ) : null
+
   const status = (
     <div className="judge" aria-live="polite">
       {lineDone ? (
@@ -721,6 +844,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         <button type="button" className="btn btn-sub" onClick={() => void listen()}>
           ▶ 다시 듣기 <span className="key-hint">Esc</span>
         </button>
+        {material.lines.length > 1 && (
+          <button type="button" className="btn btn-sub" aria-pressed={listOpen} onClick={() => setListOpen((o) => !o)}>
+            {listOpen ? '문장 목록 닫기' : `문장 목록 · 골라 듣기`}
+          </button>
+        )}
         {/* 누르면 0.75배, 다시 누르면 보통 빠르기. 지금 상태를 글로도 보여 준다 */}
         <button type="button" className="btn btn-sub tb-toggle" aria-pressed={settings.rate === 0.75} onClick={() => setSettings({ rate: settings.rate === 1 ? 0.75 : 1 })}>
           {settings.rate === 0.75 ? '✓ 0.75배 켜짐' : '0.75배'}
@@ -810,6 +938,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             </a>
           </aside>
           <section className="study-center">
+            {hud}
             {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
             {prev && (
               <p className="sentence-prev" lang={htmlLang}>
@@ -821,11 +950,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             {kbNotice}
             {status}
             {toolbar}
+            {lineList}
             {guidePanel}
           </section>
         </main>
       ) : (
         <main className="study-mobile">
+          {hud}
           {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
           {sentence}
           {input}
@@ -845,7 +976,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             <button type="button" className="btn btn-sub" aria-pressed={lineSaved} onClick={() => void toggleWord(line.src, undefined, true)}>
               {lineSaved ? '✓ 담음' : '줄 담기'}
             </button>
+            {material.lines.length > 1 && (
+              <button type="button" className="btn btn-sub" aria-pressed={listOpen} onClick={() => setListOpen((o) => !o)}>
+                {listOpen ? '목록 닫기' : '문장 목록'}
+              </button>
+            )}
           </div>
+          {lineList}
           {voiceNote && <p className="ctl-note"><Sentences text={voiceNote} /></p>}
           {/* 말풍선은 문장을 가리거나 밀지 않게 조작 버튼 아래에 둔다 */}
           <FriendBubble line={bubble.line} shownAt={bubble.at} />

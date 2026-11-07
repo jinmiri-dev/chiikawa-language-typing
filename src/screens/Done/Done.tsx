@@ -11,9 +11,21 @@ import { eul } from '../../engine/josa'
 import { KIND_NAME, LANG_NAME } from '../../engine/lang'
 import { avgLineMs, compareText } from '../../engine/stats/compare'
 import { FRIENDS, type Material, type Progress } from '../../engine/types'
+import type { LangBest, MaterialBest } from '../../services/records'
+import { getLangBest } from '../../services/records'
 import '../pages.css'
 
 const BASE = import.meta.env.BASE_URL
+
+interface LastRun {
+  materialId: string
+  cpm: number
+  accuracy: number
+  at: number
+  materialRecord: boolean
+  langRecord: boolean
+  prevMaterial?: MaterialBest
+}
 
 export default function Done({ materialId }: { materialId: string }) {
   const { store, settings } = useApp()
@@ -25,6 +37,9 @@ export default function Done({ materialId }: { materialId: string }) {
   const [nudge, setNudge] = useState(false)
   /** 초보 코스 레슨이면 다음 레슨 id */
   const [nextId, setNextId] = useState<string | null>(null)
+  /** 이번 판 속도와 최고 기록 갱신 여부(학습 화면이 마지막 줄에서 남긴다) */
+  const [run, setRun] = useState<LastRun | null>(null)
+  const [langBest, setLangBest] = useState<LangBest | undefined>(undefined)
   useEffect(() => {
     void (async () => {
       const lesson = parseLessonId(materialId)
@@ -35,7 +50,10 @@ export default function Done({ materialId }: { materialId: string }) {
         const n = nextLesson(course, lesson.lang, (await getCourseProgress(store, lesson.lang)).done)
         setNextId(n ? lessonId(lesson.lang, n.week, n.lesson) : null)
       }
+      const last = await store.getMeta<LastRun>('lastRun')
+      if (last && last.materialId === materialId) setRun(last)
       const mat = await getMaterial(store, materialId)
+      if (mat) setLangBest(await getLangBest(store, mat.lang))
       setM(mat)
       setP(await store.getProgress(materialId))
       if (mat) setOthers(await store.listProgress(mat.lang))
@@ -96,7 +114,19 @@ export default function Done({ materialId }: { materialId: string }) {
           <b><Sentences text={cheer.text} /></b>
           {cheer.action && <span className="bubble-action">{cheer.action}</span>}
         </p>
+        {run && (run.langRecord || (run.materialRecord && run.prevMaterial)) && (
+          <p className="done-record" role="status">
+            {run.langRecord ? `${LANG_NAME[m.lang].ko} 최고 기록 갱신!` : '이 재료 최고 기록 갱신!'}
+            {run.prevMaterial && <span> 지난 최고 {run.prevMaterial.cpm}자/분 → {run.cpm}자/분</span>}
+          </p>
+        )}
         <dl className="done-stats">
+          {run && (
+            <div>
+              <dt>평균 속도</dt>
+              <dd>{run.cpm}자/분</dd>
+            </div>
+          )}
           <div>
             <dt>완료한 줄</dt>
             <dd>{p.results.length}줄</dd>
@@ -110,7 +140,10 @@ export default function Done({ materialId }: { materialId: string }) {
             <dd>{Math.max(1, Math.round(p.activeMs / 60000))}분</dd>
           </div>
         </dl>
-        <p className="done-compare">{compareText(prev, now)}</p>
+        <p className="done-compare">
+          {compareText(prev, now)}
+          {langBest && !run?.langRecord && <span className="done-best"> {LANG_NAME[m.lang].ko} 내 최고 속도는 {langBest.cpm}자/분이에요.</span>}
+        </p>
         {wrong.length > 0 && (
           <section className="done-wrong" aria-label="틀렸던 줄">
             <h2>틀렸던 줄 {wrong.length}개</h2>
