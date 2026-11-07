@@ -687,6 +687,8 @@ select.btn {
 }
 .hud-race {
   margin: 4px 14px 0;
+  word-break: keep-all;
+  text-wrap: balance;
   font-size: 0.8rem;
   color: var(--muted, #6b6b6b);
   text-align: center;

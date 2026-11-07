@@ -116,8 +116,14 @@ export default function Done({ materialId }: { materialId: string }) {
         </p>
         {run && (run.langRecord || (run.materialRecord && run.prevMaterial)) && (
           <p className="done-record" role="status">
-            {run.langRecord ? `${LANG_NAME[m.lang].ko} 최고 기록 갱신!` : '이 재료 최고 기록 갱신!'}
-            {run.prevMaterial && <span> 지난 최고 {run.prevMaterial.cpm}자/분 → {run.cpm}자/분</span>}
+            <b>
+              {run.langRecord ? `${LANG_NAME[m.lang].ko} 최고 기록 갱신!` : '이 재료 최고 기록 갱신!'}
+            </b>
+            {run.prevMaterial && (
+              <span>
+                지난 최고 {run.prevMaterial.cpm}자/분 → <b>{run.cpm}자/분</b>
+              </span>
+            )}
           </p>
         )}
         <dl className="done-stats">

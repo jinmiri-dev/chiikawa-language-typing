@@ -755,8 +755,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         </span>
       </div>
       {ghost && (
-        <p className="hud-race" data-ahead={myLeft >= (ghostLeft ?? 0) || undefined}>
-          {ghostLeft === null ? `지난 최고 기록(${ghost.cpm}자/분)과 경주해요. 작은 친구가 지난 나예요.` : myLeft >= ghostLeft ? '지난 나보다 앞서는 중!' : '지난 나를 따라잡아 봐요'}
+        <p className="hud-race" data-ahead={(ghostLeft !== null && myLeft >= ghostLeft) || undefined}>
+          {ghostLeft === null ? `흐린 친구는 지난 나(${ghost.cpm}자/분)예요. 이겨 봐요!` : myLeft >= ghostLeft ? '지난 나보다 앞서는 중!' : '지난 나를 따라잡아 봐요'}
         </p>
       )}
     </div>
