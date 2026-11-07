@@ -4,7 +4,7 @@ import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { Phrases, Sentences, StatusNotice } from '../../components/components'
 import { LANG_NAME, type Lang } from '../../engine/lang'
-import { getNews, noticeFor, type NewsArticle, type NewsTag } from '../../services/api'
+import { getNews, getReading, noticeFor, type NewsArticle, type NewsTag } from '../../services/api'
 import { levelOf, NEWS_TAG_NAME, NEWS_TAG_ORDER as ORDER, openNews } from '../../services/news'
 
 export default function NewsTab({ lang }: { lang: Lang }) {
@@ -15,8 +15,9 @@ export default function NewsTab({ lang }: { lang: Lang }) {
   const [busy, setBusy] = useState('')
   useEffect(() => {
     let alive = true
-    getNews(lang).then(
-      (r) => alive && setList(r.articles),
+    // 뉴스와 읽을거리(위키백과)를 함께. 읽을거리는 못 받아도 뉴스는 보여 준다
+    Promise.all([getNews(lang), getReading(lang).catch(() => ({ articles: [] as NewsArticle[] }))]).then(
+      ([n, r]) => alive && setList([...r.articles, ...n.articles]),
       (e) => {
         if (!alive) return
         setList([])
@@ -45,7 +46,7 @@ export default function NewsTab({ lang }: { lang: Lang }) {
   return (
     <div className="news-tab">
       <p className="materials-lead">
-        <Sentences text={`매일 새로 나오는 ${LANG_NAME[lang].ko} 뉴스를 들어요. 문장을 누르면 다시 들려주고, 낱말을 누르면 뜻이 나와요.`} />
+        <Sentences text={`매일 새로 나오는 ${LANG_NAME[lang].ko} 뉴스와 읽을거리를 들어요. 문장을 누르면 다시 들려주고, 낱말을 누르면 뜻이 나와요.`} />
       </p>
       {notice && <StatusNotice title={notice.title}>{notice.body}</StatusNotice>}
       {tags.length > 0 && (

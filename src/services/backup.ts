@@ -16,7 +16,24 @@ export interface BackupFile {
   app: typeof APP
   version: typeof VERSION
   exportedAt: string
-  data: Record<DataStore, unknown[]> & { settings: Settings }
+  data: Record<DataStore, unknown[]> & { settings: Settings; meta?: Record<string, unknown> }
+}
+
+/** 함께 옮기는 기록: 초보 코스 진도·연속 일수, 단어 복습 진도, 최고 기록 */
+const META_KEY = /^(course|wordQuiz|bestLang):(en|ja|zh|tw|mn)$|^best:[\w-]{1,80}$/
+
+async function exportMeta(store: Store): Promise<Record<string, unknown>> {
+  const keys = [
+    ...LANGS.flatMap((l) => [`course:${l}`, `wordQuiz:${l}`, `bestLang:${l}`]),
+    // 최고 기록은 친 적 있는 재료마다 있다
+    ...(await store.listProgress()).map((p) => `best:${p.materialId}`),
+  ]
+  const out: Record<string, unknown> = {}
+  for (const k of keys) {
+    const v = await store.getMeta(k)
+    if (v !== undefined) out[k] = v
+  }
+  return out
 }
 
 export const backupFileName = (d = new Date()) =>
@@ -24,7 +41,7 @@ export const backupFileName = (d = new Date()) =>
 
 export async function exportBackup(store: Store): Promise<BackupFile> {
   const data = Object.fromEntries(await Promise.all(DATA_STORES.map(async (n) => [n, await store.raw.all(n)] as const))) as Record<DataStore, unknown[]>
-  return { app: APP, version: VERSION, exportedAt: new Date().toISOString(), data: { ...data, settings: await store.getSettings() } }
+  return { app: APP, version: VERSION, exportedAt: new Date().toISOString(), data: { ...data, settings: await store.getSettings(), meta: await exportMeta(store) } }
 }
 
 /** 백업 파일을 내려받고, 받은 때를 기록한다(완료 화면 권유를 다시 안 하려고) */
@@ -79,6 +96,13 @@ export async function importBackup(
     }
   }
   if (data.settings && mode === 'overwrite') await store.saveSettings(cleanSettings(data.settings))
+  // 진도·최고 기록: 아는 이름만. 둘 다 두기면 이 기기에 이미 있는 것은 그대로
+  if (isPlain(data.meta))
+    for (const [k, val] of Object.entries(data.meta)) {
+      if (!META_KEY.test(k) || !isPlain(val)) continue
+      if (mode === 'keepBoth' && (await store.getMeta(k)) !== undefined) continue
+      await store.setMeta(k, val)
+    }
   return { ok: true, counts }
 }
 

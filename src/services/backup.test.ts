@@ -97,3 +97,23 @@ describe('밖에서 온 데이터 지키기', () => {
     expect((s as unknown as Record<string, unknown>).evil).toBeUndefined()
   })
 })
+
+describe('백업에 진도와 최고 기록도', () => {
+  test('코스 진도·단어 복습·최고 기록을 옮기고, 모르는 이름은 받지 않는다', async () => {
+    const a = memoryStore()
+    await a.saveProgress({ materialId: 'ja-c1x1', lineIndex: 10, results: [], activeMs: 0, friend: 'chiikawa', updatedAt: 1 })
+    await a.setMeta('course:ja', { done: ['ja-c1x1'], days: ['2026-11-07'] })
+    await a.setMeta('wordQuiz:ja', { words: {} })
+    await a.setMeta('best:ja-c1x1', { cpm: 120, accuracy: 95, lineMs: [1], at: 1 })
+    await a.setMeta('bestLang:ja', { cpm: 120, materialId: 'ja-c1x1', at: 1 })
+    const file = await exportBackup(a)
+    expect(Object.keys(file.data.meta ?? {}).sort()).toEqual(['best:ja-c1x1', 'bestLang:ja', 'course:ja', 'wordQuiz:ja'])
+    const b = memoryStore()
+    const hacked = { ...file, data: { ...file.data, meta: { ...file.data.meta, 'backupAt': { x: 1 }, 'course:xx': { done: [] } } } }
+    expect((await importBackup(b, hacked, 'overwrite')).ok).toBe(true)
+    expect(await b.getMeta('course:ja')).toEqual({ done: ['ja-c1x1'], days: ['2026-11-07'] })
+    expect(await b.getMeta('best:ja-c1x1')).toMatchObject({ cpm: 120 })
+    expect(await b.getMeta('backupAt')).toBeUndefined()
+    expect(await b.getMeta('course:xx')).toBeUndefined()
+  })
+})

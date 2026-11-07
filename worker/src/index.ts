@@ -14,6 +14,7 @@ const ROUTES: Record<string, () => Promise<Handler>> = {
   '/netflix': async () => (await import('./netflix')).netflix,
   '/lyrics': async () => (await import('./lyrics')).lyrics,
   '/news': async () => (await import('./news')).news,
+  '/reading': async () => (await import('./reading')).reading,
 }
 
 /** 모든 응답에 붙이는 보안 헤더(내용 추측 금지, 출처 안 보냄, 다른 사이트에 끼워 넣기 금지) */

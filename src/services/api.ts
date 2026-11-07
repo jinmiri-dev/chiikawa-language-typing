@@ -121,7 +121,7 @@ export async function getGloss(lang: Lang, lines: { src: string; ko: string }[])
 }
 
 /** 오늘의 뉴스(제목과 첫 한두 문장, 줄마다 한국어 뜻) */
-export type NewsTag = 'world' | 'society' | 'economy' | 'science' | 'health' | 'sports' | 'culture' | 'etc'
+export type NewsTag = 'reading' | 'world' | 'society' | 'economy' | 'science' | 'health' | 'sports' | 'culture' | 'etc'
 export interface NewsArticle {
   id: string
   title: string
@@ -132,3 +132,5 @@ export interface NewsArticle {
   lines: { src: string; ko?: string }[]
 }
 export const getNews = (lang: Lang) => get<{ articles: NewsArticle[] }>('/news', { lang })
+/** 오늘의 읽을거리(위키백과, 뉴스보다 긴 글) */
+export const getReading = (lang: Lang) => get<{ articles: NewsArticle[] }>('/reading', { lang })

@@ -213,7 +213,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const line = material.lines[idx]
   useEffect(() => {
     if (settings.show.pairs === false) return
-    const want = material.lines.slice(idx, idx + 5).filter((l) => l.ko && !asked.current.has(l.id))
+    const want = material.lines.slice(idx, idx + 2).filter((l) => l.ko && !asked.current.has(l.id))
     if (!want.length) return
     want.forEach((l) => asked.current.add(l.id))
     void getGloss(

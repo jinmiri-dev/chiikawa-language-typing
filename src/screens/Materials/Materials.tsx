@@ -10,7 +10,7 @@ import './Materials.css'
 const TABS: { id: MaterialTab; label: string }[] = [
   { id: 'course', label: '초보 코스' },
   { id: 'youtube', label: '유튜브' },
-  { id: 'news', label: '뉴스' },
+  { id: 'news', label: '뉴스·읽을거리' },
   { id: 'script', label: '대본' },
 ]
 

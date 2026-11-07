@@ -178,16 +178,16 @@ export default function Read({ materialId }: { materialId: string }) {
   const pickedId = picked ? `${mat.lang}:${picked.text}` : ''
   return (
     <div className="page read-page">
-      <AppHeader back={href({ name: 'materials', lang: mat.lang, tab: 'news' })} title={<span className="logo-sub">뉴스 듣기</span>} />
+      <AppHeader back={href({ name: 'materials', lang: mat.lang, tab: 'news' })} title={<span className="logo-sub">{mat.sourceName === '위키백과' ? '읽을거리 듣기' : '뉴스 듣기'}</span>} />
       <main className="read">
         <header className="read-head">
           <p className="read-source">
-            {LANG_NAME[mat.lang].ko} 뉴스{mat.sourceName ? ` · ${mat.sourceName}` : ''}
+            {mat.sourceName === '위키백과' ? `${LANG_NAME[mat.lang].ko} 읽을거리 · 위키백과(CC BY-SA 4.0)` : `${LANG_NAME[mat.lang].ko} 뉴스${mat.sourceName ? ` · ${mat.sourceName}` : ''}`}
             {mat.link && (
               <>
                 {' · '}
                 <a href={mat.link} target="_blank" rel="noopener noreferrer">
-                  원문 기사 ↗
+                  {mat.sourceName === '위키백과' ? '위키백과에서 전체 읽기 ↗' : '원문 기사 ↗'}
                 </a>
               </>
             )}

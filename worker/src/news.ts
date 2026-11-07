@@ -54,7 +54,8 @@ export interface Article {
   source: string
   link: string
   date: string
-  tag: NewsTag | 'etc'
+  /** reading: 위키백과 읽을거리 */
+  tag: NewsTag | 'etc' | 'reading'
   lines: NewsLine[]
 }
 
@@ -169,7 +170,7 @@ interface Stored {
 }
 
 /** 한국어 뜻이 빠진 줄만 다시 번역해 채운다. 바뀐 게 있으면 true */
-export async function fillMissingKo(env: Env, deps: Deps, lang: Lang, stored: Stored): Promise<boolean> {
+export async function fillMissingKo(env: Env, deps: Deps, lang: Lang, stored: { articles: Article[]; koTry?: number }): Promise<boolean> {
   const missing = stored.articles.flatMap((a) => a.lines.filter((l) => !l.ko))
   if (!missing.length) return false
   stored.koTry = deps.now()

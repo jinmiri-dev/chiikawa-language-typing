@@ -21,6 +21,7 @@ export async function openNews(store: Store, lang: Lang, a: NewsArticle): Promis
 }
 
 export const NEWS_TAG_NAME: Record<NewsTag, string> = {
+  reading: '읽을거리',
   world: '국제',
   society: '사회',
   economy: '경제',
@@ -30,7 +31,7 @@ export const NEWS_TAG_NAME: Record<NewsTag, string> = {
   culture: '문화·연예',
   etc: '기타',
 }
-export const NEWS_TAG_ORDER: NewsTag[] = ['world', 'society', 'economy', 'science', 'health', 'sports', 'culture', 'etc']
+export const NEWS_TAG_ORDER: NewsTag[] = ['reading', 'world', 'society', 'economy', 'science', 'health', 'sports', 'culture', 'etc']
 
 /** 쉬움/보통/어려움: 줄 평균 길이로(한자·가나는 글자, 그 밖은 2.5글자를 한 덩이로) */
 export function levelOf(a: Pick<NewsArticle, 'title' | 'lines'>): '쉬움' | '보통' | '어려움' {
