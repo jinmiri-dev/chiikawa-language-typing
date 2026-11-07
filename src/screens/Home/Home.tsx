@@ -1,3 +1,5 @@
+import { lessonId, loadCourse, parseLessonId } from '../../content/course'
+import { courseMaterial, getCourseProgress, nextLesson } from '../../services/course'
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
@@ -81,7 +83,7 @@ function Continue({ p, m, sub }: { p: Progress; m: Material; sub?: boolean }) {
   const done = Math.min(p.lineIndex, m.lines.length)
   return (
     <a className={sub ? 'continue continue-sub' : 'continue'} href={href({ name: 'study', materialId: p.materialId })}>
-      <span className="continue-label">이어서 공부하기</span>
+      <span className="continue-label">{p.lineIndex === 0 && !p.results.length ? '다음 레슨 시작하기' : '이어서 공부하기'}</span>
       <span className="continue-title">
         {LANG_NAME[m.lang].ko} · {KIND_NAME[m.kind]} · {m.title}
       </span>
@@ -103,8 +105,19 @@ export default function Home() {
   const [safariTip, setSafariTip] = useState(false)
   useEffect(() => {
     void (async () => {
-      const p = await store.lastProgress()
-      const m = p ? await getMaterial(store, p.materialId) : null
+      let p = await store.lastProgress()
+      let m = p ? await getMaterial(store, p.materialId) : null
+      // 마지막 레슨을 다 쳤으면, 끝난 레슨 대신 초보 코스의 다음 레슨을 이어서 하기로 보여 준다
+      const lesson = p && m && p.lineIndex >= m.lines.length ? parseLessonId(m.id) : null
+      if (lesson) {
+        const course = await loadCourse(lesson.lang)
+        const n = nextLesson(course, lesson.lang, (await getCourseProgress(store, lesson.lang)).done)
+        const nm = n ? await courseMaterial(store, lessonId(lesson.lang, n.week, n.lesson)) : null
+        if (nm) {
+          m = nm
+          p = (await store.getProgress(nm.id)) ?? { materialId: nm.id, lineIndex: 0, results: [], activeMs: 0, friend: 'chiikawa', updatedAt: Date.now() }
+        }
+      }
       setDue(await reviewCount(store))
       if (isIosSafari() && !(await store.getMeta('safariTipOff'))) setSafariTip(true)
       if (m) setTrend(lineSpeedTrend(await store.listStats(m.lang), m.lang, Date.now())?.text ?? null)

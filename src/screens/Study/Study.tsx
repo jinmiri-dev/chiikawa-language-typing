@@ -41,16 +41,23 @@ function useDevice(setting: 'auto' | 'pc' | 'mobile'): 'pc' | 'mobile' {
   return setting === 'auto' ? (coarse ? 'mobile' : 'pc') : setting
 }
 
-/** 휴대폰 키보드가 올라오면 보이는 높이를 --vvh 에 넣는다(프론트-설계 7장) */
-function useVisualViewport() {
+/** 휴대폰 키보드가 올라오면 보이는 높이를 --vvh 에 넣고, 화면이 크게 줄었는지(키보드가 올라왔는지) 알려 준다 */
+function useVisualViewport(): boolean {
+  const [shrunk, setShrunk] = useState(false)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const set = () => document.documentElement.style.setProperty('--vvh', `${vv.height}px`)
+    let tallest = vv.height
+    const set = () => {
+      document.documentElement.style.setProperty('--vvh', `${vv.height}px`)
+      tallest = Math.max(tallest, vv.height)
+      setShrunk(vv.height < tallest - 150)
+    }
     set()
     vv.addEventListener('resize', set)
     return () => vv.removeEventListener('resize', set)
   }, [])
+  return shrunk
 }
 
 /** 키 안내 한 줄: '→' 로 나눈 덩어리(예: Z A O S H A N G)는 가운데서 줄이 바뀌지 않게 묶는다 */
@@ -134,7 +141,7 @@ export default function Study({ materialId }: { materialId: string }) {
 function StudyView({ material, initial }: { material: Material; initial: Progress | null }) {
   const { store, settings, setSettings } = useApp()
   const device = useDevice(settings.device)
-  useVisualViewport()
+  const viewportShrunk = useVisualViewport()
   const reduceMotion = settings.reduceMotion || (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   // 다 친 재료를 다시 열면 처음부터, 지난 회차 평균은 비교용으로 남긴다
@@ -162,8 +169,6 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   useEffect(() => {
     if (material.youtubeId) void store.listSaved(material.lang).then((list) => setVideoSaved(list.some((v) => v.videoId === material.youtubeId)))
   }, [store, material])
-  /** 이 줄에서 이미 읽어 준 마지막 단어 조각 */
-  const spokenSeg = useRef(-1)
   /** 자동으로 넘어갈 때 그 사이 다른 줄로 옮겼는지 보려고 */
   const idxRef = useRef(idx)
   idxRef.current = idx
@@ -186,6 +191,11 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const [kbNote, setKbNote] = useState('')
   // 휴대폰도 처음부터 자판 그림을 펼쳐 둔다(무엇을 누를지 바로 보이게). 접을 수 있다
   const [mobileMap, setMobileMap] = useState(true)
+  /** 입력칸에 손가락이 들어가 있으면(휴대폰 키보드가 올라와 있으면) 자판 그림을 숨기고 안내 줄만 */
+  const [inputFocused, setInputFocused] = useState(false)
+  /** 자동 포커스만으로는 키보드가 안 올라오므로, 직접 눌렀거나 화면이 줄었을 때만 올라온 것으로 본다 */
+  const [inputTapped, setInputTapped] = useState(false)
+  const kbUp = device === 'mobile' && inputFocused && (inputTapped || viewportShrunk)
   const [words, setWords] = useState<Word[]>([])
   const [wordsOpen, setWordsOpen] = useState(false)
 
@@ -304,7 +314,6 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     setComposing('')
     setLineDone(false)
     oopsSaid.current = false
-    spokenSeg.current = -1
     stopSpeaking()
     // 줄 시작 때 자동으로 듣기: 설정, 또는 유튜브 재료는 기본으로(기획안 10장)
     if (settings.autoListen || material.kind === 'youtube') void listen()
@@ -334,19 +343,6 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const guide = baseGuide && byKeys ? { ...baseGuide, ...byKeys } : baseGuide
   const nextStep = guide?.steps[guide.nextIndex]
 
-  // 단어를 다 칠 때마다 그 단어를 읽어 준다(타자 게임처럼). 줄을 다 치면 줄 전체를 들려주니 그때는 읽지 않는다.
-  useEffect(() => {
-    if (!settings.speakWords || res.done) return
-    let last = spokenSeg.current
-    line.segments.forEach((s, i) => {
-      if (s.isWord && starts[i] + s.text.length <= res.okUpTo) last = Math.max(last, i)
-    })
-    if (last <= spokenSeg.current) return
-    const words = line.segments.slice(spokenSeg.current + 1, last + 1).filter((s) => s.isWord).map((s) => s.text)
-    spokenSeg.current = last
-    void speak(words.join(material.lang === 'en' || material.lang === 'mn' ? ' ' : ''), { lang: material.lang, voice: settings.voice[material.lang] ?? 'female', rate: settings.rate })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [res.okUpTo, res.done, idx])
   const idle = now - lastInputAt >= 2000
   const fading = seg ? (hintMem[seg.reading ?? seg.text]?.level ?? 'full') : 'full'
   const level: HintLevel = !settings.hintFading ? settings.hintMode : idle || mistake ? 'full' : fading
@@ -673,7 +669,17 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         onCompositionUpdate={onCompositionUpdate}
         onCompositionEnd={onCompositionEnd}
         onKeyDown={onKeyDown}
-        onFocus={(e) => e.currentTarget.scrollIntoView?.({ block: 'nearest' })}
+        onFocus={(e) => {
+          setInputFocused(true)
+          const el = e.currentTarget
+          // 휴대폰 키보드가 다 올라온 뒤 입력칸을 보이는 화면 맨 아래에 맞춘다(그 위로 안내 줄·문장이 보이게)
+          setTimeout(() => el.scrollIntoView?.({ block: device === 'mobile' ? 'end' : 'nearest' }), device === 'mobile' ? 350 : 0)
+        }}
+        onBlur={() => {
+          setInputFocused(false)
+          setInputTapped(false)
+        }}
+        onPointerDown={() => setInputTapped(true)}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
@@ -681,7 +687,12 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         enterKeyHint="next"
         readOnly={lineDone}
       />
-      {device === 'mobile' && (
+      {device === 'mobile' && kbUp && (
+        <button type="button" className="btn btn-sub listen-btn" aria-label="다시 듣기" onMouseDown={(e) => e.preventDefault()} onClick={() => void listen()}>
+          ▶
+        </button>
+      )}
+      {device === 'mobile' && !kbUp && (
         <button type="button" className="btn btn-sub layout-btn" onClick={() => setSheetOpen(true)}>
           {LAYOUT_LABEL[layoutId].name} ▾
         </button>
@@ -803,7 +814,8 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     </div>
   )
 
-  const guidePanel = !seg ? null : !seg.confident ? (
+  // 키 안내 한 줄(무엇을 누를지)과 자판 그림을 나눠 둔다: 휴대폰은 안내 줄을 입력칸 바로 위에, 그림은 키보드를 내렸을 때만
+  const guideLine = !seg ? null : !seg.confident ? (
     <StatusNotice title="읽기를 확인하지 못한 줄이에요">
       {(material.kind === 'script' ? '대본 정리 화면에서 읽기를 고치면 키 안내가 나와요. ' : '') + '타자와 채점은 그대로 돼요.'}
     </StatusNotice>
@@ -813,12 +825,13 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       <p className="guide-line" lang={htmlLang}>
         <GuideParts text={guideText(layout, guideSeg ?? seg)} />
       </p>
-      <p className="guide-note">자판 그림은 기기마다 달라 아직 준비 중이에요. 위 순서대로 쳐 보세요.</p>
+      {!kbUp && <p className="guide-note">자판 그림은 기기마다 달라 아직 준비 중이에요. 위 순서대로 쳐 보세요.</p>}
     </div>
   ) : (
     <div className="guide">
       {level !== 'off' ? (
         <p className="guide-line" lang={htmlLang}>
+          {device === 'mobile' && <span className="guide-tag">누를 키</span>}
           <GuideParts text={guideText(layout, guideSeg ?? seg)} />
         </p>
       ) : (
@@ -827,13 +840,24 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       <p className="sr-only" aria-live="polite">
         {level !== 'off' ? stepSpeech(layout, nextStep) : ''}
       </p>
-      {level === 'full' && (device === 'pc' || mobileMap) && <KeyboardMap layout={layout} next={nextStep} small={device === 'mobile'} />}
-      {device === 'mobile' && level === 'full' && (
+    </div>
+  )
+  const showMap = !!seg && seg.confident && layout.verified && level === 'full'
+  const guideMap = !showMap ? null : (
+    <div className="guide guide-map">
+      {(device === 'pc' || (mobileMap && !kbUp)) && <KeyboardMap layout={layout} next={nextStep} small={device === 'mobile'} />}
+      {device === 'mobile' && !kbUp && (
         <button type="button" className="btn btn-sub map-toggle" onClick={() => setMobileMap((v) => !v)} aria-expanded={mobileMap}>
           {mobileMap ? '자판 그림 접기' : '자판 그림 보기'}
         </button>
       )}
     </div>
+  )
+  const guidePanel = (
+    <>
+      {guideLine}
+      {guideMap}
+    </>
   )
 
   // 조작은 한곳에: 입력칸 바로 아래 한 줄(PC). 키보드가 하나뿐이면 바꾸기 버튼은 두지 않는다
@@ -928,18 +952,25 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
         }
       />
       {device === 'pc' ? (
-        <main className="study-grid">
-          <aside className="study-friend" aria-label="함께하는 친구">
-            <FriendBubble line={bubble.line} shownAt={bubble.at} />
-            <FriendImage friend={settings.friend} stage={stage} size={168} cue={bubble.at} />
-            <p className="study-time">연습 시간 {minutes(activeMs)}</p>
-            <a className="btn btn-sub" href="#/friend">
-              친구 바꾸기
-            </a>
+        // PC: 왼쪽에 (영상)·조작·친구, 오른쪽에 문장·입력·자판을 모아 스크롤 없이 한 화면에 다 보이게
+        <main className={`study-grid study-grid-video${material.youtubeId ? ' has-video' : ''}`}>
+          <aside className="study-side" aria-label={material.youtubeId ? '영상과 조작' : '조작과 친구'}>
+            {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
+            {toolbar}
+            {lineList}
+            <div className="study-friend study-friend-row">
+              <FriendImage friend={settings.friend} stage={stage} size={material.youtubeId ? 88 : 140} cue={bubble.at} />
+              <div className="study-friend-text">
+                <FriendBubble line={bubble.line} shownAt={bubble.at} />
+                <p className="study-time">연습 시간 {minutes(activeMs)}</p>
+                <a className="btn btn-sub" href="#/friend">
+                  친구 바꾸기
+                </a>
+              </div>
+            </div>
           </aside>
           <section className="study-center">
             {hud}
-            {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
             {prev && (
               <p className="sentence-prev" lang={htmlLang}>
                 {prev.src}
@@ -949,20 +980,19 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
             {input}
             {kbNotice}
             {status}
-            {toolbar}
-            {lineList}
             {guidePanel}
           </section>
         </main>
       ) : (
-        <main className="study-mobile">
+        <main className={`study-mobile${kbUp ? ' kb-up' : ''}`}>
           {hud}
           {material.youtubeId && <YouTubePlayer ref={player} videoId={material.youtubeId} title={material.title} onTime={onVideoTime} />}
           {sentence}
+          {guideLine}
           {input}
           {kbNotice}
           {status}
-          {guidePanel}
+          {guideMap}
           <div className="ctl-row ctl-mobile">
             <button type="button" className="btn btn-sub" onClick={() => void listen()}>
               ▶ 듣기

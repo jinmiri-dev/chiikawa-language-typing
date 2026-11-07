@@ -11,4 +11,4 @@ export const LANG_NAME: Record<Lang, { ko: string; native: string; htmlLang: str
 }
 
 /** 재료 종류 이름 */
-export const KIND_NAME = { starter: '기본 연습', script: '대본', youtube: '유튜브' } as const
+export const KIND_NAME = { starter: '초보 코스', script: '대본', youtube: '유튜브' } as const

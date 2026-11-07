@@ -702,3 +702,184 @@ select.btn {
     transition: none;
   }
 }
+
+/* 휴대폰 키보드가 올라온 동안: 문장 → 누를 키 → 입력칸만 남겨 키보드에 가리지 않게 */
+.guide-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--bg, #fff);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  vertical-align: 2px;
+}
+.study-mobile .guide-line {
+  padding: 10px 14px;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.study-mobile.kb-up {
+  gap: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.study-mobile.kb-up .hud-stat:first-child,
+.study-mobile.kb-up .hud-stat:nth-child(3),
+.study-mobile.kb-up .hud-sound,
+.study-mobile.kb-up .hud-race,
+.study-mobile.kb-up .bubble {
+  display: none;
+}
+.study-mobile.kb-up .hud-track {
+  margin-top: 14px;
+}
+.study-mobile.kb-up .sentence-src {
+  font-size: 24px;
+  line-height: 1.6;
+}
+.study-mobile.kb-up .yt-player {
+  height: 18vh;
+  max-height: calc(var(--vvh, 100dvh) * 0.2);
+}
+.listen-btn {
+  flex: none;
+  min-width: 48px;
+  font-size: 18px;
+}
+
+/* 영상 재료(PC): 왼쪽 영상·친구 | 오른쪽 문장·입력·자판. 한 화면에 다 보이게 촘촘히 */
+.study-grid-video {
+  max-width: 1600px;
+  padding: 16px var(--gutter);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 32px;
+  align-items: start;
+}
+/* 영상이 없으면 왼쪽은 좁게(조작·친구), 오른쪽 타자가 넓게 */
+.study-grid-video:not(.has-video) {
+  max-width: 1280px;
+  grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1.45fr);
+  align-items: center;
+}
+.study-grid-video:not(.has-video) .study-side {
+  position: static;
+  flex-direction: column-reverse;
+}
+.study-grid-video:not(.has-video) .study-friend-row {
+  flex-direction: column;
+  text-align: center;
+}
+.study-grid-video:not(.has-video) .study-friend-text {
+  align-items: center;
+}
+.study-side {
+  position: sticky;
+  top: 16px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.study-grid-video .yt-player,
+.study-pc .study-side .yt-player {
+  max-width: none;
+  width: 100%;
+  align-self: stretch;
+}
+.study-friend-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: left;
+}
+.study-friend-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.study-grid-video .study-center {
+  max-width: none;
+  gap: 10px;
+}
+.study-grid-video .sentence-src {
+  font-size: clamp(24px, 2.3vw, 34px);
+  line-height: 1.7;
+}
+.study-grid-video .hud-race {
+  display: none;
+}
+.study-grid-video .hud-track {
+  margin-top: 16px;
+}
+.study-grid-video .kbd-map {
+  gap: 4px;
+}
+.study-grid-video .kbd-row {
+  gap: 4px;
+}
+.study-grid-video .kbd-key {
+  height: 32px;
+  font-size: 13px;
+}
+.study-grid-video .guide-line {
+  padding: 8px 14px;
+  font-size: 16px;
+}
+.study-grid-video .study-toolbar .btn {
+  min-height: 38px;
+}
+@media (max-width: 1100px) {
+  .study-grid.study-grid-video {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 20px;
+  }
+}
+@media (max-width: 860px) {
+  .study-grid.study-grid-video,
+  .study-grid.study-grid-video:not(.has-video) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .study-side {
+    position: static;
+  }
+}
+.study-side .study-toolbar {
+  gap: 6px 10px;
+}
+.study-side .study-toolbar .btn {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.study-side .line-list {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.study-side .study-toolbar,
+.study-side .tb-group {
+  justify-content: center;
+}
+.study-side .ctl-note {
+  text-align: center;
+}
+/* 큰 화면에서도 위로 몰리지 않게 가운데로, 자판은 화면 높이에 맞춰 조금 커진다 */
+.study-grid-video,
+.study-grid-video.has-video {
+  align-items: center;
+  align-content: center;
+}
+.study-grid-video .study-side {
+  position: static;
+}
+.study-grid-video .kbd-key {
+  height: clamp(32px, 5vh, 42px);
+}
+/* 휴대폰 계기판은 한 줄로: 속도·콤보·소리만 */
+.study-mobile .hud-stat:first-child,
+.study-mobile .hud-stat:nth-child(3) {
+  display: none;
+}

@@ -98,7 +98,7 @@ export function noticeFor(e: unknown, lang: Lang): { title: string; body: string
       return { title: '이 영상은 사이트에서 재생할 수 없어요', body: '영상 주인이 외부 재생을 막아 두었어요. 비슷한 영상을 고르거나 대본만으로 연습해요.' }
     case 'NOT_CONNECTED':
     case 'NOT_CONFIGURED':
-      return { title: '유튜브 연결은 아직 준비 중이에요', body: '검색과 자막을 가져오는 서버를 연결하고 있어요. 지금은 기본 연습과 대본으로 연습할 수 있고, 저장한 영상과 전에 연 영상은 볼 수 있어요.' }
+      return { title: '유튜브 연결은 아직 준비 중이에요', body: '검색과 자막을 가져오는 서버를 연결하고 있어요. 지금은 초보 코스와 대본으로 연습할 수 있고, 저장한 영상과 전에 연 영상은 볼 수 있어요.' }
     case 'OFFLINE':
       return { title: '인터넷 연결을 확인해 주세요', body: '이미 저장한 연습은 인터넷 없이도 칠 수 있어요.' }
     default:

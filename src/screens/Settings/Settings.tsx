@@ -70,7 +70,6 @@ export default function Settings() {
         <section aria-label="듣기">
           <h2>듣기</h2>
           <Toggle label="줄 시작할 때 자동으로 듣기" on={s.autoListen} onChange={(autoListen) => set({ autoListen })} />
-          <Toggle label="단어마다 읽어 주기" sub="단어를 다 칠 때마다 그 단어를 읽어 줘요." on={s.speakWords} onChange={(speakWords) => set({ speakWords })} />
           <Toggle label="다 치면 한 번 더 듣기" sub="맞힌 줄을 다시 들으며 글자와 소리를 이어요." on={s.listenAfter} onChange={(listenAfter) => set({ listenAfter })} />
           <Toggle label="효과음" sub="맞게 친 글자, 틀림, 줄 끝에 작은 소리를 내요." on={s.sfx !== false} onChange={(sfx) => set({ sfx })} />
           <Toggle label="다 들으면 저절로 다음 줄로" sub="끄면 다 친 뒤 Enter를 눌러 넘어가요. 그 사이 Esc로 다시 들을 수 있어요." on={s.autoAdvance} onChange={(autoAdvance) => set({ autoAdvance })} />

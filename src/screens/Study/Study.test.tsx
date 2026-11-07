@@ -68,14 +68,11 @@ test('줄을 다 치면 그 줄을 한 번 더 들려준다(설정으로 끌 수
   expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['おはよう！元気？'])
 })
 
-test('단어를 다 칠 때마다 그 단어를 읽어 준다', async () => {
+test('치는 도중에는 읽어 주지 않는다(빠르게 치면 소리가 끊겨서)', async () => {
   vi.mocked(speak).mockClear()
   const input = await open()
   await act(async () => compose(input, 'おはよう', 'おはよう！')())
-  expect(vi.mocked(speak).mock.calls.map((c) => c[0])).toEqual(['おはよう！'])
-  // 같은 단어를 지웠다 다시 쳐도 또 읽지 않는다
-  await act(async () => compose(input, 'おはよう', 'おはよう！')())
-  expect(vi.mocked(speak)).toHaveBeenCalledTimes(1)
+  expect(vi.mocked(speak)).not.toHaveBeenCalled()
 })
 
 test('줄을 다 치면 한 번 들려주고 그 줄에 머문다(Enter 를 눌러야 다음 줄, 그 사이 Esc 로 다시 듣기)', async () => {
@@ -197,4 +194,21 @@ test('낱말 짝: 지금 칠 낱말과 한국어 뜻 속 그 낱말이 함께 �
   expect(document.querySelector('.ko-pair')?.textContent).toBe('잘 지내')
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '☆ 담기' })))
   expect((await store.listWords('ja')).map((w) => w.text)).toContain('元気')
+})
+
+test('휴대폰: 입력칸을 누르면(키보드가 올라오면) 자판 그림을 숨기고 누를 키 안내는 입력칸 위에 남긴다', async () => {
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }))
+  const input = await open()
+  const guide = document.querySelector('.guide-line')!
+  expect(guide.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(screen.queryByText('자판 그림 접기')).not.toBeNull()
+  await act(async () => {
+    fireEvent.pointerDown(input)
+    fireEvent.focus(input)
+  })
+  expect(screen.queryByText('자판 그림 접기')).toBeNull()
+  expect(document.querySelector('.guide-line')).not.toBeNull()
+  expect(screen.getByLabelText('다시 듣기')).toBeTruthy()
+  await act(async () => void fireEvent.blur(input))
+  expect(screen.queryByText('자판 그림 접기')).not.toBeNull()
 })

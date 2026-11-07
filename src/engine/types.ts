@@ -99,7 +99,6 @@ export interface Settings {
   /** 줄을 다 치면 그 줄을 한 번 더 듣기 */
   listenAfter: boolean
   /** 단어를 다 칠 때마다 그 단어 읽기 */
-  speakWords: boolean
   /** 효과음(맞게 친 글자·틀림·줄 끝). 없던 예전 설정은 켜짐으로 본다 */
   sfx?: boolean
   /** 다 들으면 Enter 없이 다음 줄로(기본 끔: 다 치면 Enter 를 눌러 넘어간다. 그 사이 Esc 로 다시 듣기) */
@@ -119,7 +118,6 @@ export const DEFAULT_SETTINGS: Settings = {
   easyGrading: false,
   autoListen: false,
   listenAfter: true,
-  speakWords: true,
   sfx: true,
   autoAdvance: false,
   reduceMotion: false,
