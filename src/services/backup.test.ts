@@ -117,3 +117,21 @@ describe('백업에 진도와 최고 기록도', () => {
     expect(await b.getMeta('course:xx')).toBeUndefined()
   })
 })
+
+test('백업 파일의 이상한 링크(javascript:)와 모양이 틀린 재료는 받지 않는다', async () => {
+  const b = memoryStore()
+  const file = {
+    app: 'language-grade1', version: 1, exportedAt: '', data: {
+      materials: [
+        { id: 'en-nx', lang: 'en', kind: 'script', title: 'x', koSource: 'none', lines: [], createdAt: 0, link: 'javascript:alert(1)' },
+        { id: 'en-ny', lang: 'en', kind: 'script', title: 'y', koSource: 'none', lines: [], createdAt: 0, link: 'https://bbc.co.uk/a' },
+        { id: 'bad', lang: 'xx', title: 1 },
+        'not an object',
+      ],
+      progress: [], words: [], review: [], stats: [], saved: [], settings: DEFAULT_SETTINGS,
+    },
+  }
+  expect((await importBackup(b, file, 'overwrite')).ok).toBe(true)
+  const ms = await b.listMaterials()
+  expect(ms.map((m) => [m.id, m.link])).toEqual([['en-nx', undefined], ['en-ny', 'https://bbc.co.uk/a']])
+})

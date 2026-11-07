@@ -10,8 +10,8 @@
   margin: 0 auto;
   padding: 40px var(--gutter);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 64px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+  gap: clamp(32px, 5vw, 64px);
   align-items: center;
 }
 .home-main {
@@ -287,7 +287,7 @@
   color: var(--ink);
   font-weight: 700;
 }
-@media (max-width: 1023px) {
+@media (max-width: 899px) {
   .home-return {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'hero' 'side' 'langs';
@@ -298,7 +298,7 @@
     border-left: 0;
   }
 }
-@media (max-width: 1023px) {
+@media (max-width: 899px) {
   .home {
     grid-template-columns: minmax(0, 1fr);
     gap: 32px;

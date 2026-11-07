@@ -1,4 +1,5 @@
 /** 오늘의 뉴스 기사를 연습 재료로(읽기를 만들어 저장) */
+import { safeLink } from '../engine/url'
 import { buildDraftMaterial } from '../engine/import/material'
 import type { Lang } from '../engine/lang'
 import type { Material } from '../engine/types'
@@ -15,7 +16,8 @@ export async function openNews(store: Store, lang: Lang, a: NewsArticle): Promis
   if (saved && saved.lines.length === a.lines.length && saved.lines.every((l, i) => l.ko === a.lines[i]?.ko)) return saved
   const segment = await loadSegmenter(lang).catch(() => null)
   const draft = buildDraftMaterial({ id, lang, title: a.title, lines: a.lines.map((l) => ({ src: l.src, ...(l.ko ? { ko: l.ko } : {}), flags: [] })), segment })
-  const m: Material = { ...draft, kind: 'script', link: a.link, sourceName: a.source }
+  const link = safeLink(a.link)
+  const m: Material = { ...draft, kind: 'script', ...(link ? { link } : {}), sourceName: a.source }
   await store.saveMaterial(m)
   return m
 }

@@ -43,3 +43,9 @@ describe('/news 오늘의 뉴스', () => {
     expect(stored.articles[0].lines[0].ko).toBe('아')
   })
 })
+
+test('피드의 링크는 http·https 만 받는다', async () => {
+  const { parseFeed } = await import('./news')
+  const items = parseFeed('<rss><item><title>a</title><description>b</description><link>javascript:alert(1)</link></item></rss>')
+  expect(items[0].link).toBe('')
+})

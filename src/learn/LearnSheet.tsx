@@ -53,7 +53,7 @@ export default function LearnSheet({ native }: { native: Lang }) {
       <div className="no-print">
         <AppHeader back={href({ name: 'learn-list', native })} title={<span className="logo-sub">{t.worksheet}</span>} right={<span />} />
       </div>
-      <main className="learn-sheet-main">
+      <main className={`learn-sheet-main${list && !list.length ? ' learn-sheet-empty' : ''}`}>
         <div className="learn-sheet-tools no-print">
           <h1>{t.savedTitle}</h1>
           {/* 저장한 문장이 없으면 인쇄 버튼 대신 영상으로 가는 길만 */}

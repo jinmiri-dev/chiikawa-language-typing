@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type CompositionEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { safeLink } from '../../engine/url'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
 import { AppHeader, FriendBubble, FriendImage, StatusNotice, Sentences } from '../../components/components'
@@ -867,7 +868,7 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     <div className="guide guide-map">
       {lang === 'mn' && device === 'pc' && (
         <p className="guide-note">
-          <Sentences text="몽골어 자판을 깔지 않아도 돼요. 영문 상태에서 그림의 자리대로 누르면 몽골 글자가 들어가요(예: B → м)." />
+          <Sentences text="몽골어 자판이 없어도 돼요. 그림 자리대로 누르면 몽골 글자가 들어가요(B → м)." />
         </p>
       )}
       {(device === 'pc' || (mobileMap && !kbUp)) && <KeyboardMap layout={layout} next={nextStep} then={guide?.steps[(guide?.nextIndex ?? 0) + 1]} small={device === 'mobile'} />}
@@ -926,9 +927,9 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
           {offset !== 0 && <span className="tb-note">{offset > 0 ? `+${offset}` : offset}초</span>}
         </div>
       )}
-      {material.link && (
+      {safeLink(material.link) && (
         <div className="tb-group">
-          <a className="btn btn-sub" href={material.link} target="_blank" rel="noopener noreferrer">
+          <a className="btn btn-sub" href={safeLink(material.link)} target="_blank" rel="noopener noreferrer">
             원문 기사{material.sourceName ? ` · ${material.sourceName}` : ''} ↗
           </a>
         </div>

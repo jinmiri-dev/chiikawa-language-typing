@@ -883,3 +883,16 @@ select.btn {
 .study-mobile .hud-stat:nth-child(3) {
   display: none;
 }
+/* 노트북처럼 세로가 낮은 화면: 자판을 조금 낮춰 스크롤 없이 */
+@media (max-height: 680px) {
+  .study-grid-video .kbd-key {
+    height: 27px;
+  }
+  .study-grid-video .guide-note {
+    margin: 0;
+    font-size: 13px;
+  }
+  .study-grid-video .study-center {
+    gap: 8px;
+  }
+}

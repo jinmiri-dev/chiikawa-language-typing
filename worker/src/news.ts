@@ -79,7 +79,8 @@ export function parseFeed(xml: string): { title: string; desc: string; link: str
   return items.map((b) => ({
     title: unhtml(tagOf(b, 'title')),
     desc: unhtml(tagOf(b, 'description') || tagOf(b, 'summary') || tagOf(b, 'content')),
-    link: unhtml(tagOf(b, 'link')) || (b.match(/<link[^>]*href="([^"]+)"/i)?.[1] ?? ''),
+    // 링크는 http·https 만(피드에 javascript: 같은 주소가 와도 화면에 링크로 나가지 않게)
+    link: [unhtml(tagOf(b, 'link')), b.match(/<link[^>]*href="([^"]+)"/i)?.[1] ?? ''].find((u) => /^https?:\/\//i.test(u)) ?? '',
     date: unhtml(tagOf(b, 'pubDate') || tagOf(b, 'updated') || tagOf(b, 'published')),
   }))
 }

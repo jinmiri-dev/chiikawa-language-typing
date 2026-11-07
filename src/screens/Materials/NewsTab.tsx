@@ -1,4 +1,5 @@
 /** 오늘의 뉴스 탭: 분야로 고르고, 기사를 문장마다 듣고 낱말 뜻을 본다(뉴스 듣기 화면). 원문은 링크로. */
+import { safeLink } from '../../engine/url'
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
@@ -79,8 +80,8 @@ export default function NewsTab({ lang }: { lang: Lang }) {
                 
               </span>
             </button>
-            {a.link && (
-              <a className="news-link" href={a.link} target="_blank" rel="noopener noreferrer" aria-label={`${a.title} 원문 기사`}>
+            {safeLink(a.link) && (
+              <a className="news-link" href={safeLink(a.link)} target="_blank" rel="noopener noreferrer" aria-label={`${a.title} 원문 기사`}>
                 원문
               </a>
             )}

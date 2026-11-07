@@ -2,6 +2,7 @@
  * 뉴스 듣기: 기사를 문장마다 듣고(누르면 그 문장, ▶ 전체 듣기로 처음부터 끝까지), 낱말을 누르면 뜻이 나온다.
  * 타자 연습이 아니라 듣기·읽기 화면이다. 뜻은 서버 AI → (한도가 찼으면) 기기 번역 순으로 채운다.
  */
+import { safeLink } from '../../engine/url'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
@@ -183,10 +184,10 @@ export default function Read({ materialId }: { materialId: string }) {
         <header className="read-head">
           <p className="read-source">
             {mat.sourceName === '위키백과' ? `${LANG_NAME[mat.lang].ko} 읽을거리 · 위키백과(CC BY-SA 4.0)` : `${LANG_NAME[mat.lang].ko} 뉴스${mat.sourceName ? ` · ${mat.sourceName}` : ''}`}
-            {mat.link && (
+            {safeLink(mat.link) && (
               <>
                 {' · '}
-                <a href={mat.link} target="_blank" rel="noopener noreferrer">
+                <a href={safeLink(mat.link)} target="_blank" rel="noopener noreferrer">
                   {mat.sourceName === '위키백과' ? '위키백과에서 전체 읽기 ↗' : '원문 기사 ↗'}
                 </a>
               </>

@@ -2,6 +2,7 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 import { LANGS, type Lang } from '../engine/lang'
 import { DEFAULT_SETTINGS, FRIENDS, type Line, type Material, type Progress, type Segment, type Settings } from '../engine/types'
+import { safeLink } from '../engine/url'
 import { downloadText } from './files'
 import { newScriptId } from './materials'
 import type { Store, StoreName } from './storage'
@@ -87,8 +88,17 @@ export async function importBackup(
   for (const name of DATA_STORES) {
     const existing = mode === 'keepBoth' ? new Set((await store.raw.all(name)).map((x) => String((x as Record<string, unknown>)[KEY[name]]))) : null
     for (const raw of (data[name] ?? []) as Record<string, unknown>[]) {
+      // 모양이 맞지 않는 항목은 건너뛴다(고친 파일이 화면을 깨거나 이상한 링크를 넣지 않게)
+      if (!isPlain(raw) || typeof raw[KEY[name]] !== 'string') continue
       let item = raw
-      if (name === 'materials' && renamed.has(raw.id as string)) item = { ...raw, id: renamed.get(raw.id as string) }
+      if (name === 'materials') {
+        if (!LANGS.includes(raw.lang as Lang) || typeof raw.title !== 'string' || !Array.isArray(raw.lines)) continue
+        const link = safeLink(raw.link)
+        const { link: _drop, ...rest } = raw
+        void _drop
+        item = { ...rest, ...(link ? { link } : {}) }
+      }
+      if (name === 'materials' && renamed.has(raw.id as string)) item = { ...item, id: renamed.get(raw.id as string) }
       else if (name === 'progress' && renamed.has(raw.materialId as string)) item = { ...(raw as unknown as Progress), materialId: renamed.get(raw.materialId as string)! } as unknown as Record<string, unknown>
       else if (existing?.has(String(raw[KEY[name]]))) continue // 둘 다 두기: 단어·복습·기록은 이미 있으면 그대로
       await store.raw.put(name, item)

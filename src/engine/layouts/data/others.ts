@@ -82,7 +82,7 @@ export const mnCyrillicMobile: Layout = {
   rows: [
     ...pcRows(MN_KEYS)
       .slice(0, 4)
-      .map((r, ri) => r.filter((key) => MN_KEYS[key.id] || key.id === 'shift').map((key, ci) => ({ ...key, row: ri, col: ci, w: key.id === 'shift' ? 1.5 : undefined }))),
+      .map((r, ri) => r.filter((key) => MN_KEYS[key.id] || key.id === 'shift').map((key, ci) => ({ ...key, ...(key.id === 'shift' ? { label: '⇧' } : {}), row: ri, col: ci, w: key.id === 'shift' ? 1.5 : undefined }))),
     [k('sym', '123', 4, 0, 1.5), k('space', '공백', 4, 1, 5), k('enter', '확인', 4, 2, 2)],
   ],
 }

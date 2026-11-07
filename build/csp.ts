@@ -18,6 +18,8 @@ export function buildCsp(opts: { workerOrigin?: string } = {}): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'none'",
+    // 혹시 http 주소가 섞여도 https 로만 부른다
+    'upgrade-insecure-requests',
   ].join('; ')
 }
 
