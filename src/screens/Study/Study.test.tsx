@@ -212,3 +212,14 @@ test('휴대폰: 입력칸을 누르면(키보드가 올라오면) 자판 그림
   await act(async () => void fireEvent.blur(input))
   expect(screen.queryByText('자판 그림 접기')).not.toBeNull()
 })
+
+test('몽골어 PC: 몽골어 자판이 없어도 그림 자리대로 누르면 몽골 글자가 들어간다', async () => {
+  const { mnPcChar } = await import('../../engine/layouts')
+  expect(mnPcChar('b', false)).toBe('м')
+  expect(mnPcChar('b', true)).toBe('М')
+  expect(mnPcChar('f', false)).toBe('ө')
+  expect(mnPcChar('6', true)).toBe('.')
+  expect(mnPcChar('8', true)).toBe(',')
+  expect(mnPcChar('6', false)).toBeNull()
+  expect(mnPcChar('space', false)).toBeNull()
+})

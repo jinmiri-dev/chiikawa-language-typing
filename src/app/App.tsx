@@ -5,6 +5,7 @@ import Friend from '../screens/Friend/Friend'
 import Guide from '../screens/Guide/Guide'
 import Home from '../screens/Home/Home'
 import Materials from '../screens/Materials/Materials'
+import Read from '../screens/Read/Read'
 import Review from '../screens/Review/Review'
 import Settings from '../screens/Settings/Settings'
 import Share from '../screens/Share/Share'
@@ -56,6 +57,8 @@ function Screen({ route }: { route: Route }) {
       return <Review key={route.materialId} materialId={route.materialId} />
     case 'done':
       return <Done key={route.materialId} materialId={route.materialId} />
+    case 'read':
+      return <Read key={route.materialId} materialId={route.materialId} />
     case 'share':
       return <Share data={route.data} />
     case 'friend':

@@ -9,7 +9,7 @@ import { nextHintLevel, type HintLevel, type HintMemory } from '../../engine/hin
 import { keyboardTrouble, layoutFromComposition, TROUBLE_TEXT } from '../../engine/detect'
 import { explainMistake } from '../../engine/judge/explain'
 import { composingAhead, judge, significantChars } from '../../engine/judge/judge'
-import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor } from '../../engine/layouts'
+import { DEFAULT_LAYOUT, getLayout, LAYOUT_LABEL, layoutsFor, mnPcChar } from '../../engine/layouts'
 import { LANG_NAME } from '../../engine/lang'
 import { guideByKeys, guideFor, guideText, keyIdOfCode, remainingSeg, stepSpeech } from '../../engine/layouts/guide'
 import { newReviewItem, reviewId, schedule } from '../../engine/review/schedule'
@@ -410,8 +410,10 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
     const doneAt = idx
     void (async () => {
       if (settings.listenAfter) await listen()
-      if (!settings.autoAdvance) return
-      await new Promise((r) => setTimeout(r, settings.listenAfter ? 600 : 900))
+      // 노래는 흐름이 끊기지 않게 Enter 없이 다음 소절로 넘어간다(그 사이 Esc 로 다시 들을 수 있다)
+      const song = !!material.youtubeId && material.source === 'lyrics'
+      if (!settings.autoAdvance && !song) return
+      await new Promise((r) => setTimeout(r, song ? 400 : settings.listenAfter ? 600 : 900))
       if (idxRef.current === doneAt) goTo(doneAt + 1)
     })()
     persist(idx + 1, nextResults)
@@ -525,6 +527,24 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
       return
     }
     if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return
+    // 몽골어(PC): 몽골어 자판을 깔지 않았어도(영문·러시아 자판이어도) 자판 그림 자리대로 누르면 그 몽골 글자가 들어간다
+    if (lang === 'mn' && device === 'pc') {
+      const id = keyIdOfCode(e.code)
+      const ch = id ? mnPcChar(id, e.shiftKey) : null
+      if (ch) {
+        e.preventDefault()
+        const el = e.currentTarget
+        const from = el.selectionStart ?? el.value.length
+        const to = el.selectionEnd ?? from
+        const v = el.value.slice(0, from) + ch + el.value.slice(to)
+        el.value = v // 아주 빠르게 이어 눌러도 다음 키가 바뀐 값을 보게
+        setValue(v)
+        commit(v)
+        requestAnimationFrame(() => el.setSelectionRange(from + ch.length, from + ch.length))
+        if (kbNote) setKbNote('')
+        return
+      }
+    }
     const t = keyboardTrouble(lang, { key: e.key, code: e.code }, [...line.src.slice(res.okUpTo)][0])
     if (t) setKbNote(TROUBLE_TEXT[t](lang, device))
     else if (kbNote && !/맞췄어요/.test(kbNote)) setKbNote('')
@@ -845,7 +865,12 @@ function StudyView({ material, initial }: { material: Material; initial: Progres
   const showMap = !!seg && seg.confident && layout.verified && level === 'full'
   const guideMap = !showMap ? null : (
     <div className="guide guide-map">
-      {(device === 'pc' || (mobileMap && !kbUp)) && <KeyboardMap layout={layout} next={nextStep} small={device === 'mobile'} />}
+      {lang === 'mn' && device === 'pc' && (
+        <p className="guide-note">
+          <Sentences text="몽골어 자판을 깔지 않아도 돼요. 영문 상태에서 그림의 자리대로 누르면 몽골 글자가 들어가요(예: B → м)." />
+        </p>
+      )}
+      {(device === 'pc' || (mobileMap && !kbUp)) && <KeyboardMap layout={layout} next={nextStep} then={guide?.steps[(guide?.nextIndex ?? 0) + 1]} small={device === 'mobile'} />}
       {device === 'mobile' && !kbUp && (
         <button type="button" className="btn btn-sub map-toggle" onClick={() => setMobileMap((v) => !v)} aria-expanded={mobileMap}>
           {mobileMap ? '자판 그림 접기' : '자판 그림 보기'}

@@ -128,6 +128,18 @@ const MN_KEY = invert(MN_KEYS)
 const MN_PC_PUNCT: Record<string, string[]> = {
   '?': ['shift', '0'], '.': ['shift', '6'], ',': ['shift', '8'], '"': ['shift', '3'], ':': ['shift', '5'], '-': ['shift', '2'], '_': ['shift', '7'], '%': ['shift', '9'],
 }
+const MN_PUNCT_OF_DIGIT = Object.fromEntries(Object.entries(MN_PC_PUNCT).map(([c, keys]) => [keys[1], c]))
+/**
+ * 몽골어 자판이 깔려 있지 않아도 칠 수 있게: 누른 키 자리(keyId) → 몽골어(키릴) 배열에서 그 자리 글자.
+ * 안내·자판 그림과 같은 표를 쓰므로 그림대로 누르면 그 글자가 들어간다. 글자 키가 아니면 null(그대로 둔다).
+ */
+export function mnPcChar(keyId: string, shift: boolean): string | null {
+  const c = MN_KEYS[keyId]
+  if (c) return shift ? c.toUpperCase() : c
+  if (shift && MN_PUNCT_OF_DIGIT[keyId]) return MN_PUNCT_OF_DIGIT[keyId]
+  if (shift && keyId === '1') return '!'
+  return null
+}
 const TONE_KEY: Record<string, string> = { 'ˊ': '6', 'ˇ': '3', 'ˋ': '4', '˙': '7' }
 /** 전각 문장부호 → PC 키 (중국어 입력기에서 같은 키로 친다) */
 const FULL: Record<string, string> = { '，': ',', '。': '.', '？': '?', '！': '!', '：': ':', '；': ';', '、': '/', '“': '"', '”': '"', '（': '(', '）': ')' }

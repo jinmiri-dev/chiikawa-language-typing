@@ -1,4 +1,4 @@
-/** 오늘의 뉴스 탭: 태그로 고르고, 기사 제목과 첫 문장들을 한 줄씩 친다. 원문은 링크로. */
+/** 오늘의 뉴스 탭: 분야로 고르고, 기사를 문장마다 듣고 낱말 뜻을 본다(뉴스 듣기 화면). 원문은 링크로. */
 import { useEffect, useState } from 'react'
 import { useApp } from '../../app/AppState'
 import { href } from '../../app/routes'
@@ -32,7 +32,7 @@ export default function NewsTab({ lang }: { lang: Lang }) {
     setBusy('기사를 준비하고 있어요…')
     try {
       const m = await openNews(store, lang, a)
-      location.hash = href({ name: 'study', materialId: m.id })
+      location.hash = href({ name: 'read', materialId: m.id })
     } finally {
       setBusy('')
     }
@@ -45,7 +45,7 @@ export default function NewsTab({ lang }: { lang: Lang }) {
   return (
     <div className="news-tab">
       <p className="materials-lead">
-        <Sentences text={`매일 아침 새로 나오는 ${LANG_NAME[lang].ko} 뉴스예요. 제목과 첫 문장을 한 줄씩 치고, 원문은 링크로 읽어요.`} />
+        <Sentences text={`매일 새로 나오는 ${LANG_NAME[lang].ko} 뉴스를 들어요. 문장을 누르면 다시 들려주고, 낱말을 누르면 뜻이 나와요.`} />
       </p>
       {notice && <StatusNotice title={notice.title}>{notice.body}</StatusNotice>}
       {tags.length > 0 && (
@@ -74,8 +74,8 @@ export default function NewsTab({ lang }: { lang: Lang }) {
               </b>
               {a.lines[0]?.ko && <span className="news-ko">{a.lines[0].ko}</span>}
               <span className="news-meta">
-                {NEWS_TAG_NAME[a.tag]} · {levelOf(a)} · {a.lines.length}줄 · {a.source}
-                {!a.lines.some((l) => l.ko) && ' · 한국어 뜻 준비 중'}
+                {NEWS_TAG_NAME[a.tag]} · {levelOf(a)} · {a.lines.length}문장 · {a.source}
+                
               </span>
             </button>
             {a.link && (

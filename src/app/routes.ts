@@ -9,6 +9,8 @@ export type Route =
   | { name: 'study'; materialId: string }
   | { name: 'review'; materialId: string }
   | { name: 'done'; materialId: string }
+  // 뉴스 듣기(문장 듣기·낱말 뜻)
+  | { name: 'read'; materialId: string }
   | { name: 'share'; data: string }
   | { name: 'friend' }
   | { name: 'settings' }
@@ -61,8 +63,8 @@ export function parseRoute(hash: string): Route {
   const share = path.match(/^\/share\/([A-Za-z0-9+\-$]+)$/)
   if (share) return { name: 'share', data: share[1] }
 
-  const m = path.match(/^\/(study|done|review)\/([\w-]+)$/)
-  if (m) return { name: m[1] as 'study' | 'done' | 'review', materialId: m[2] }
+  const m = path.match(/^\/(study|done|review|read)\/([\w-]+)$/)
+  if (m) return { name: m[1] as 'study' | 'done' | 'review' | 'read', materialId: m[2] }
   return { name: 'not-found' }
 }
 
@@ -76,6 +78,7 @@ export function href(r: Route): string {
     case 'study':
     case 'done':
     case 'review':
+    case 'read':
       return `#/${r.name}/${r.materialId}`
     case 'share':
       return `#/share/${r.data}`
