@@ -661,3 +661,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 휴대폰: 재료 탭 네 개가 한 줄에 들어가게 */
+@media (max-width: 480px) {
+  .tabs {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+  .tab {
+    flex: 1 1 auto;
+    padding: 0 6px;
+    justify-content: center;
+    white-space: nowrap;
+    font-size: 15px;
+  }
+}
