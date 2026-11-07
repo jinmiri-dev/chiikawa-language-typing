@@ -244,7 +244,7 @@ export default function Read({ materialId }: { materialId: string }) {
                     ),
                   )}
                 </p>
-                {showKo && <p className="read-ko">{l.ko ?? '뜻을 준비하고 있어요'}</p>}
+                {showKo && <p className="read-ko">{l.ko ?? '한국어 뜻은 곧 채워져요'}</p>}
                 {picked?.line === i && (
                   <div className="read-pick" role="status">
                     <b lang={htmlLang}>{picked.text}</b>
