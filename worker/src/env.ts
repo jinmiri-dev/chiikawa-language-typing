@@ -12,6 +12,8 @@ export interface Env {
   KV: KV
   YOUTUBE_API_KEY?: string
   TRANSCRIPT_API_KEY?: string
+  /** 자막 서비스 두 번째(Supadata, 무료 월 100회). 첫째가 멈췄을 때만 쓴다 */
+  SUPADATA_API_KEY?: string
   AZURE_SPEECH_KEY?: string
   AZURE_SPEECH_REGION?: string
   AZURE_TRANSLATOR_KEY?: string

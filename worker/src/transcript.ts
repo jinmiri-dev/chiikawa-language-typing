@@ -163,6 +163,32 @@ export async function fetchTrack(env: Env, deps: Deps, v: string, pick: Pick): P
   return { cues, available: body.available_languages ?? [] }
 }
 
+/** Supadata 가 돌려주는 자막 언어 이름(그 언어로 된 자막인지 볼 때) */
+const SUPA_LANG: Record<SrcLang, string[]> = { ko: ['ko'], ja: ['ja'], en: ['en'], zh: ['zh', 'zh-Hans', 'zh-CN'], tw: ['zh-Hant', 'zh-TW', 'zh'], mn: ['mn'] }
+
+/**
+ * 두 번째 자막 서비스(Supadata). 첫째(SearchAPI)의 무료 횟수가 끝났을 때만 부른다(무료 월 100회라 아낀다).
+ * 그 언어 자막이 없으면 다른 언어를 돌려주므로, 언어가 다르면 없는 것으로 본다.
+ */
+export async function supadataTrack(env: Env, deps: Deps, v: string, lang: SrcLang): Promise<{ cues: Cue[]; auto: boolean } | null> {
+  const u = new URL('https://api.supadata.ai/v1/youtube/transcript')
+  u.searchParams.set('videoId', v)
+  u.searchParams.set('lang', SUPA_LANG[lang][0])
+  const res = await deps.fetch(u, { headers: { 'x-api-key': env.SUPADATA_API_KEY! }, signal: AbortSignal.timeout(20000) })
+  if (res.status === 404 || res.status === 400) return null
+  if (!res.ok) {
+    console.warn(`supadata ${res.status}`)
+    throw new ApiError('UPSTREAM_FAILED', '자막 서비스가 응답하지 않았어요. 잠시 뒤 다시 해 보세요.')
+  }
+  const body = (await res.json()) as { content?: { text: string; offset: number; duration: number; lang?: string }[] | string; lang?: string }
+  if (!Array.isArray(body.content) || !body.content.length || !SUPA_LANG[lang].includes(body.lang ?? '')) return null
+  const cues = body.content
+    .filter((c) => c.text?.trim())
+    .map((c) => ({ start: c.offset / 1000, end: (c.offset + c.duration) / 1000, text: c.text.replace(/\s*\n\s*/g, ' ') }))
+  if (!cues.length || !native(cues, lang)) return null
+  return { cues, auto: looksAuto(cues) }
+}
+
 /**
  * 원문 자막: 직접 올린 자막을 먼저 받는다. 받은 자막이 로마자처럼 그 언어 글자가 아니면
  * 같은 언어의 다른 자막(자동 자막 등)을 이름으로 두 개까지 더 찾아본다.
@@ -237,11 +263,22 @@ export async function findSource(env: Env, deps: Deps, v: string, lang: SrcLang,
       failure = e
     }
   }
+  // 첫째 서비스가 멈췄거나(무료 횟수 끝) 키가 없으면 두 번째 서비스로
+  if (env.SUPADATA_API_KEY && (!env.TRANSCRIPT_API_KEY || failure?.code === 'UPSTREAM_FAILED')) {
+    try {
+      const s = await supadataTrack(env, deps, v, lang)
+      if (s) return { src: s, via: 'captions' }
+      failure = null
+    } catch (e) {
+      if (!(e instanceof ApiError)) throw e
+      failure = e
+    }
+  }
   if (!songFirst) {
     const c = await trySong()
     if (c) return { src: { cues: c, auto: false }, via: 'lyrics' }
   }
-  if (failure?.code === 'UPSTREAM_FAILED' || (!env.TRANSCRIPT_API_KEY && !songFirst))
+  if (failure?.code === 'UPSTREAM_FAILED' || (!env.TRANSCRIPT_API_KEY && !env.SUPADATA_API_KEY && !songFirst))
     throw new ApiError('UPSTREAM_FAILED', '이 영상 자막을 지금 가져오지 못했어요. 유튜브 "스크립트 표시"를 복사해 대본 탭에 붙여 넣으면 바로 연습할 수 있어요.')
   throw failure ?? new ApiError('NO_TRACK', `이 영상에는 ${LANG_KO[lang]} 자막도, 찾을 수 있는 가사도 없어요.`)
 }
@@ -266,6 +303,17 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
         hit.koChecked = true
         await putJson(env.KV, key, hit)
       }
+    }
+    // AI 하루 한도로 뜻을 못 붙였던 자막은 한 시간에 한 번 다시 번역해 본다(자막을 다시 받지 않는다)
+    const h = hit as typeof hit & { koTry?: number }
+    if (h.koSource === 'none' && h.lines?.length && deps.now() - (h.koTry ?? 0) > 3600_000) {
+      h.koTry = deps.now()
+      const t = await aiTranslate(env, deps, lang, 'ko', h.lines.map((l) => l.src))
+      if (t?.some(Boolean)) {
+        h.lines = h.lines.map((l, i) => (t[i] ? { ...l, ko: t[i] } : l))
+        h.koSource = 'auto'
+      }
+      await putJson(env.KV, key, h)
     }
     // 예전에 받아 둔 자막에는 영상 제목이 없다: 한 번 채워 다시 저장(링크로 연 영상도 제목이 보이게)
     if (!('title' in hit)) {
