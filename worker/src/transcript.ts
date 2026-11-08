@@ -308,9 +308,10 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
     // 뜻이 빠진 줄(한도로 못 붙였거나 지어낸 번역이라 버린 줄)만 다시 번역한다
     const h = hit as typeof hit & { koTry?: number; koV?: number }
     // 몽골어 자막의 예전 뜻은 몽골어를 잘 못 옮기는 모델로 붙였을 수 있어 한 번 새로 번역한다. 다른 언어는 지어낸 영문이 든 뜻만 비운다
-    if (h.koSource === 'auto' && h.koV !== 2 && h.lines?.length) {
-      h.lines = h.lines.map((l) => (l.ko && (lang === 'mn' || inventedLatin(l.src, l.ko, 'ko')) ? { start: l.start, end: l.end, src: l.src } : l))
-      h.koV = 2
+    if (h.koSource === 'auto' && (h.koV ?? 0) < 3 && h.lines?.length) {
+      const redoMn = lang === 'mn' && (h.koV ?? 0) < 2
+      h.lines = h.lines.map((l) => (l.ko && (redoMn || inventedLatin(l.src, l.ko, 'ko')) ? { start: l.start, end: l.end, src: l.src } : l))
+      h.koV = 3
       h.koTry = 0
     }
     const missing = (h.lines ?? []).map((l, i) => (l.ko ? -1 : i)).filter((i) => i >= 0)

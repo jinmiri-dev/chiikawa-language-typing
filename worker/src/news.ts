@@ -172,14 +172,14 @@ interface Stored {
 }
 
 /** 한국어 뜻이 빠진 줄만 다시 번역해 채운다. 바뀐 게 있으면 true */
-/** 뜻 다듬기 판(올리면 예전 뜻을 한 번 다시 본다). 2: 지어낸 번역 거르기, 몽골어는 새 방식으로 다시 번역 */
-export const KO_VERSION = 2
+/** 뜻 다듬기 판(올리면 예전 뜻을 한 번 다시 본다). 2: 지어낸 번역 거르기, 몽골어는 새 방식으로 다시 번역. 3: 줄 번역 모델이 넣은 영문도 거르기 */
+export const KO_VERSION = 3
 
 /** 예전 뜻 중 믿기 어려운 것을 비운다(바뀐 게 있으면 true) */
 export function cleanKo(lang: Lang, stored: { articles: Article[]; koV?: number }): boolean {
   if (stored.koV === KO_VERSION) return false
   for (const a of stored.articles)
-    for (const l of a.lines) if (l.ko && (lang === 'mn' || inventedLatin(l.src, l.ko, 'ko'))) delete l.ko
+    for (const l of a.lines) if (l.ko && ((lang === 'mn' && (stored.koV ?? 0) < 2) || inventedLatin(l.src, l.ko, 'ko'))) delete l.ko
   stored.koV = KO_VERSION
   return true
 }

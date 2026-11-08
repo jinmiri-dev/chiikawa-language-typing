@@ -85,7 +85,8 @@ export async function aiTranslate(env: Env, _deps: Deps, from: SrcLang, to: SrcL
     else if (LINE_OK(from, to))
       for (let k = 0; k < part.length && calls < BUDGET; k++) {
         try {
-          out[i + k] = ((await ai(LINE_MODEL, { text: part[k], source_lang: CODE[from], target_lang: CODE[to] })).translated_text ?? '').trim()
+          const t = ((await ai(LINE_MODEL, { text: part[k], source_lang: CODE[from], target_lang: CODE[to] })).translated_text ?? '').trim()
+          out[i + k] = inventedLatin(part[k], t, to) ? '' : t
         } catch (e) {
           console.warn('ai line failed', String(e))
         }
@@ -101,7 +102,7 @@ export async function aiTranslate(env: Env, _deps: Deps, from: SrcLang, to: SrcL
     }
     try {
       const t = ((await ai(LINE_MODEL, { text: texts[k], source_lang: CODE[from], target_lang: CODE[to] })).translated_text ?? '').trim()
-      out[k] = t && !stray.test(t) ? t : ''
+      out[k] = t && !stray.test(t) && !inventedLatin(texts[k], t, to) ? t : ''
     } catch {
       out[k] = ''
     }
