@@ -5,7 +5,7 @@ import { buildDraftMaterial } from '../engine/import/material'
 import type { Lang } from '../engine/lang'
 import type { Material } from '../engine/types'
 import { dayKey } from '../engine/stats/trend'
-import { loadSegmenter } from './segmenter'
+import { segmenterFor } from './segmenter'
 import type { Store } from './storage'
 
 export interface CourseProgress {
@@ -64,7 +64,7 @@ export async function courseMaterial(store: Store, id: string): Promise<Material
   const saved = await store.getMaterial(id)
   const same = saved && saved.title === lessonTitle(course, l.week, l.lesson) && saved.lines.every((x, i) => x.src === lines[i]?.[0]) && saved.lines.length === lines.length
   if (saved && same && saved.readingVersion === READING_VERSION) return saved
-  const segment = await loadSegmenter(l.lang).catch(() => null)
+  const segment = await segmenterFor(l.lang, lines.map(([src]) => src)).catch(() => null)
   const m = buildDraftMaterial({
     id,
     lang: l.lang,

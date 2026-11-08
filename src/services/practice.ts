@@ -3,7 +3,7 @@ import { loadPractice, parsePracticeId, practiceTitle, TWISTER } from '../conten
 import { READING_VERSION } from '../engine/reading/ja'
 import { buildDraftMaterial } from '../engine/import/material'
 import type { Material, Segment } from '../engine/types'
-import { loadSegmenter } from './segmenter'
+import { segmenterFor } from './segmenter'
 import type { Store } from './storage'
 
 /** 발음 연습 재료는 듣기 화면이 알아보도록 이 이름을 단다 */
@@ -17,7 +17,7 @@ export async function practiceMaterial(store: Store, id: string): Promise<Materi
   if (!lines?.length) return null
   const saved = await store.getMaterial(id)
   if (saved && saved.readingVersion === READING_VERSION && saved.lines.length === lines.length && saved.lines.every((l, i) => l.src === lines[i][0] && l.ko === lines[i][1] && (!lines[i][2] || l.segments.map((g) => g.reading).join('|') === lines[i][2]!.map(([t, r]) => r ?? t).join('|')))) return saved
-  const segment = await loadSegmenter(p.lang).catch(() => null)
+  const segment = await segmenterFor(p.lang, lines.map(([src]) => src)).catch(() => null)
   const m = buildDraftMaterial({ id, lang: p.lang, title: practiceTitle(p.id), lines: lines.map(([src, ko]) => ({ src, ko, flags: [] })), segment })
   // 읽기를 정해 둔 줄은 그대로 쓴다(生米 → なまごめ 처럼 사전이 틀리는 말)
   m.lines = m.lines.map((l, i) => {

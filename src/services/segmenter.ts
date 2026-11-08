@@ -42,3 +42,16 @@ export async function loadSegmenter(lang: Lang): Promise<Segmenter> {
   }
   return (src) => buildPlainSegments(lang, src)
 }
+
+/**
+ * 코스·예문처럼 문장이 정해진 재료: 일본어는 미리 만든 읽기를 쓴다(17MB 사전을 받지 않아 휴대폰에서도 바로 열림).
+ * 한 줄이라도 없으면(문장을 바꾸고 읽기를 다시 만들지 않았으면) 사전으로 만든다.
+ */
+export async function segmenterFor(lang: Lang, srcs: string[]): Promise<Segmenter> {
+  if (lang === 'ja') {
+    const { loadJaReadings, unpackSegments } = await import('../content/readings/pack')
+    const r = await loadJaReadings()
+    if (srcs.every((s) => r[s])) return (src) => (r[src] ? unpackSegments(r[src]) : [])
+  }
+  return loadSegmenter(lang)
+}
