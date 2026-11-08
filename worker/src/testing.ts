@@ -11,6 +11,9 @@ export function memoryKV(): KV & { data: Map<string, string | ArrayBuffer> } {
       if (type === 'json') return JSON.parse(v as string)
       return v
     },
+    async list(opts: { prefix: string }) {
+      return { keys: [...data.keys()].filter((k) => k.startsWith(opts.prefix)).map((name) => ({ name })), list_complete: true }
+    },
     async put(key: string, value: string | ArrayBuffer) {
       data.set(key, value)
     },

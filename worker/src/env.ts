@@ -6,6 +6,7 @@ export interface KV {
   get(key: string, type: 'json'): Promise<unknown>
   get(key: string, type: 'arrayBuffer'): Promise<ArrayBuffer | null>
   put(key: string, value: string | ArrayBuffer, opts?: { expirationTtl?: number }): Promise<void>
+  list(opts: { prefix: string; cursor?: string }): Promise<{ keys: { name: string }[]; list_complete: boolean; cursor?: string }>
 }
 
 export interface Env {

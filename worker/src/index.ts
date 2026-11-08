@@ -3,6 +3,8 @@ import { isLang, LANGS, type Deps, type Env, type Lang } from './env'
 import { ApiError, errorResponse, json, withCors } from './http'
 
 export const VERSION = '1.0.0'
+/** 영상 자막 뜻 채우기 예약(두 시간마다 15분). wrangler.toml 의 crons 와 같아야 한다 */
+export const FILL_CRON = '15 */2 * * *'
 
 type Handler = (url: URL, lang: Lang, env: Env, deps: Deps) => Promise<Response>
 
@@ -68,10 +70,17 @@ export default {
   fetch: (req: Request, env: Env) =>
     handle(req, env, { fetch: (...a) => fetch(...a), now: () => Date.now(), ip: req.headers.get('cf-connecting-ip') ?? undefined }),
   /** 매일 아침·저녁 예약 실행: 언어별 오늘의 뉴스를 미리 만들어 둔다(사람이 할 일 없음) */
-  scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+  scheduled: (event: { cron?: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
     const deps: Deps = { fetch: (...a) => fetch(...a), now: () => Date.now() }
     ctx.waitUntil(
       (async () => {
+        // 두 시간마다: 영상 자막의 빠진 한국어 뜻 채우기(몽골어 먼저)
+        if (event.cron === FILL_CRON) {
+          const { fillAllTranscripts } = await import('./transcript')
+          const r = await fillAllTranscripts(env, deps).catch((e) => ({ error: String(e) }))
+          console.log('fill transcripts', JSON.stringify(r))
+          return
+        }
         const { refreshNews } = await import('./news')
         for (const lang of LANGS) await refreshNews(env, deps, lang).catch((e) => console.warn('news', lang, String(e)))
       })(),

@@ -283,6 +283,73 @@ export async function findSource(env: Env, deps: Deps, v: string, lang: SrcLang,
   throw failure ?? new ApiError('NO_TRACK', `이 영상에는 ${LANG_KO[lang]} 자막도, 찾을 수 있는 가사도 없어요.`)
 }
 
+/** 뜻을 채울 수 있는 저장된 자막 */
+export interface KoFillable {
+  koSource?: string
+  koTry?: number
+  koV?: number
+  lines?: TranscriptLine[]
+}
+
+/**
+ * 저장된 자막의 빠진 한국어 뜻을 채운다(자막은 다시 받지 않는다). 몽골어의 예전 뜻은 한 번 새로 번역하고,
+ * 지어낸 영문이 든 뜻은 비운다. 'quota' 는 AI 하루 한도라 아무것도 못 한 것, 'none' 은 할 일이 없던 것.
+ */
+export async function fillTranscriptKo(env: Env, deps: Deps, lang: Lang, h: KoFillable): Promise<'none' | 'filled' | 'quota'> {
+  if (!h.lines?.length || h.koSource === 'youtube') return 'none'
+  let changed = false
+  if (h.koSource === 'auto' && (h.koV ?? 0) < 3) {
+    const redoMn = lang === 'mn' && (h.koV ?? 0) < 2
+    h.lines = h.lines.map((l) => (l.ko && (redoMn || inventedLatin(l.src, l.ko, 'ko')) ? { start: l.start, end: l.end, src: l.src } : l))
+    h.koV = 3
+    changed = true
+  }
+  const missing = h.lines.map((l, i) => (l.ko ? -1 : i)).filter((i) => i >= 0)
+  if (!missing.length) return changed ? 'filled' : 'none'
+  h.koTry = deps.now()
+  const t = await aiTranslate(env, deps, lang, 'ko', missing.map((i) => h.lines![i].src))
+  if (!t?.some(Boolean)) return 'quota'
+  h.lines = h.lines.map((l, i) => {
+    const k = missing.indexOf(i)
+    return k >= 0 && t[k] ? { ...l, ko: t[k] } : l
+  })
+  h.koSource = 'auto'
+  return 'filled'
+}
+
+/**
+ * 예약 실행: 저장된 영상 자막 중 뜻이 빠진 것을 몽골어부터 채운다(누가 영상을 열지 않아도).
+ * AI 하루 한도에 걸리면 멈추고 다음 예약 때 이어서 한다. 한 번에 영상 maxVideos 개까지.
+ */
+export async function fillAllTranscripts(env: Env, deps: Deps, maxVideos = 6): Promise<{ filled: number; quota: boolean }> {
+  const keys: string[] = []
+  let cursor: string | undefined
+  do {
+    const page = await env.KV.list({ prefix: 'transcript:v6:', ...(cursor ? { cursor } : {}) })
+    keys.push(...page.keys.map((k) => k.name))
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+  // 몽골어 먼저(기기 번역이 없어 서버가 채워야 한다), 그다음 나머지
+  keys.sort((a, b) => Number(b.endsWith(':mn')) - Number(a.endsWith(':mn')))
+  let filled = 0
+  for (const key of keys) {
+    if (filled >= maxVideos) break
+    const lang = key.slice(key.lastIndexOf(':') + 1) as Lang
+    const h = await cachedJson<KoFillable>(env.KV, key)
+    if (!h?.lines?.length || h.lines.every((l) => l.ko)) continue
+    const r = await fillTranscriptKo(env, deps, lang, h)
+    if (r === 'quota') {
+      await putJson(env.KV, key, h)
+      return { filled, quota: true }
+    }
+    if (r === 'filled') {
+      await putJson(env.KV, key, h)
+      filled++
+    }
+  }
+  return { filled, quota: false }
+}
+
 export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Promise<Response> {
   const v = url.searchParams.get('v') ?? ''
   if (!/^[\w-]{11}$/.test(v)) throw new ApiError('BAD_REQUEST', '영상 id(v)가 잘못됐어요.')
@@ -305,27 +372,9 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
       }
     }
     // AI 하루 한도로 뜻을 못 붙였던 자막은 한 시간에 한 번 다시 번역해 본다(자막을 다시 받지 않는다)
-    // 뜻이 빠진 줄(한도로 못 붙였거나 지어낸 번역이라 버린 줄)만 다시 번역한다
-    const h = hit as typeof hit & { koTry?: number; koV?: number }
-    // 몽골어 자막의 예전 뜻은 몽골어를 잘 못 옮기는 모델로 붙였을 수 있어 한 번 새로 번역한다. 다른 언어는 지어낸 영문이 든 뜻만 비운다
-    if (h.koSource === 'auto' && (h.koV ?? 0) < 3 && h.lines?.length) {
-      const redoMn = lang === 'mn' && (h.koV ?? 0) < 2
-      h.lines = h.lines.map((l) => (l.ko && (redoMn || inventedLatin(l.src, l.ko, 'ko')) ? { start: l.start, end: l.end, src: l.src } : l))
-      h.koV = 3
-      h.koTry = 0
-    }
-    const missing = (h.lines ?? []).map((l, i) => (l.ko ? -1 : i)).filter((i) => i >= 0)
-    if (h.koSource !== 'youtube' && missing.length && deps.now() - (h.koTry ?? 0) > 3600_000) {
-      h.koTry = deps.now()
-      const t = await aiTranslate(env, deps, lang, 'ko', missing.map((i) => h.lines![i].src))
-      if (t?.some(Boolean)) {
-        h.lines = h.lines!.map((l, i) => {
-          const k = missing.indexOf(i)
-          return k >= 0 && t[k] ? { ...l, ko: t[k] } : l
-        })
-        h.koSource = 'auto'
-      }
-      await putJson(env.KV, key, h)
+    const h = hit as KoFillable
+    if (deps.now() - (h.koTry ?? 0) > 3600_000 || (h.koV ?? 0) < 3) {
+      if ((await fillTranscriptKo(env, deps, lang, h)) !== 'none') await putJson(env.KV, key, h)
     }
     // 예전에 받아 둔 자막에는 영상 제목이 없다: 한 번 채워 다시 저장(링크로 연 영상도 제목이 보이게)
     if (!('title' in hit)) {
