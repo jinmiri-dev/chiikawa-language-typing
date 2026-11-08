@@ -48,7 +48,8 @@ export async function gloss(body: string, lang: Lang, env: Env, deps: Deps): Pro
   const found = await Promise.all(keys.map((k) => cachedJson<Pair[]>(env.KV, k)))
   const missing = lines.map((l, i) => ({ l, i })).filter((x) => !found[x.i])
   if (missing.length && env.AI) {
-    const quota = await takeQuota(env.KV, 'gloss', 20_000, deps.now(), missing.length, deps.ip)
+    // 낱말 짝은 있으면 좋은 정도라 하루 1,500줄까지만(AI 하루 무료 양을 뉴스·영상 뜻에 남겨 둔다)
+    const quota = await takeQuota(env.KV, 'gloss', 1_500, deps.now(), missing.length, deps.ip)
     if (quota.ok) {
       const made = await ask(env, lang, missing.map((m) => m.l))
       if (made)
