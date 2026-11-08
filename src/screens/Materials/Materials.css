@@ -676,3 +676,46 @@
     font-size: 15px;
   }
 }
+
+/* 상황별 예문·발음 연습 카드 */
+.practice-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.practice-card {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: none;
+  word-break: keep-all;
+}
+.practice-card:hover {
+  border-color: var(--ink);
+}
+.practice-card span {
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+}
+.practice-card[data-state='done'] {
+  background: var(--surface, #f5f5f5);
+  border-color: transparent;
+}
+.practice-twister {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.practice-listen {
+  background: #fff8dc;
+  border-color: #f1d77a;
+}

@@ -8,7 +8,7 @@ import { aiTranslate } from './ai'
 import { cachedJson, putJson, sha } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { json } from './http'
-import { fillMissingKo, leadSentences, type Article } from './news'
+import { cleanKo, fillMissingKo, KO_VERSION, leadSentences, type Article } from './news'
 import { toScript } from './songs'
 
 const UA = { 'user-agent': 'language-grade1 study site (+https://github.com/jinmiri-dev/chiikawa-language-typing)' }
@@ -117,6 +117,7 @@ interface Stored {
   day: string
   articles: Article[]
   koTry?: number
+  koV?: number
 }
 
 export async function reading(_url: URL, lang: Lang, env: Env, deps: Deps): Promise<Response> {
@@ -127,15 +128,16 @@ export async function reading(_url: URL, lang: Lang, env: Env, deps: Deps): Prom
       await env.KV.put(lock, '1', { expirationTtl: 120 })
       const fresh = await buildReading(env, deps, lang)
       if (fresh.length) {
-        stored = { day: dayOf(deps.now()), articles: fresh }
+        stored = { day: dayOf(deps.now()), articles: fresh, koV: KO_VERSION }
         await putJson(env.KV, key(lang), stored)
       }
     }
-  } else if (stored.articles.some((a) => a.lines.some((l) => !l.ko)) && deps.now() - (stored.koTry ?? 0) > 3600_000) {
+  } else if (stored.koV !== KO_VERSION || (stored.articles.some((a) => a.lines.some((l) => !l.ko)) && deps.now() - (stored.koTry ?? 0) > 3600_000)) {
     // AI 하루 한도로 뜻을 못 붙였으면 한 시간에 한 번 다시 채워 본다
     const lock = `readingko:${lang}`
     if (!(await env.KV.get(lock))) {
       await env.KV.put(lock, '1', { expirationTtl: 300 })
+      if (cleanKo(lang, stored)) stored.koTry = 0
       await fillMissingKo(env, deps, lang, stored)
       await putJson(env.KV, key(lang), stored)
     }

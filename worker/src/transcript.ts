@@ -3,7 +3,7 @@ import { cachedJson, putJson } from './cache'
 import type { Deps, Env, Lang } from './env'
 import { ApiError, json } from './http'
 import { LIMITS, quotaHeaders, takeQuota } from './quota'
-import { aiTranslate } from './ai'
+import { aiTranslate, inventedLatin } from './ai'
 import { findSong, videoMeta, type VideoMeta } from './songs'
 
 export interface Cue {
@@ -305,12 +305,23 @@ export async function transcript(url: URL, lang: Lang, env: Env, deps: Deps): Pr
       }
     }
     // AI 하루 한도로 뜻을 못 붙였던 자막은 한 시간에 한 번 다시 번역해 본다(자막을 다시 받지 않는다)
-    const h = hit as typeof hit & { koTry?: number }
-    if (h.koSource === 'none' && h.lines?.length && deps.now() - (h.koTry ?? 0) > 3600_000) {
+    // 뜻이 빠진 줄(한도로 못 붙였거나 지어낸 번역이라 버린 줄)만 다시 번역한다
+    const h = hit as typeof hit & { koTry?: number; koV?: number }
+    // 몽골어 자막의 예전 뜻은 몽골어를 잘 못 옮기는 모델로 붙였을 수 있어 한 번 새로 번역한다. 다른 언어는 지어낸 영문이 든 뜻만 비운다
+    if (h.koSource === 'auto' && h.koV !== 2 && h.lines?.length) {
+      h.lines = h.lines.map((l) => (l.ko && (lang === 'mn' || inventedLatin(l.src, l.ko, 'ko')) ? { start: l.start, end: l.end, src: l.src } : l))
+      h.koV = 2
+      h.koTry = 0
+    }
+    const missing = (h.lines ?? []).map((l, i) => (l.ko ? -1 : i)).filter((i) => i >= 0)
+    if (h.koSource !== 'youtube' && missing.length && deps.now() - (h.koTry ?? 0) > 3600_000) {
       h.koTry = deps.now()
-      const t = await aiTranslate(env, deps, lang, 'ko', h.lines.map((l) => l.src))
+      const t = await aiTranslate(env, deps, lang, 'ko', missing.map((i) => h.lines![i].src))
       if (t?.some(Boolean)) {
-        h.lines = h.lines.map((l, i) => (t[i] ? { ...l, ko: t[i] } : l))
+        h.lines = h.lines!.map((l, i) => {
+          const k = missing.indexOf(i)
+          return k >= 0 && t[k] ? { ...l, ko: t[k] } : l
+        })
         h.koSource = 'auto'
       }
       await putJson(env.KV, key, h)

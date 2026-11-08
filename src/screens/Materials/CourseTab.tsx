@@ -5,6 +5,7 @@ import { href } from '../../app/routes'
 import { Sentences } from '../../components/components'
 import { allLessons, lessonId, loadCourse, type CourseData } from '../../content/course'
 import { starterSets } from '../../content/starter'
+import { practiceId, SITUATIONS, TWISTER } from '../../content/practice'
 import type { Progress } from '../../engine/types'
 import type { Lang } from '../../engine/lang'
 import { getCourseProgress, nextLesson, streak, type CourseProgress } from '../../services/course'
@@ -108,6 +109,44 @@ export default function CourseTab({ lang }: { lang: Lang }) {
             </ul>
           </section>
         )}
+        <section aria-label="상황별 예문">
+          <h2 className="course-h">
+            상황별 예문 <span className="course-h-sub">· 면접·이메일·편지처럼 실제로 쓰는 글을 쳐 봐요</span>
+          </h2>
+          <ul className="practice-grid">
+            {SITUATIONS.map((s) => {
+              const id = practiceId(lang, s.id)
+              const p = setProgress[id]
+              const finished = !!p && p.lineIndex >= 8
+              return (
+                <li key={s.id}>
+                  <a className="practice-card" data-state={finished ? 'done' : undefined} href={href({ name: 'study', materialId: id })}>
+                    <b>
+                      {finished && <span aria-label="끝냄">✓ </span>}
+                      {s.title}
+                    </b>
+                    <span>{s.desc} · 8줄</span>
+                  </a>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+        <section aria-label="발음 연습">
+          <h2 className="course-h">
+            발음 연습 <span className="course-h-sub">· {lang === 'mn' ? '헷갈리는 소리를 모은 문장' : '잰말놀이'}를 듣고 소리 내어 따라 해요</span>
+          </h2>
+          <div className="practice-twister">
+            <a className="practice-card practice-listen" href={href({ name: 'read', materialId: practiceId(lang, TWISTER) })}>
+              <b>🔊 듣고 따라 말하기</b>
+              <span>8문장 · 천천히(0.75배)부터 시작해 보세요</span>
+            </a>
+            <a className="practice-card" href={`${href({ name: 'materials', lang, tab: 'youtube' })}&tag=twister`}>
+              <b>▶ 유튜브 발음 연습 영상</b>
+              <span>영상을 한 문장씩 듣고 따라 쳐요</span>
+            </a>
+          </div>
+        </section>
       </section>
       <aside className="course-side" aria-label="오늘 할 일">
         <h2 className="course-h">오늘 할 일</h2>

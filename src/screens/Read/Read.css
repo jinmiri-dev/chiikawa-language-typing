@@ -174,3 +174,31 @@
     margin-left: 0;
   }
 }
+.read-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.read-mic[aria-pressed='true'] {
+  background: #ffe1e1;
+  border-color: #e26a6a;
+}
+.read-said {
+  margin: 2px 0 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--soft, #f5f5f5);
+  font-size: var(--fs-sub);
+  color: var(--ink-2);
+  word-break: keep-all;
+}
+.read-said b {
+  color: var(--ink);
+}
+.read-said[data-good] b {
+  color: var(--success, #2f7d5b);
+}
+.read-said span {
+  display: block;
+  margin-top: 2px;
+}

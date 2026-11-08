@@ -65,7 +65,8 @@ export async function lyrics(url: URL, lang: Lang, env: Env, deps: Deps): Promis
   const t = await aiTranslate(env, deps, 'ko', lang, out.map((l) => l.ko))
   if (t) {
     out = out.map((l, i) => (t[i] ? { ...l, meaning: t[i] } : l))
-    meaningSource = 'auto'
+    // 거의 다 옮겼을 때만 끝난 것으로(빠진 줄이 많으면 하루 뒤 다시 번역)
+    if (t.filter(Boolean).length >= t.length * 0.9) meaningSource = 'auto'
   }
   const body = { videoId: v, to: lang, source: src.via === 'lyrics' ? 'lyrics' : src.auto ? 'asr' : 'manual', meaningSource, lines: out }
   await putJson(env.KV, key, body, meaningSource === 'none' ? 86400 : undefined)

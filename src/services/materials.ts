@@ -2,12 +2,15 @@
 import { parseLessonId } from '../content/course'
 import { starterMaterial } from '../content/starter'
 import { courseMaterial } from './course'
+import { parsePracticeId } from '../content/practice'
+import { practiceMaterial } from './practice'
 import type { Lang } from '../engine/lang'
 import type { Material } from '../engine/types'
 import type { Store } from './storage'
 
 export async function getMaterial(store: Store, id: string): Promise<Material | null> {
   if (parseLessonId(id)) return courseMaterial(store, id)
+  if (parsePracticeId(id)) return practiceMaterial(store, id)
   return starterMaterial(id) ?? (await store.getMaterial(id))
 }
 

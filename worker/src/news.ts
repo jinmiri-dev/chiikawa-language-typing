@@ -3,7 +3,7 @@
  * 매일 아침(예약 실행)과, 그날 처음 부를 때 만든다. 한국어 뜻은 줄마다 1:1 번역. 기사 본문 전체는 가져오지 않는다.
  */
 import { cachedJson, putJson, sha } from './cache'
-import { aiTranslate } from './ai'
+import { aiTranslate, inventedLatin } from './ai'
 import { toScript } from './songs'
 import type { Deps, Env, Lang } from './env'
 import { json } from './http'
@@ -168,9 +168,22 @@ interface Stored {
   articles: Article[]
   /** 빠진 한국어 뜻을 마지막으로 다시 번역해 본 때(AI 하루 한도에 걸렸을 때 다시 채운다) */
   koTry?: number
+  koV?: number
 }
 
 /** 한국어 뜻이 빠진 줄만 다시 번역해 채운다. 바뀐 게 있으면 true */
+/** 뜻 다듬기 판(올리면 예전 뜻을 한 번 다시 본다). 2: 지어낸 번역 거르기, 몽골어는 새 방식으로 다시 번역 */
+export const KO_VERSION = 2
+
+/** 예전 뜻 중 믿기 어려운 것을 비운다(바뀐 게 있으면 true) */
+export function cleanKo(lang: Lang, stored: { articles: Article[]; koV?: number }): boolean {
+  if (stored.koV === KO_VERSION) return false
+  for (const a of stored.articles)
+    for (const l of a.lines) if (l.ko && (lang === 'mn' || inventedLatin(l.src, l.ko, 'ko'))) delete l.ko
+  stored.koV = KO_VERSION
+  return true
+}
+
 export async function fillMissingKo(env: Env, deps: Deps, lang: Lang, stored: { articles: Article[]; koTry?: number }): Promise<boolean> {
   const missing = stored.articles.flatMap((a) => a.lines.filter((l) => !l.ko))
   if (!missing.length) return false
@@ -191,7 +204,9 @@ export async function refreshNews(env: Env, deps: Deps, lang: Lang): Promise<Sto
   const old = await cachedJson<Stored>(env.KV, key(lang))
   const fresh = await buildNews(env, deps, lang)
   const seen = new Set(fresh.map((a) => a.id))
-  const body: Stored = { day: dayOf(deps.now()), articles: [...fresh, ...(old?.articles ?? []).filter((a) => !seen.has(a.id))].slice(0, 40) }
+  const body: Stored = { day: dayOf(deps.now()), articles: [...fresh, ...(old?.articles ?? []).filter((a) => !seen.has(a.id))].slice(0, 40), koV: old?.koV }
+  // 어제까지의 기사에 남은 예전 뜻도 다듬는다
+  cleanKo(lang, body)
   if (fresh.length) await putJson(env.KV, key(lang), body)
   return body
 }
@@ -205,11 +220,12 @@ export async function news(_url: URL, lang: Lang, env: Env, deps: Deps): Promise
       await env.KV.put(lock, '1', { expirationTtl: 120 })
       stored = await refreshNews(env, deps, lang)
     }
-  } else if (stored.articles.some((a) => a.lines.some((l) => !l.ko)) && deps.now() - (stored.koTry ?? 0) > 3600_000) {
+  } else if (stored.koV !== KO_VERSION || (stored.articles.some((a) => a.lines.some((l) => !l.ko)) && deps.now() - (stored.koTry ?? 0) > 3600_000)) {
     // 아침에 AI 한도로 뜻을 못 붙였으면 한 시간에 한 번 다시 채워 본다
     const lock = `newsko:${lang}`
     if (!(await env.KV.get(lock))) {
       await env.KV.put(lock, '1', { expirationTtl: 300 })
+      if (cleanKo(lang, stored)) stored.koTry = 0
       await fillMissingKo(env, deps, lang, stored)
       await putJson(env.KV, key(lang), stored)
     }

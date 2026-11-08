@@ -4,16 +4,16 @@ import type { Deps, Env, Lang } from './env'
 import { ApiError, json, upstreamJson } from './http'
 import { LIMITS, quotaHeaders, takeQuota } from './quota'
 
-export const TAGS = ['song', 'kids', 'drama', 'movie', 'variety', 'news', 'vlog'] as const
+export const TAGS = ['song', 'kids', 'drama', 'movie', 'variety', 'news', 'vlog', 'twister', 'work'] as const
 export type Tag = (typeof TAGS)[number]
 
 /** 태그를 누르면 그 언어로 찾는 검색어 (기획안 7.4) */
 export const TAG_QUERY: Record<Lang, Record<Tag, string>> = {
-  ja: { song: '歌 歌詞', kids: '童謡', drama: 'ドラマ 名場面', movie: '映画 予告', variety: 'バラエティ', news: 'ニュース', vlog: 'vlog 日常' },
-  tw: { song: '歌詞 MV', kids: '兒歌', drama: '台劇', movie: '電影 預告', variety: '綜藝', news: '新聞', vlog: 'vlog 台灣' },
-  zh: { song: '歌词 MV', kids: '儿歌', drama: '电视剧 片段', movie: '电影 预告', variety: '综艺', news: '新闻', vlog: 'vlog 日常' },
-  en: { song: 'song lyrics', kids: 'nursery rhymes', drama: 'drama scene', movie: 'movie trailer', variety: 'talk show', news: 'news', vlog: 'daily vlog' },
-  mn: { song: 'дуу', kids: 'хүүхдийн дуу', drama: 'монгол кино', movie: 'кино', variety: 'шоу', news: 'мэдээ', vlog: 'влог' },
+  ja: { song: '歌 歌詞', kids: '童謡', drama: 'ドラマ 名場面', movie: '映画 予告', variety: 'バラエティ', news: 'ニュース', vlog: 'vlog 日常', twister: '早口言葉', work: '面接 日本語 練習' },
+  tw: { song: '歌詞 MV', kids: '兒歌', drama: '台劇', movie: '電影 預告', variety: '綜藝', news: '新聞', vlog: 'vlog 台灣', twister: '繞口令', work: '面試 自我介紹' },
+  zh: { song: '歌词 MV', kids: '儿歌', drama: '电视剧 片段', movie: '电影 预告', variety: '综艺', news: '新闻', vlog: 'vlog 日常', twister: '绕口令', work: '面试 自我介绍' },
+  en: { song: 'song lyrics', kids: 'nursery rhymes', drama: 'drama scene', movie: 'movie trailer', variety: 'talk show', news: 'news', vlog: 'daily vlog', twister: 'tongue twisters', work: 'job interview english practice' },
+  mn: { song: 'дуу', kids: 'хүүхдийн дуу', drama: 'монгол кино', movie: 'кино', variety: 'шоу', news: 'мэдээ', vlog: 'влог', twister: 'түргэн хэллэг', work: 'ажлын ярилцлага' },
 }
 const RELEVANCE: Record<Lang, string> = { ja: 'ja', tw: 'zh-Hant', zh: 'zh-Hans', en: 'en', mn: 'mn' }
 const SONG_Q = /노래|가사|歌|lyric|song|\bmv\b|music|дуу|клип/i

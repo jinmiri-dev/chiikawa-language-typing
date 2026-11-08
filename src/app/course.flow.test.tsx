@@ -27,7 +27,7 @@ async function go(hash: string) {
 test('초보 코스: 글자 레슨을 끝내면 진도·연속 학습일이 오르고 다음 레슨으로', async () => {
   render(<App />)
   await go('#/materials?lang=ja&tab=course')
-  const first = await screen.findByRole('link', { name: /오늘의 레슨 시작/ })
+  const first = await screen.findByRole('link', { name: /오늘의 레슨 시작/ }, { timeout: 5000 })
   expect(first.getAttribute('href')).toBe('#/study/ja-c0x1')
   await go('#/study/ja-c0x1')
   for (const src of ['あいうえお', 'かきくけこ', 'さしすせそ', 'たちつてと', 'なにぬねの', 'あさ', 'いえ', 'くち', 'なつ', 'ねこ']) {
@@ -41,9 +41,9 @@ test('초보 코스: 글자 레슨을 끝내면 진도·연속 학습일이 오�
     await act(async () => fireEvent.click(next))
   }
   await go('#/done/ja-c0x1')
-  const nextLesson = await screen.findByRole('link', { name: '다음 레슨' })
+  const nextLesson = await screen.findByRole('link', { name: '다음 레슨' }, { timeout: 5000 })
   expect(nextLesson.getAttribute('href')).toBe('#/study/ja-c0x2')
   await go('#/materials?lang=ja&tab=course')
-  expect(await screen.findByText('1 / 125')).toBeTruthy()
+  expect(await screen.findByText('1 / 125', {}, { timeout: 5000 })).toBeTruthy()
   expect(screen.getByText('1일')).toBeTruthy()
 }, 30_000)

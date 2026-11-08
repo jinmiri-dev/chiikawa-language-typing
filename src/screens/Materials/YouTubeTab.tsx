@@ -12,7 +12,7 @@ import { openVideo } from '../../services/youtube'
 
 /** 태그 (기획안 7.4). 검색어는 중계 함수가 언어마다 정한다 */
 const TAGS: [string, string][] = [
-  ['song', '노래'], ['kids', '동요'], ['drama', '드라마'], ['movie', '영화'], ['variety', '예능'], ['news', '뉴스'], ['vlog', '일상·브이로그'],
+  ['song', '노래'], ['kids', '동요'], ['drama', '드라마'], ['movie', '영화'], ['variety', '예능'], ['news', '뉴스'], ['vlog', '일상·브이로그'], ['twister', '발음 연습'], ['work', '면접·업무'],
 ]
 
 const time = (sec: number) => {
@@ -42,6 +42,12 @@ export default function YouTubeTab({ lang }: { lang: Lang }) {
   useEffect(() => {
     void store.listSaved(lang).then(setSaved)
   }, [store, lang])
+  // 다른 화면에서 태그를 골라 들어오면(예: 초보 코스의 「유튜브에서 잰말놀이 보기」) 바로 그 태그로 찾는다
+  useEffect(() => {
+    const tag = new URLSearchParams(location.hash.split('?')[1] ?? '').get('tag')
+    if (tag && TAGS.some(([id]) => id === tag)) void run({ tag })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
 
   async function run(p: { q?: string; tag?: string }) {
     setNotice(null)

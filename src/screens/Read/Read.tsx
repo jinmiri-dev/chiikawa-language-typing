@@ -14,6 +14,8 @@ import { getGloss } from '../../services/api'
 import { getMaterial } from '../../services/materials'
 import { speak, stopSpeaking } from '../../services/speech'
 import { toKorean } from '../../services/translate'
+import { TWISTER_SOURCE } from '../../services/practice'
+import { bestMatch, canRecognize, recognize } from '../../services/recognize'
 import './Read.css'
 
 const HAN = /\p{Script=Han}/u
@@ -48,6 +50,12 @@ export default function Read({ materialId }: { materialId: string }) {
   const [picked, setPicked] = useState<Picked | null>(null)
   const [saved, setSaved] = useState<Set<string>>(new Set())
   const [deviceKo, setDeviceKo] = useState(false)
+  /** 발음 연습: 한 문장을 세 번씩 들려준다 */
+  const [thrice, setThrice] = useState(false)
+  /** 따라 말하기: 듣는 중인 줄과 줄마다 마지막 결과 */
+  const [listening, setListening] = useState<number | null>(null)
+  const [said, setSaid] = useState<Record<number, { text: string; score: number } | null>>({})
+  const [micOk] = useState(canRecognize)
   const stopRef = useRef(false)
   const pairs = useRef(new Map<number, Promise<PlacedPair[]>>())
 
@@ -104,6 +112,10 @@ export default function Read({ materialId }: { materialId: string }) {
     )
   const mat = m
   const htmlLang = LANG_NAME[mat.lang].htmlLang
+  const twister = mat.sourceName === TWISTER_SOURCE
+  const wiki = mat.sourceName === '위키백과'
+  const backHref = href({ name: 'materials', lang: mat.lang, tab: twister ? 'course' : 'news' })
+  const times = twister && thrice ? 3 : 1
   const voice = { lang: mat.lang, voice: settings.voice[mat.lang] ?? ('female' as const), rate: settings.rate }
 
   async function playFrom(i: number) {
@@ -112,7 +124,10 @@ export default function Read({ materialId }: { materialId: string }) {
       if (stopRef.current) break
       setPlaying(k)
       document.getElementById(`read-line-${k}`)?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
-      await speak(mat.lines[k].src, voice)
+      for (let t = 0; t < times && !stopRef.current; t++) {
+        await speak(mat.lines[k].src, voice)
+        if (t < times - 1) await new Promise((r) => setTimeout(r, 400))
+      }
       if (stopRef.current) break
       await new Promise((r) => setTimeout(r, 350))
     }
@@ -123,7 +138,13 @@ export default function Read({ materialId }: { materialId: string }) {
     stopSpeaking()
     stopRef.current = false
     setPlaying(i)
-    void speak(mat.lines[i].src, voice).then(() => setPlaying((p) => (p === i ? null : p)))
+    void (async () => {
+      for (let t = 0; t < times && !stopRef.current; t++) {
+        await speak(mat.lines[i].src, voice)
+        if (t < times - 1) await new Promise((r) => setTimeout(r, 400))
+      }
+      setPlaying((p) => (p === i ? null : p))
+    })()
   }
   function stop() {
     stopRef.current = true
@@ -176,19 +197,36 @@ export default function Read({ materialId }: { materialId: string }) {
     setSaved((s) => new Set([...s, id]))
   }
 
+  /** 소리 내어 따라 말하면 들은 말을 원문(일본어는 읽기 가나도)과 견준다 */
+  async function sayBack(i: number) {
+    stop()
+    setListening(i)
+    const line = mat.lines[i]
+    const heard = await recognize(mat.lang)
+    const reading = line.segments.map((g) => g.reading ?? g.text).join('')
+    const a = bestMatch(line.src, heard)
+    const b = mat.lang === 'ja' ? bestMatch(reading, heard) : null
+    setSaid((x) => ({ ...x, [i]: a && b ? (b.score > a.score ? b : a) : (a ?? b) }))
+    setListening(null)
+  }
+
   const pickedId = picked ? `${mat.lang}:${picked.text}` : ''
   return (
     <div className="page read-page">
-      <AppHeader back={href({ name: 'materials', lang: mat.lang, tab: 'news' })} title={<span className="logo-sub">{mat.sourceName === '위키백과' ? '읽을거리 듣기' : '뉴스 듣기'}</span>} />
+      <AppHeader back={backHref} title={<span className="logo-sub">{twister ? '발음 연습' : wiki ? '읽을거리 듣기' : '뉴스 듣기'}</span>} />
       <main className="read">
         <header className="read-head">
           <p className="read-source">
-            {mat.sourceName === '위키백과' ? `${LANG_NAME[mat.lang].ko} 읽을거리 · 위키백과(CC BY-SA 4.0)` : `${LANG_NAME[mat.lang].ko} 뉴스${mat.sourceName ? ` · ${mat.sourceName}` : ''}`}
+            {twister
+              ? `${LANG_NAME[mat.lang].ko} 발음 연습 · ${mat.lang === 'mn' ? '헷갈리는 소리를 모은 문장' : '잰말놀이'}`
+              : wiki
+                ? `${LANG_NAME[mat.lang].ko} 읽을거리 · 위키백과(CC BY-SA 4.0)`
+                : `${LANG_NAME[mat.lang].ko} 뉴스${mat.sourceName ? ` · ${mat.sourceName}` : ''}`}
             {safeLink(mat.link) && (
               <>
                 {' · '}
                 <a href={safeLink(mat.link)} target="_blank" rel="noopener noreferrer">
-                  {mat.sourceName === '위키백과' ? '위키백과에서 전체 읽기 ↗' : '원문 기사 ↗'}
+                  {wiki ? '위키백과에서 전체 읽기 ↗' : '원문 기사 ↗'}
                 </a>
               </>
             )}
@@ -209,6 +247,11 @@ export default function Read({ materialId }: { materialId: string }) {
             <button type="button" className="btn btn-sub" aria-pressed={showKo} onClick={() => setShowKo((v) => !v)}>
               {showKo ? '뜻 가리기' : '뜻 보기'}
             </button>
+            {twister && (
+              <button type="button" className="btn btn-sub" aria-pressed={thrice} onClick={() => setThrice((v) => !v)}>
+                {thrice ? '✓ 3번씩 듣기' : '3번씩 듣기'}
+              </button>
+            )}
             {(mat.lang === 'ja' || mat.lang === 'zh' || mat.lang === 'tw') && (
               <button type="button" className="btn btn-sub" aria-pressed={ruby} onClick={() => setRuby((v) => !v)}>
                 {ruby ? '읽기 가리기' : '읽기 보기'}
@@ -216,15 +259,35 @@ export default function Read({ materialId }: { materialId: string }) {
             )}
           </div>
           <p className="read-tip">
-            <Sentences text="문장을 누르면 그 문장을 들려주고, 낱말을 누르면 뜻이 나와요. 뜻을 가리고 먼저 들어 본 뒤 확인해 보세요." />
+            <Sentences
+              text={
+                twister
+                  ? `▶로 듣고 ${micOk ? '🎤를 눌러 소리 내어 따라 하면 얼마나 비슷한지 알려 줘요' : '소리 내어 따라 해 보세요'}. 0.75배로 천천히 시작해, 익숙해지면 보통 빠르기로 해 보세요.`
+                  : `▶로 듣고, 낱말을 누르면 뜻이 나와요.${micOk ? ' 🎤로 따라 읽으면 얼마나 비슷한지 알려 줘요.' : ''} 뜻을 가리고 먼저 들어 본 뒤 확인해 보세요.`
+              }
+            />
           </p>
         </header>
         <ol className="read-lines">
           {mat.lines.map((l, i) => (
-            <li key={l.id} id={`read-line-${i}`} className="read-line" data-playing={playing === i || undefined} data-title={i === 0 || undefined}>
-              <button type="button" className="read-play" aria-label={`${i + 1}번째 문장 듣기`} onClick={() => playOne(i)}>
-                {playing === i ? '🔊' : '▶'}
-              </button>
+            <li key={l.id} id={`read-line-${i}`} className="read-line" data-playing={playing === i || undefined} data-title={(i === 0 && !twister) || undefined}>
+              <div className="read-btns">
+                <button type="button" className="read-play" aria-label={`${i + 1}번째 문장 듣기`} onClick={() => playOne(i)}>
+                  {playing === i ? '🔊' : '▶'}
+                </button>
+                {micOk && (
+                  <button
+                    type="button"
+                    className="read-play read-mic"
+                    aria-label={`${i + 1}번째 문장 따라 말하기`}
+                    aria-pressed={listening === i}
+                    disabled={listening !== null && listening !== i}
+                    onClick={() => void sayBack(i)}
+                  >
+                    🎤
+                  </button>
+                )}
+              </div>
               <div className="read-body">
                 <p className="read-src" lang={htmlLang}>
                   {l.segments.map((s, si) =>
@@ -246,6 +309,19 @@ export default function Read({ materialId }: { materialId: string }) {
                   )}
                 </p>
                 {showKo && <p className="read-ko">{l.ko ?? '한국어 뜻은 곧 채워져요'}</p>}
+                {listening === i && <p className="read-said" role="status">듣고 있어요… 문장을 소리 내어 읽어 주세요.</p>}
+                {listening !== i && i in said && (
+                  <p className="read-said" role="status" data-good={(said[i]?.score ?? 0) >= 80 || undefined}>
+                    {said[i] ? (
+                      <>
+                        <b>일치 {said[i]!.score}%</b> {said[i]!.score >= 90 ? '완벽해요!' : said[i]!.score >= 80 ? '잘했어요!' : said[i]!.score >= 50 ? '조금만 더!' : '천천히 다시 해 봐요.'}
+                        <span lang={htmlLang}> 들린 말: {said[i]!.text}</span>
+                      </>
+                    ) : (
+                      '잘 듣지 못했어요. 마이크를 허용했는지 보고 다시 해 봐요.'
+                    )}
+                  </p>
+                )}
                 {picked?.line === i && (
                   <div className="read-pick" role="status">
                     <b lang={htmlLang}>{picked.text}</b>
@@ -270,11 +346,12 @@ export default function Read({ materialId }: { materialId: string }) {
         </ol>
         <footer className="read-foot">
           {deviceKo && <p className="read-note">일부 뜻은 이 브라우저의 번역기로 채웠어요.</p>}
+          {micOk && <p className="read-note">🎤 따라 말하기는 브라우저 음성 인식을 써요. 크롬은 소리를 구글로 보내 글자로 바꾸고, 이 사이트는 소리를 저장하지 않아요.</p>}
           <a className="btn" href={href({ name: 'words', lang: mat.lang })}>
             담은 단어 복습하기
           </a>
-          <a className="btn" href={href({ name: 'materials', lang: mat.lang, tab: 'news' })}>
-            다른 기사
+          <a className="btn" href={backHref}>
+            {twister ? '초보 코스로' : '다른 기사'}
           </a>
         </footer>
       </main>
