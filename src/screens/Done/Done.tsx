@@ -6,6 +6,7 @@ import { FRIEND_INFO, pickLine } from '../../content/friendLines'
 import { downloadBackup } from '../../services/backup'
 import { getMaterial } from '../../services/materials'
 import { lessonId, loadCourse, parseLessonId } from '../../content/course'
+import { parsePracticeId, practiceId, SITUATIONS, TWISTER } from '../../content/practice'
 import { getCourseProgress, markLessonDone, nextLesson } from '../../services/course'
 import { eul } from '../../engine/josa'
 import { KIND_NAME, LANG_NAME } from '../../engine/lang'
@@ -37,11 +38,22 @@ export default function Done({ materialId }: { materialId: string }) {
   const [nudge, setNudge] = useState(false)
   /** 초보 코스 레슨이면 다음 레슨 id */
   const [nextId, setNextId] = useState<string | null>(null)
+  const [nextLabel, setNextLabel] = useState('다음 레슨')
   /** 이번 판 속도와 최고 기록 갱신 여부(학습 화면이 마지막 줄에서 남긴다) */
   const [run, setRun] = useState<LastRun | null>(null)
   const [langBest, setLangBest] = useState<LangBest | undefined>(undefined)
   useEffect(() => {
     void (async () => {
+      // 상황별 예문이면 다음 상황으로 이어서
+      const practice = parsePracticeId(materialId)
+      if (practice && practice.id !== TWISTER) {
+        const at = SITUATIONS.findIndex((x) => x.id === practice.id)
+        const nx = SITUATIONS[at + 1]
+        if (nx) {
+          setNextId(practiceId(practice.lang, nx.id))
+          setNextLabel(`다음 예문 · ${nx.title}`)
+        }
+      }
       const lesson = parseLessonId(materialId)
       if (lesson) {
         const prog = await store.getProgress(materialId)
@@ -178,7 +190,7 @@ export default function Done({ materialId }: { materialId: string }) {
         <div className="done-actions">
           {nextId && (
             <a className="btn btn-primary" href={href({ name: 'study', materialId: nextId })}>
-              다음 레슨
+              {nextLabel}
             </a>
           )}
           {cardOk && (
