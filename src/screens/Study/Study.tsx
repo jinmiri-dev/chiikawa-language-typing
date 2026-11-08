@@ -25,6 +25,7 @@ import { currentPair, koRange, placePairs } from '../../engine/pairs'
 import { speak, stopSpeaking } from '../../services/speech'
 import { syncStep } from '../../services/youtubeSync'
 import { playSfx } from '../../services/sfx'
+import { fillLines } from '../../services/translate'
 import { getMaterialBest, ghostProgress, saveRun, type MaterialBest } from '../../services/records'
 import { perMinute, sessionStats } from '../../engine/stats/speed'
 import KeyboardSheet from './KeyboardSheet'
@@ -112,7 +113,22 @@ export default function Study({ materialId }: { materialId: string }) {
   const { store } = useApp()
   const [loaded, setLoaded] = useState<{ material: Material | null; initial: Progress | null } | undefined>(undefined)
   useEffect(() => {
-    void Promise.all([getMaterial(store, materialId), store.getProgress(materialId)]).then(([material, initial]) => setLoaded({ material, initial }))
+    let alive = true
+    void Promise.all([getMaterial(store, materialId), store.getProgress(materialId)]).then(async ([material, initial]) => {
+      if (!alive) return
+      setLoaded({ material, initial })
+      // 한국어 뜻이 빠진 줄(서버 AI 하루 한도로 못 채운 줄)은 크롬·엣지의 기기 번역으로 채운다
+      if (!material || material.lines.every((l) => l.ko)) return
+      const lines = [...material.lines]
+      const n = await fillLines(lines, (l) => !!l.ko, (l) => l.src, (i, ko) => (lines[i] = { ...lines[i], ko }), material.lang, 'ko')
+      if (!n || !alive) return
+      const next = { ...material, lines }
+      setLoaded((x) => (x && x.material?.id === next.id ? { ...x, material: next } : x))
+      await store.saveMaterial(next)
+    })
+    return () => {
+      alive = false
+    }
   }, [store, materialId])
   if (loaded === undefined)
     return (

@@ -71,7 +71,7 @@ export interface LyricsResult {
   videoId: string
   to: Lang
   source: 'manual' | 'asr'
-  meaningSource: 'youtube' | 'none'
+  meaningSource: 'youtube' | 'auto' | 'none'
   lines: { start: number; end: number; ko: string; meaning?: string }[]
 }
 export const getLyrics = (native: Lang, v: string) => get<LyricsResult>('/lyrics', { lang: native, v })

@@ -3,6 +3,7 @@
  * 듣기(멈추지 않고 이어 재생, 지금 줄 강조) → 한 줄씩(줄 3번 반복) → 따라 부르기(빈칸).
  */
 import { useEffect, useRef, useState } from 'react'
+import { fillLines } from '../services/translate'
 import { useApp } from '../app/AppState'
 import { href } from '../app/routes'
 import { AppHeader, Phrases } from '../components/components'
@@ -63,9 +64,24 @@ export default function LearnVideo({ native, videoId }: { native: Lang; videoId:
   const runId = useRef(0)
 
   useEffect(() => {
-    getLyrics(native, videoId).then(setData, (e) => setError(errorText(e, t)))
+    let alive = true
+    getLyrics(native, videoId).then(
+      async (d) => {
+        if (!alive) return
+        setData(d)
+        // 서버가 아직 뜻을 못 채운 줄은 크롬·엣지의 기기 번역으로(한국어 → 모국어) 채운다
+        if (d.lines.every((l) => l.meaning)) return
+        const lines = [...d.lines]
+        const n = await fillLines(lines, (l) => !!l.meaning, (l) => l.ko, (i, meaning) => (lines[i] = { ...lines[i], meaning }), 'ko', native)
+        if (n && alive) setData({ ...d, lines, meaningSource: 'auto' })
+      },
+      (e) => setError(errorText(e, t)),
+    )
     void listSentences(store).then((list) => setSaved(new Set(list.filter((s) => s.videoId === videoId).map((s) => s.id))))
-    return () => stopSpeaking()
+    return () => {
+      alive = false
+      stopSpeaking()
+    }
   }, [native, videoId, store, t])
 
   useEffect(() => {
