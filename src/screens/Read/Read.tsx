@@ -33,6 +33,17 @@ function SegText({ s, lang, ruby }: { s: Segment; lang: Lang; ruby: boolean }) {
   )
 }
 
+/** 줄을 덩어리로: 낱말 하나 + 바로 뒤에 붙는 문장부호. 띄어쓰기는 따로(거기서만 줄이 바뀐다) */
+export function groupSegments(segs: Segment[]): { idx: number[]; space?: boolean }[] {
+  const out: { idx: number[]; space?: boolean }[] = []
+  segs.forEach((g, i) => {
+    if (/^\s+$/.test(g.text)) out.push({ idx: [i], space: true })
+    else if (!g.isWord && out.length && !out[out.length - 1].space) out[out.length - 1].idx.push(i)
+    else out.push({ idx: [i] })
+  })
+  return out
+}
+
 interface Picked {
   line: number
   seg: number
@@ -290,20 +301,30 @@ export default function Read({ materialId }: { materialId: string }) {
               </div>
               <div className="read-body">
                 <p className="read-src" lang={htmlLang}>
-                  {l.segments.map((s, si) =>
-                    s.isWord ? (
-                      <button
-                        key={si}
-                        type="button"
-                        className="read-word"
-                        data-picked={(picked?.line === i && picked.seg === si) || undefined}
-                        onClick={() => void pick(i, si)}
-                      >
-                        <SegText s={s} lang={mat.lang} ruby={ruby} />
-                      </button>
+                  {groupSegments(l.segments).map((g, gi) =>
+                    g.space ? (
+                      <span key={gi}>{l.segments[g.idx[0]].text}</span>
                     ) : (
-                      <span key={si}>
-                        <SegText s={s} lang={mat.lang} ruby={ruby} />
+                      // 낱말과 바로 뒤 문장부호는 한 덩어리(줄 첫머리에 「，」가 오지 않게)
+                      <span key={gi} className="read-chunk">
+                        {g.idx.map((si) => {
+                          const s = l.segments[si]
+                          return s.isWord ? (
+                            <button
+                              key={si}
+                              type="button"
+                              className="read-word"
+                              data-picked={(picked?.line === i && picked.seg === si) || undefined}
+                              onClick={() => void pick(i, si)}
+                            >
+                              <SegText s={s} lang={mat.lang} ruby={ruby} />
+                            </button>
+                          ) : (
+                            <span key={si}>
+                              <SegText s={s} lang={mat.lang} ruby={ruby} />
+                            </span>
+                          )
+                        })}
                       </span>
                     ),
                   )}

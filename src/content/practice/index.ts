@@ -4,7 +4,8 @@
  */
 import type { Lang } from '../../engine/lang'
 
-export type PracticeLine = [src: string, ko: string]
+/** [원문, 한국어 뜻, 정해 둔 조각·읽기(사전이 틀리기 쉬운 잰말놀이 등)?] */
+export type PracticeLine = [src: string, ko: string, segs?: [text: string, reading?: string][]]
 export interface PracticeData {
   situations: Record<string, PracticeLine[]>
   twisters: PracticeLine[]

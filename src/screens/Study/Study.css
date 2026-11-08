@@ -896,3 +896,13 @@ select.btn {
     gap: 8px;
   }
 }
+
+/* 좁은 휴대폰(갤럭시 S 360px 등): 연습 화면 머리글은 진도가 먼저. 로고 글자는 빼서 겹치지 않게 */
+@media (max-width: 420px) {
+  .study.study-mobile .app-header .logo {
+    display: none;
+  }
+  .study.study-mobile .study-meta {
+    padding: 0 6px;
+  }
+}

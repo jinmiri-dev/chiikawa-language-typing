@@ -202,3 +202,11 @@
   display: block;
   margin-top: 2px;
 }
+/* 낱말+문장부호 덩어리는 가운데서 줄이 바뀌지 않는다 */
+.read-chunk {
+  white-space: nowrap;
+}
+.read-word {
+  min-width: 28px;
+  padding: 0 2px;
+}

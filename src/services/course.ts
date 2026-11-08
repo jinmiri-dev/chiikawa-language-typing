@@ -1,4 +1,5 @@
 /** 초보 코스: 레슨을 연습 재료로 만들고, 끝낸 레슨과 공부한 날(연속 학습일)을 기억한다. */
+import { READING_VERSION } from '../engine/reading/ja'
 import { allLessons, lessonId, lessonLines, lessonTitle, loadCourse, parseLessonId, type CourseData } from '../content/course'
 import { buildDraftMaterial } from '../engine/import/material'
 import type { Lang } from '../engine/lang'
@@ -62,7 +63,7 @@ export async function courseMaterial(store: Store, id: string): Promise<Material
   // 저장해 둔 레슨이 지금 코스와 같으면 그대로(코스가 바뀌었으면 다시 만든다)
   const saved = await store.getMaterial(id)
   const same = saved && saved.title === lessonTitle(course, l.week, l.lesson) && saved.lines.every((x, i) => x.src === lines[i]?.[0]) && saved.lines.length === lines.length
-  if (saved && same) return saved
+  if (saved && same && saved.readingVersion === READING_VERSION) return saved
   const segment = await loadSegmenter(l.lang).catch(() => null)
   const m = buildDraftMaterial({
     id,
@@ -71,7 +72,7 @@ export async function courseMaterial(store: Store, id: string): Promise<Material
     lines: lines.map(([src, ko]) => ({ src, ko, flags: [] })),
     segment,
   })
-  const material: Material = { ...m, kind: 'starter', koSource: 'given' }
+  const material: Material = { ...m, kind: 'starter', koSource: 'given', readingVersion: READING_VERSION }
   await store.saveMaterial(material)
   return material
 }

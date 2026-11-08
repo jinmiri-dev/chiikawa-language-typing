@@ -83,3 +83,13 @@ dd,
 .nowrap {
   white-space: nowrap;
 }
+
+/* 휴대폰에서 머리글 링크(이용 안내·설정)를 손가락으로 누르기 쉽게 */
+@media (pointer: coarse) {
+  .app-header a,
+  .app-header button {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

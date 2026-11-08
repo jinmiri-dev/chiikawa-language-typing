@@ -64,6 +64,8 @@ export interface Material {
   sourceName?: string
   lines: Line[]
   createdAt: number
+  /** 읽기를 만든 규칙의 판(올라가면 저장해 둔 레슨을 다시 만든다) */
+  readingVersion?: number
 }
 
 export interface LineResult {

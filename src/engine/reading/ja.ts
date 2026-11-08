@@ -23,7 +23,15 @@ function attaches(prev: JaToken | undefined, t: JaToken): boolean {
   return false
 }
 
+/** 읽기 규칙 판(일본어 후리가나·중국어 병음 공통): 바꾸면 저장해 둔 코스·예문 레슨을 다시 만든다. 3: 번체 병음을 간체 낱말 사전으로 */
+export const READING_VERSION = 3
+
+/** 사전이 흔히 틀리는 읽기(일상에서 쓰는 읽기로 고친다). 예: 日本 → にっぽん 이 아니라 にほん */
+const READING_FIX: Record<string, string> = { 日本: 'にほん', 日本人: 'にほんじん', 日本中: 'にほんじゅう' }
+
 function readingOf(t: JaToken): { reading: string; known: boolean } {
+  const fixed = READING_FIX[t.surface_form]
+  if (fixed) return { reading: fixed, known: true }
   const s = t.surface_form
   if (!KANJI.test(s)) return { reading: toHiragana(s), known: true }
   if (!t.reading || t.reading === '*') return { reading: s, known: false }
