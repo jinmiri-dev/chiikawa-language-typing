@@ -78,3 +78,8 @@ dd,
     transition: none !important;
   }
 }
+
+/* 이 덩어리 가운데서는 줄을 바꾸지 않는다(예: "· 8줄") */
+.nowrap {
+  white-space: nowrap;
+}

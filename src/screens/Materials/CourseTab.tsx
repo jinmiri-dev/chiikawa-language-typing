@@ -125,7 +125,9 @@ export default function CourseTab({ lang }: { lang: Lang }) {
                       {finished && <span aria-label="끝냄">✓ </span>}
                       {s.title}
                     </b>
-                    <span>{s.desc} · 8줄</span>
+                    <span>
+                      {s.desc} <span className="nowrap">· 8줄</span>
+                    </span>
                   </a>
                 </li>
               )
