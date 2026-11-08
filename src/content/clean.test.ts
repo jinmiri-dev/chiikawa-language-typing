@@ -9,3 +9,10 @@ test('코스·예문·채팅 표현 문장에 욕설·민감한 말이 없다', 
   expect(Object.keys(FILES).length).toBeGreaterThanOrEqual(15)
   for (const [name, text] of Object.entries(FILES)) expect(text.match(BAD) ?? [], name).toEqual([])
 })
+
+test('뜻에 옛 맞춤법(읍니다)·정치적 주장 문장이 없다', () => {
+  for (const [name, text] of Object.entries(FILES)) {
+    expect(text.match(/읍니다|읍니까/g) ?? [], name).toEqual([])
+    expect(text.match(/台湾是一个国家|臺灣是一個國家/g) ?? [], name).toEqual([])
+  }
+})
